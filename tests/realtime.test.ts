@@ -295,3 +295,82 @@ describe("quiz over the wire", () => {
     await a.waitFor((m) => m.t === "me" && m.me.rank?.rank === 1);
   });
 });
+
+describe("reactions and chat", () => {
+  it("shares reactions between audience members but not with the presenter unless enabled", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    const b = await audience(s, "Bea");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    await b.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "start" });
+    a.send({ t: "react", i: 0 });
+    a.send({ t: "react", i: 0 });
+    expect(await b.waitFor((m) => m.t === "reactions")).toMatchObject({ counts: [2, 0, 0, 0, 0, 0] });
+    await new Promise((r) => setTimeout(r, 450));
+    expect(p.messages.some((m) => m.t === "reactions")).toBe(false);
+
+    p.send({ t: "view", view: { showReactions: true, showReactionCounter: true } });
+    await p.waitFor((m) => m.t === "state" && m.state.presenterView.showReactions);
+    b.send({ t: "react", i: 1 });
+    expect(await p.waitFor((m) => m.t === "reactions")).toMatchObject({ counts: [0, 1, 0, 0, 0, 0], totals: [2, 1, 0, 0, 0, 0] });
+  });
+
+  it("delivers chat once the presenter opens it, with moderation", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    const b = await audience(s, "Bea");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    await b.waitFor((m) => m.t === "welcome-audience");
+
+    a.send({ t: "chat", text: "hola" });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "chat-closed" });
+
+    p.send({ t: "chat-mode", mode: "text" });
+    await a.waitFor((m) => m.t === "state" && m.state.chat.mode === "text");
+    a.send({ t: "chat", text: "<b>hola</b>" });
+    const msg = await b.waitFor((m): m is Extract<ServerMessage, { t: "chat" }> => m.t === "chat");
+    expect(msg.message).toMatchObject({ name: "Ana", text: "<b>hola</b>" });
+    await p.waitFor((m) => m.t === "chat");
+
+    p.send({ t: "chat-delete", id: msg.message.id });
+    await b.waitFor((m) => m.t === "chat-delete" && m.id === msg.message.id);
+    p.send({ t: "chat-mute", participantId: msg.message.from });
+    await new Promise((r) => setTimeout(r, 50));
+    a.send({ t: "chat", text: "otra vez" });
+    expect(await a.waitFor((m) => m.t === "error" && m.code === "chat-muted")).toBeTruthy();
+
+    const late = await audience(s, "Carl");
+    expect(await late.waitFor((m) => m.t === "chat-history")).toMatchObject({ messages: [] });
+  });
+
+  it("rejects stickers when no GIPHY key is configured", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    const w = await a.waitFor((m): m is Extract<ServerMessage, { t: "welcome-audience" }> => m.t === "welcome-audience");
+    expect(w.features.stickers).toBe(false);
+    p.send({ t: "chat-mode", mode: "mixed" });
+    await a.waitFor((m) => m.t === "state" && m.state.chat.mode === "mixed");
+    a.send({ t: "chat", stickerId: "abc" });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "chat-sticker" });
+    const res = await fetch(`${base}/api/sessions/${s.code}/stickers?q=hola`);
+    expect(res.status).toBe(503);
+  });
+});
+
+describe("robustness", () => {
+  it("survives garbage frames and keeps serving the session", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    for (const junk of ["not json", "{}", '{"t":"vote"}', '{"t":"chat","text":1}', "[]", "null", '{"t":"react","i":-1}']) a.ws.send(junk);
+    p.send({ t: "start" });
+    await a.waitFor((m) => m.t === "state" && m.state.status === "live");
+    const health = await (await fetch(`${base}/api/health`)).json();
+    expect(health.ok).toBe(true);
+  });
+});

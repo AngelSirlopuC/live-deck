@@ -46,6 +46,13 @@ export interface SessionSnapshot {
   leaderboard: LeaderboardRow[] | null;
   /** Server clock (epoch ms) when this snapshot was built, to align quiz timers. */
   serverNow: number;
+  chat: ChatState;
+  presenterView: PresenterView;
+}
+
+export interface Features {
+  /** GIPHY stickers are configured on this server. */
+  stickers: boolean;
 }
 
 export interface Identity {
@@ -59,15 +66,33 @@ export interface Identity {
 export type CloseReason = "ended" | "restricted" | "not-found" | "replaced";
 
 export type ServerMessage =
-  | { t: "welcome-audience"; you: Identity; deck: PublicDeck; deckId: string; joinUrl: string; state: SessionSnapshot }
-  | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; state: SessionSnapshot }
+  | { t: "welcome-audience"; you: Identity; deck: PublicDeck; deckId: string; joinUrl: string; state: SessionSnapshot; features: Features }
+  | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; state: SessionSnapshot; features: Features }
   | { t: "state"; state: SessionSnapshot }
   | { t: "ripple"; slide: number; x: number; y: number }
   | { t: "me"; me: PersonalState }
+  | { t: "reactions"; counts: number[]; totals?: number[] }
+  | { t: "chat"; message: ChatMessage }
+  | { t: "chat-delete"; id: string }
+  | { t: "chat-history"; messages: ChatMessage[] }
   | { t: "closed"; reason: CloseReason }
   | { t: "error"; code: ErrorCode; message: string };
 
-export type ErrorCode = "bad-request" | "unauthorized" | "locked" | "not-found" | "restricted" | "ended" | "rate-limited";
+export type ErrorCode =
+  | "bad-request"
+  | "unauthorized"
+  | "locked"
+  | "not-found"
+  | "restricted"
+  | "ended"
+  | "rate-limited"
+  | "chat-closed"
+  | "chat-paused"
+  | "chat-mode"
+  | "chat-muted"
+  | "chat-rate"
+  | "chat-empty"
+  | "chat-sticker";
 
 export interface CreateSessionRequest {
   deckId: string;
@@ -115,4 +140,43 @@ export interface PersonalState {
   votes: Record<string, number>;
   score: { correct: number; answered: number };
   rank: { rank: number; of: number } | null;
+}
+
+/** Reactions available to the audience: a short set meant for talks. */
+export const REACTIONS = ["👏", "🔥", "💡", "😂", "🤯", "❤️"] as const;
+export const REACTION_LABELS = ["Aplausos", "Fuego", "Buena idea", "Risa", "Me voló la cabeza", "Me encanta"] as const;
+
+export type ChatMode = "off" | "text" | "sticker" | "mixed";
+export const CHAT_TEXT_MAX = 280;
+
+export interface Sticker {
+  id: string;
+  url: string;
+  width: number;
+  height: number;
+  title: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  from: string;
+  name: string;
+  text?: string;
+  sticker?: Sticker;
+  at: number;
+}
+
+export interface ChatState {
+  mode: ChatMode;
+  paused: boolean;
+}
+
+/** Presenter display preferences for audience activity. */
+export interface PresenterView {
+  /** Float audience reactions over the presenter console and projector. */
+  showReactions: boolean;
+  /** Show per-emoji totals so the presenter sees the trend. */
+  showReactionCounter: boolean;
+  /** Show the audience chat on the presenter console. */
+  showChat: boolean;
 }

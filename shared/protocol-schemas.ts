@@ -45,11 +45,20 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("ripple"), x: unit, y: unit }).strict(),
   z.object({ t: z.literal("quiz"), action: z.enum(["close", "reveal"]) }).strict(),
   z.object({ t: z.literal("settings"), showScore: z.boolean() }).strict(),
+  z.object({ t: z.literal("view"), view: z.object({ showReactions: z.boolean(), showReactionCounter: z.boolean(), showChat: z.boolean() }).partial().strict() }).strict(),
+  z.object({ t: z.literal("chat-mode"), mode: z.enum(["off", "text", "sticker", "mixed"]) }).strict(),
+  z.object({ t: z.literal("chat-pause"), paused: z.boolean() }).strict(),
+  z.object({ t: z.literal("chat-delete"), id: z.string().max(20) }).strict(),
+  z.object({ t: z.literal("chat-mute"), participantId: z.string().max(40) }).strict(),
 ]);
 
-export const AudienceCommandSchema = z.discriminatedUnion("t", [
+// z.union (not discriminatedUnion): "chat" has two shapes, text or sticker.
+export const AudienceCommandSchema = z.union([
   z.object({ t: z.literal("ping") }).strict(),
   z.object({ t: z.literal("vote"), slideId: z.string().max(40), option: z.number().int().min(0).max(5) }).strict(),
+  z.object({ t: z.literal("react"), i: z.number().int().min(0).max(5) }).strict(),
+  z.object({ t: z.literal("chat"), text: z.string().max(1000) }).strict(),
+  z.object({ t: z.literal("chat"), stickerId: z.string().max(64) }).strict(),
 ]);
 
 export type AudienceHello = z.infer<typeof AudienceHelloSchema>;

@@ -21,6 +21,7 @@ const app = createApp({
   publicBaseUrl: env.PUBLIC_BASE_URL?.trim() || null,
   trustProxy: env.TRUST_PROXY === "1",
   allowedOrigins: (env.ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
+  giphyKey: env.GIPHY_API_KEY?.trim() || null,
 });
 
 const server = createServer(app.handle);

@@ -4,7 +4,9 @@ import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import { publicDeck } from "../../shared/deck.ts";
 import { AudienceCommandSchema, HelloSchema, PresenterCommandSchema } from "../../shared/protocol-schemas.ts";
 import type { AudienceHello, CloseReason, ErrorCode, PresenterHello, PresenterSurface, ServerMessage } from "../../shared/protocol.ts";
+import type { Giphy } from "../giphy.ts";
 import type { ViewerRole } from "../session/quiz.ts";
+import type { PostResult } from "../session/social.ts";
 import type { SessionEntry, SessionRegistry } from "../session/registry.ts";
 
 export interface HubOptions {
@@ -15,16 +17,29 @@ export interface HubOptions {
   /** Exact origins allowed to open sockets; empty = same host as the request. */
   allowedOrigins: string[];
   tickMs?: number;
+  /** GIPHY proxy; null disables stickers. */
+  giphy: Giphy | null;
 }
 
 type Client =
   | { kind: "presenter"; ws: WebSocket; entry: SessionEntry; surface: PresenterSurface; bucket: Bucket }
-  | { kind: "audience"; ws: WebSocket; entry: SessionEntry; id: string; bucket: Bucket };
+  | { kind: "audience"; ws: WebSocket; entry: SessionEntry; id: string; bucket: Bucket; reactBucket: Bucket };
 
 const HELLO_TIMEOUT_MS = 10_000;
 const HEARTBEAT_MS = 30_000;
 /** Vote bursts are coalesced into one state broadcast per window. */
 const BROADCAST_COALESCE_MS = 250;
+/** Reactions are fanned out as one count array per window, whatever the audience size. */
+const REACTION_WINDOW_MS = 300;
+
+const CHAT_ERRORS: Record<Exclude<PostResult, { ok: true }>["reason"], { code: ErrorCode; message: string }> = {
+  closed: { code: "chat-closed", message: "Chat is closed." },
+  paused: { code: "chat-paused", message: "Chat is paused." },
+  mode: { code: "chat-mode", message: "That kind of message is not allowed right now." },
+  empty: { code: "chat-empty", message: "Empty message." },
+  muted: { code: "chat-muted", message: "You were muted by the presenter." },
+  rate: { code: "chat-rate", message: "Too many messages. Wait a moment." },
+};
 
 /** The projector screen is public, so it gets the audience view of quizzes. */
 const roleOf = (c: Client): ViewerRole => (c.kind === "presenter" && c.surface !== "screen" ? "presenter" : "audience");
@@ -54,6 +69,18 @@ function send(ws: WebSocket, msg: ServerMessage) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
 }
 
+/** A failing handler must only affect its own socket, never crash the process. */
+function guarded(ws: WebSocket, fn: (data: RawData) => void) {
+  return (data: RawData) => {
+    try {
+      fn(data);
+    } catch (err) {
+      console.error("ws handler error", err);
+      send(ws, { t: "error", code: "bad-request", message: "Internal error." });
+    }
+  };
+}
+
 function parse(data: RawData): unknown {
   try {
     return JSON.parse(data.toString());
@@ -78,6 +105,7 @@ export class WsHub {
     this.opts = opts;
     this.timers.push(setInterval(() => this.tick(), opts.tickMs ?? 5_000));
     this.timers.push(setInterval(() => this.heartbeat(), HEARTBEAT_MS));
+    this.timers.push(setInterval(() => this.flushReactions(), REACTION_WINDOW_MS));
   }
 
   attach(server: Server) {
@@ -116,13 +144,13 @@ export class WsHub {
     this.alive.add(ws);
     ws.on("pong", () => this.alive.add(ws));
     const timeout = setTimeout(() => ws.close(4000, "hello timeout"), HELLO_TIMEOUT_MS);
-    ws.once("message", (data) => {
+    ws.once("message", guarded(ws, (data) => {
       clearTimeout(timeout);
       const hello = HelloSchema.safeParse(parse(data));
       if (!hello.success) return this.reject(ws, "bad-request", "Invalid hello.");
       if (hello.data.role === "presenter") this.helloPresenter(ws, req, hello.data);
       else this.helloAudience(ws, req, hello.data);
-    });
+    }));
   }
 
   private reject(ws: WebSocket, code: ErrorCode, message: string) {
@@ -153,9 +181,11 @@ export class WsHub {
       code: entry.session.code,
       joinUrl: `${this.opts.baseUrl(req)}/s/${entry.session.code}`,
       state: entry.session.snapshot(roleOf(client), now),
+      features: { stickers: !!this.opts.giphy },
     });
+    if (client.surface !== "screen") send(ws, { t: "chat-history", messages: entry.session.chat.history() });
     this.broadcast(entry);
-    ws.on("message", (data) => this.onPresenterMessage(client, data));
+    ws.on("message", guarded(ws, (data) => this.onPresenterMessage(client, data)));
     ws.on("close", () => {
       this.removeClient(client);
       entry.session.presenterLeft(this.opts.now());
@@ -171,7 +201,7 @@ export class WsHub {
     if (s.isRestricted) return this.closeWith(ws, "restricted");
 
     const you = s.join({ name: hello.name ?? null, ...(hello.resume ? { resume: hello.resume } : {}) });
-    const client: Client = { kind: "audience", ws, entry, id: you.id, bucket: new Bucket(5, 15, this.opts.now()) };
+    const client: Client = { kind: "audience", ws, entry, id: you.id, bucket: new Bucket(5, 15, this.opts.now()), reactBucket: new Bucket(8, 12, this.opts.now()) };
     this.add(client);
     s.audienceConnected(you.id);
     send(ws, {
@@ -181,10 +211,12 @@ export class WsHub {
       deckId: s.deckId,
       joinUrl: `${this.opts.baseUrl(req)}/s/${s.code}`,
       state: s.snapshot("audience", this.opts.now()),
+      features: { stickers: !!this.opts.giphy },
     });
     send(ws, { t: "me", me: s.personal(you.id) });
+    send(ws, { t: "chat-history", messages: s.chat.history() });
     this.broadcast(entry);
-    ws.on("message", (data) => this.onAudienceMessage(client, data));
+    ws.on("message", guarded(ws, (data) => this.onAudienceMessage(client, data)));
     ws.on("close", () => {
       this.removeClient(client);
       s.audienceDisconnected(you.id);
@@ -222,6 +254,21 @@ export class WsHub {
         this.broadcast(entry);
         this.sendPersonal(entry);
         return;
+      case "view":
+        s.setPresenterView(cmd.data.view);
+        break;
+      case "chat-mode":
+        s.chat.setMode(cmd.data.mode);
+        break;
+      case "chat-pause":
+        s.chat.setPaused(cmd.data.paused);
+        break;
+      case "chat-delete":
+        if (s.chat.delete(cmd.data.id)) this.sendChat(entry, { t: "chat-delete", id: cmd.data.id });
+        return;
+      case "chat-mute":
+        s.chat.mute(cmd.data.participantId);
+        return;
       case "restrict":
         s.restrict(cmd.data.restricted);
         if (cmd.data.restricted) this.closeAudience(entry, "restricted");
@@ -251,6 +298,12 @@ export class WsHub {
     switch (cmd.data.t) {
       case "ping":
         return;
+      case "react":
+        if (s.isLive && client.reactBucket.take(this.opts.now())) s.reactions.add(cmd.data.i);
+        return;
+      case "chat":
+        void this.postChat(client, cmd.data);
+        return;
       case "vote":
         if (!s.vote(client.id, cmd.data.slideId, cmd.data.option, this.opts.now())) {
           return send(client.ws, { t: "error", code: "bad-request", message: "Voting is closed." });
@@ -258,6 +311,48 @@ export class WsHub {
         send(client.ws, { t: "me", me: s.personal(client.id) });
         this.scheduleBroadcast(client.entry);
         return;
+    }
+  }
+
+  private async postChat(client: Extract<Client, { kind: "audience" }>, data: { text: string } | { stickerId: string }) {
+    const s = client.entry.session;
+    const name = s.identity(client.id)?.name ?? "?";
+    let result: PostResult;
+    if ("stickerId" in data) {
+      const sticker = this.opts.giphy ? await this.opts.giphy.resolve(data.stickerId) : null;
+      if (!sticker) return send(client.ws, { t: "error", code: "chat-sticker", message: "Sticker unavailable." });
+      result = s.chat.post({ from: client.id, name, sticker }, this.opts.now());
+    } else {
+      result = s.chat.post({ from: client.id, name, text: data.text }, this.opts.now());
+    }
+    if (!result.ok) return send(client.ws, { t: "error", ...CHAT_ERRORS[result.reason] });
+    this.sendChat(client.entry, { t: "chat", message: result.message });
+  }
+
+  /** Chat goes to the audience and presenter consoles, never to the projector. */
+  private sendChat(entry: SessionEntry, msg: ServerMessage) {
+    const payload = JSON.stringify(msg);
+    for (const c of this.clients.get(entry.session.code) ?? []) {
+      if (c.kind === "presenter" && c.surface === "screen") continue;
+      if (c.ws.readyState === c.ws.OPEN) c.ws.send(payload);
+    }
+  }
+
+  private flushReactions() {
+    for (const set of this.clients.values()) {
+      const first = set.values().next().value as Client | undefined;
+      if (!first) continue;
+      const s = first.entry.session;
+      const counts = s.reactions.flush();
+      if (!counts) continue;
+      const view = s.presenterView;
+      const audience = JSON.stringify({ t: "reactions", counts } satisfies ServerMessage);
+      const presenter = JSON.stringify({ t: "reactions", counts, ...(view.showReactionCounter ? { totals: s.reactions.totals() } : {}) } satisfies ServerMessage);
+      for (const c of set) {
+        if (c.ws.readyState !== c.ws.OPEN) continue;
+        if (c.kind === "audience") c.ws.send(audience);
+        else if (view.showReactions || view.showReactionCounter) c.ws.send(presenter);
+      }
     }
   }
 

@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { publicDeck } from "../shared/deck.ts";
 import { PIN, SESSION_CODE, type CreateSessionResponse, type SessionInfo } from "../shared/protocol.ts";
+import { Giphy } from "./giphy.ts";
 import { WsHub } from "./realtime/ws-hub.ts";
 import { DECK_ID, DeckStore, listDecks } from "./decks.ts";
 import { SessionRegistry } from "./session/registry.ts";
@@ -20,6 +21,10 @@ export interface AppOptions {
   allowedOrigins: string[];
   now?: () => number;
   tickMs?: number;
+  /** GIPHY API key for chat stickers; null disables stickers. */
+  giphyKey?: string | null;
+  /** Injected fetch for the GIPHY client (tests). */
+  fetchImpl?: typeof fetch;
 }
 
 export function json(res: ServerResponse, status: number, body: unknown) {
@@ -56,7 +61,21 @@ export function createApp(opts: AppOptions) {
     return `${fwdProto || "http"}://${fwdHost || req.headers.host}`;
   };
 
-  const hub = new WsHub({ registry, now, baseUrl, allowedOrigins: opts.allowedOrigins, ...(opts.tickMs ? { tickMs: opts.tickMs } : {}) });
+  const giphy = opts.giphyKey ? new Giphy(opts.giphyKey, opts.fetchImpl) : null;
+  const hub = new WsHub({ registry, now, baseUrl, allowedOrigins: opts.allowedOrigins, giphy, ...(opts.tickMs ? { tickMs: opts.tickMs } : {}) });
+  // Per-IP budget for sticker searches so the proxy cannot be used as a free GIPHY relay.
+  const searchBudget = new Map<string, { tokens: number; at: number }>();
+  const allowSearch = (ip: string) => {
+    const t = now();
+    const b = searchBudget.get(ip) ?? { tokens: 20, at: t };
+    b.tokens = Math.min(20, b.tokens + (t - b.at) / 3000);
+    b.at = t;
+    searchBudget.set(ip, b);
+    if (searchBudget.size > 5000) searchBudget.clear();
+    if (b.tokens < 1) return false;
+    b.tokens -= 1;
+    return true;
+  };
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
     const path = new URL(req.url ?? "/", "http://x").pathname;
@@ -105,6 +124,20 @@ export function createApp(opts: AppOptions) {
         joinUrl: `${base}/s/${entry.session.code}`,
       };
       return json(res, 201, response);
+    }
+
+    const stickerMatch = /^\/api\/sessions\/([^/]+)\/stickers$/.exec(path);
+    if (stickerMatch && req.method === "GET") {
+      if (!giphy) return json(res, 503, { error: "stickers are not configured" });
+      const code = stickerMatch[1]!.toUpperCase();
+      const entry = SESSION_CODE.test(code) ? registry.get(code) : undefined;
+      const mode = entry?.session.chat.state.mode;
+      if (!entry || entry.session.isEnded) return json(res, 404, { error: "session not found" });
+      if (mode !== "sticker" && mode !== "mixed") return json(res, 403, { error: "stickers are off" });
+      const ip = (opts.trustProxy ? String(req.headers["x-forwarded-for"] ?? "").split(",")[0]?.trim() : "") || req.socket.remoteAddress || "?";
+      if (!allowSearch(ip)) return json(res, 429, { error: "too many searches" });
+      const q = new URL(req.url ?? "/", "http://x").searchParams.get("q") ?? "";
+      return json(res, 200, await giphy.search(q));
     }
 
     const sessionMatch = /^\/api\/sessions\/([^/]+)$/.exec(path);

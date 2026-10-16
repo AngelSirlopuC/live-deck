@@ -3,7 +3,9 @@ import { slideSteps, type Deck } from "../../shared/deck.ts";
 import { effectRect, type PersistentEffect } from "../../shared/effects.ts";
 import { isAfter, nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
 import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type PersonalState, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
+import type { PresenterView } from "../../shared/protocol.ts";
 import { QuizBook, type ViewerRole } from "./quiz.ts";
+import { Chat, ReactionMeter } from "./social.ts";
 import { pickAlias } from "./aliases.ts";
 
 export interface SessionInit {
@@ -52,6 +54,9 @@ export class Session {
   private effect: PersistentEffect | null = null;
   private showScore = false;
   private readonly quizzes: QuizBook;
+  readonly chat = new Chat();
+  readonly reactions = new ReactionMeter();
+  private view: PresenterView = { showReactions: false, showReactionCounter: false, showChat: false };
   private readonly identities = new Map<string, Identity>();
   private readonly takenNames = new Set<string>();
   private readonly audienceSockets = new Map<string, number>();
@@ -67,6 +72,10 @@ export class Session {
 
   get isEnded(): boolean {
     return this.status === "ended";
+  }
+
+  get isLive(): boolean {
+    return this.status === "live";
   }
 
   get isRestricted(): boolean {
@@ -99,6 +108,8 @@ export class Session {
       showScore: this.showScore,
       leaderboard: role === "presenter" || this.showScore ? this.quizzes.leaderboard(name, 10) : null,
       serverNow: now,
+      chat: this.chat.state,
+      presenterView: { ...this.view },
     };
   }
 
@@ -136,6 +147,14 @@ export class Session {
 
   setShowScore(show: boolean) {
     this.showScore = show;
+  }
+
+  setPresenterView(view: Partial<PresenterView>) {
+    this.view = { ...this.view, ...view };
+  }
+
+  get presenterView(): PresenterView {
+    return this.view;
   }
 
   /** Records an audience vote; false when voting is not possible right now. */
