@@ -206,6 +206,14 @@ export class WsHub {
         s.restrict(cmd.data.restricted);
         if (cmd.data.restricted) this.closeAudience(entry, "restricted");
         break;
+      case "effect":
+        s.setEffect(cmd.data.effect);
+        break;
+      case "ripple": {
+        const ev = s.ripple(cmd.data.x, cmd.data.y);
+        if (ev) this.broadcastMessage(entry, { t: "ripple", ...ev });
+        return;
+      }
       case "end":
         s.end();
         this.opts.registry.markEnded(entry, this.opts.now());
@@ -240,7 +248,11 @@ export class WsHub {
   }
 
   private broadcast(entry: SessionEntry) {
-    const payload = JSON.stringify({ t: "state", state: entry.session.snapshot() } satisfies ServerMessage);
+    this.broadcastMessage(entry, { t: "state", state: entry.session.snapshot() });
+  }
+
+  private broadcastMessage(entry: SessionEntry, msg: ServerMessage) {
+    const payload = JSON.stringify(msg);
     for (const c of this.clients.get(entry.session.code) ?? []) if (c.ws.readyState === c.ws.OPEN) c.ws.send(payload);
   }
 

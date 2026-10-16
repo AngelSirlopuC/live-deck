@@ -242,3 +242,118 @@
   font-size: 0.8rem;
   pointer-events: none;
 }
+
+/* Presenter effects ----------------------------------------------------------- */
+.stage-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+.stage-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fx-animate .stage-layer {
+  transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fx-focus {
+  position: absolute;
+  border-radius: 28px;
+  box-shadow: 0 0 0 4000px rgb(6 5 3 / 0.84);
+  outline: 4px solid rgb(255 181 71 / 0.85);
+  outline-offset: 6px;
+}
+
+.fx-animate .fx-focus {
+  transition: left 450ms cubic-bezier(0.16, 1, 0.3, 1), top 450ms cubic-bezier(0.16, 1, 0.3, 1), width 450ms cubic-bezier(0.16, 1, 0.3, 1), height 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fx-focus-enter {
+  animation: focus-in 420ms ease-out;
+}
+
+@keyframes focus-in {
+  from {
+    box-shadow: 0 0 0 4000px rgb(6 5 3 / 0);
+    outline-color: transparent;
+  }
+}
+
+.fx-ripple {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.fx-ripple span {
+  position: absolute;
+  left: -60px;
+  top: -60px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 10px solid #ffb547;
+  box-shadow: 0 0 0 4px rgb(20 17 13 / 0.55), inset 0 0 0 4px rgb(20 17 13 / 0.55);
+  opacity: 0;
+  animation: ripple 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.fx-ripple span:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.fx-ripple span:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+.fx-ripple::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: -18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffb547;
+  box-shadow: 0 0 0 6px rgb(20 17 13 / 0.5);
+  animation: ripple-dot 1300ms ease-out forwards;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes ripple-dot {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-ripple span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-ripple::before {
+    animation: none;
+  }
+}

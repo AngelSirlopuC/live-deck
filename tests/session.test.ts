@@ -150,3 +150,36 @@ describe("audience identity", () => {
     expect(s.snapshot().audienceCount).toBe(0);
   });
 });
+
+describe("presenter effects", () => {
+  it("keeps focus or zoom on the current slide and clears it when the slide changes", () => {
+    const s = make();
+    s.start();
+    s.next(); // agenda slide
+    s.setEffect({ kind: "focus", target: { elementId: "p2" } });
+    expect(s.snapshot().effect).toEqual({ kind: "focus", target: { elementId: "p2" } });
+    s.next(); // fragment step on the same slide keeps it
+    expect(s.snapshot().effect).not.toBeNull();
+    s.goto({ slide: 2, step: 0 });
+    expect(s.snapshot().effect).toBeNull();
+  });
+
+  it("rejects targets that are not on the current slide", () => {
+    const s = make();
+    s.start();
+    s.setEffect({ kind: "zoom", target: { elementId: "servidor" } });
+    expect(s.snapshot().effect).toBeNull();
+    s.setEffect({ kind: "zoom", target: { rect: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } } });
+    expect(s.snapshot().effect?.kind).toBe("zoom");
+    s.setEffect(null);
+    expect(s.snapshot().effect).toBeNull();
+  });
+
+  it("emits ripples only while live, tagged with the current slide", () => {
+    const s = make();
+    expect(s.ripple(0.5, 0.5)).toBeNull();
+    s.start();
+    s.next();
+    expect(s.ripple(0.25, 0.75)).toEqual({ slide: 1, x: 0.25, y: 0.75 });
+  });
+});

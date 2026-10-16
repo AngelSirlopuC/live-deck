@@ -36,8 +36,15 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   stage.style.setProperty("--theme-accent", theme.accent);
   stage.style.setProperty("--theme-muted", theme.muted ?? theme.foreground);
 
-  for (const el of slide.elements) stage.append(renderElement(el, opts));
-  if (slide.layout === "quiz" && slide.quiz) stage.append(renderQuiz(slide));
+  // Content sits in its own layer so presenter zoom can transform it while the
+  // effects layer (focus mask, ripples) stays in stage coordinates.
+  const layer = document.createElement("div");
+  layer.className = "stage-layer";
+  for (const el of slide.elements) layer.append(renderElement(el, opts));
+  if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide));
+  const fx = document.createElement("div");
+  fx.className = "stage-fx";
+  stage.append(layer, fx);
   return stage;
 }
 

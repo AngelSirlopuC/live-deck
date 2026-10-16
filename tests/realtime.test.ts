@@ -207,3 +207,24 @@ describe("realtime session", () => {
     expect(err).toMatchObject({ code: "bad-request" });
   });
 });
+
+describe("live effects", () => {
+  it("broadcasts ripples and persistent effects to the audience", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s);
+    await a.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "start" });
+    p.send({ t: "ripple", x: 0.4, y: 0.6 });
+    expect(await a.waitFor((m) => m.t === "ripple")).toEqual({ t: "ripple", slide: 0, x: 0.4, y: 0.6 });
+    p.send({ t: "effect", effect: { kind: "focus", target: { elementId: "qr" } } });
+    await a.waitFor((m) => m.t === "state" && m.state.effect?.kind === "focus");
+  });
+
+  it("rejects malformed effect coordinates", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    p.send({ t: "ripple", x: 4, y: 0 });
+    expect(await p.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
+  });
+});

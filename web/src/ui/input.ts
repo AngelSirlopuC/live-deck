@@ -10,7 +10,9 @@ const PREV_KEYS = new Set(["ArrowLeft", "ArrowUp", "PageUp", "Backspace"]);
 export function bindDeckKeys(target: Window, nav: NavHandlers): () => void {
   const onKey = (e: KeyboardEvent) => {
     const el = e.target as HTMLElement | null;
-    if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(el.tagName))) return;
+    if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+    // A focused button handles its own activation keys; arrows still navigate.
+    if (el && /^(BUTTON|A|SUMMARY)$/.test(el.tagName) && (e.key === "Enter" || e.key === " ")) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (NEXT_KEYS.has(e.key)) {
       e.preventDefault();

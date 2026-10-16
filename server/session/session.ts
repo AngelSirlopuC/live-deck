@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { slideSteps, type Deck } from "../../shared/deck.ts";
+import { effectRect, type PersistentEffect } from "../../shared/effects.ts";
 import { isAfter, nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
 import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
 import { pickAlias } from "./aliases.ts";
@@ -47,6 +48,7 @@ export class Session {
   private presenterSockets = 0;
   private presenterLastSeen: number;
   private abandoned = false;
+  private effect: PersistentEffect | null = null;
   private readonly identities = new Map<string, Identity>();
   private readonly takenNames = new Set<string>();
   private readonly audienceSockets = new Map<string, number>();
@@ -87,6 +89,7 @@ export class Session {
       presenterOnline: this.presenterSockets > 0,
       abandoned: this.abandoned,
       audienceCount: this.audienceSockets.size,
+      effect: this.effect,
     };
   }
 
@@ -123,8 +126,22 @@ export class Session {
     this.abandoned = false;
   }
 
+  /** Focus or zoom on the current slide; null clears it. Invalid targets are ignored. */
+  setEffect(effect: PersistentEffect | null) {
+    if (this.status !== "live") return;
+    if (effect && !effectRect(this.deck.slides[this.position.slide]!, effect.target)) return;
+    this.effect = effect;
+  }
+
+  /** One-shot "here" pulse; returns the event to broadcast, or null when not live. */
+  ripple(x: number, y: number): { slide: number; x: number; y: number } | null {
+    if (this.status !== "live") return null;
+    return { slide: this.position.slide, x, y };
+  }
+
   private moveTo(pos: Position) {
     if (this.status !== "live") return;
+    if (pos.slide !== this.position.slide) this.effect = null;
     this.position = pos;
     if (isAfter(pos, this.highWater)) this.highWater = { ...pos };
   }

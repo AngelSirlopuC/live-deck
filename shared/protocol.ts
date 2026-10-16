@@ -1,4 +1,5 @@
 import type { Deck, PublicDeck } from "./deck.ts";
+import type { PersistentEffect } from "./effects.ts";
 import type { Position } from "./nav.ts";
 
 // Wire protocol between the browser and the session server. Client messages
@@ -35,6 +36,8 @@ export interface SessionSnapshot {
   /** Presenter has been gone for ABANDON_AFTER_MS; audience may unlock the whole deck. */
   abandoned: boolean;
   audienceCount: number;
+  /** Focus or zoom the presenter is holding on the current slide. */
+  effect: PersistentEffect | null;
 }
 
 export interface Identity {
@@ -51,6 +54,7 @@ export type ServerMessage =
   | { t: "welcome-audience"; you: Identity; deck: PublicDeck; deckId: string; joinUrl: string; state: SessionSnapshot }
   | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; state: SessionSnapshot }
   | { t: "state"; state: SessionSnapshot }
+  | { t: "ripple"; slide: number; x: number; y: number }
   | { t: "closed"; reason: CloseReason }
   | { t: "error"; code: ErrorCode; message: string };
 

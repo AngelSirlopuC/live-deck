@@ -5,6 +5,7 @@ import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
+import { bindEffectTools, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
 import { openShareSheet } from "../ui/share.ts";
@@ -78,6 +79,8 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
       } else if (msg.t === "state" && ctx) {
         ctx.state = msg.state;
         ui?.update(ctx.state);
+      } else if (msg.t === "ripple" && ctx && msg.slide === ctx.state.position.slide) {
+        ui?.ripple(msg.x, msg.y);
       } else if (msg.t === "error") {
         if (msg.code === "unauthorized") {
           session.remove(pinKey(token));
@@ -97,6 +100,7 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
 
 interface PresenterUi {
   update(state: SessionSnapshot): void;
+  ripple(x: number, y: number): void;
   connection(status: ConnectionStatus): void;
 }
 
@@ -176,7 +180,40 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   const programHost = h("div", { class: "monitor-host" });
   const nextHost = h("div", { class: "monitor-host" });
-  const program = h("section", { class: "monitor monitor-program", "aria-label": "Diapositiva actual" }, h("span", { class: "monitor-label" }, "Programa"), programHost);
+  let tool: EffectTool = "ripple";
+  const toolKeys = (
+    [
+      ["ripple", "Señalar", "R"],
+      ["focus", "Enfocar", "F"],
+      ["zoom", "Zoom", "Z"],
+    ] as const
+  ).map(([id, label, kbd]) => {
+    const b = h("button", { type: "button", class: "key", "data-tool": id, "aria-pressed": String(id === tool), "aria-keyshortcuts": kbd }, label, " ", h("kbd", {}, kbd));
+    b.addEventListener("click", () => setTool(id));
+    return b;
+  });
+  const clearFx = h("button", { type: "button", class: "key key-ghost", "aria-keyshortcuts": "Escape" }, "Quitar efecto ", h("kbd", {}, "Esc"));
+  clearFx.addEventListener("click", () => ctx.send({ t: "effect", effect: null }));
+  const setTool = (t: EffectTool) => {
+    tool = t;
+    for (const b of toolKeys) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
+  };
+  window.addEventListener("keydown", (e) => {
+    const el = e.target as HTMLElement | null;
+    if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "r") setTool("ripple");
+    else if (k === "f") setTool("focus");
+    else if (k === "z") setTool("zoom");
+    else if (e.key === "Escape" && !document.querySelector("dialog[open]")) ctx.send({ t: "effect", effect: null });
+  });
+  const program = h(
+    "section",
+    { class: "monitor monitor-program", "aria-label": "Diapositiva actual" },
+    h("div", { class: "monitor-head" }, h("span", { class: "monitor-label" }, "Programa"), h("div", { class: "fx-tools", role: "toolbar", "aria-label": "Efectos en vivo" }, ...toolKeys, clearFx)),
+    programHost,
+  );
   const nextMon = h("section", { class: "monitor monitor-next", "aria-label": "Siguiente" }, h("span", { class: "monitor-label" }, "Siguiente"), nextHost);
   const timer = h("div", { class: "console-timer", "aria-label": "Tiempo transcurrido" }, "00:00");
   const slideNo = h("div", { class: "console-slide-no" });
@@ -200,15 +237,20 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     nextView.setOptions({ qrSvg: svg });
   });
   bindDeckKeys(window, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
+  bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effect);
   setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
 
   return {
+    ripple: (x, y) => programView.ripple(x, y),
     update(s) {
       const l = lampFor(s);
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
+      for (const b of [...toolKeys, clearFx]) b.disabled = s.status !== "live";
+      clearFx.disabled = s.status !== "live" || !s.effect;
       count.textContent = `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       programView.show(s.position);
+      programView.setEffect(s.effect);
       const upcoming: Position = nextPosition(ctx.deck.slides, s.position);
       const atEnd = upcoming.slide === s.position.slide && upcoming.step === s.position.step;
       nextHost.hidden = atEnd;
@@ -273,8 +315,10 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
   });
 
   return {
+    ripple: (x, y) => view.ripple(x, y),
     update(s) {
       view.show(s.position);
+      view.setEffect(s.effect);
     },
     connection() {},
   };
@@ -307,15 +351,22 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   );
   const view = new StageView(host, ctx.deck, { assetBase: `/decks/${ctx.deckId}/`, joinUrl: ctx.joinUrl });
   bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
+  // Tap on the preview pulses a ripple on every screen.
+  host.addEventListener("click", (e) => {
+    const p = view.toSlidePoint(e.clientX, e.clientY);
+    if (p && ctx.state.status === "live") ctx.send({ t: "ripple", x: p.x, y: p.y });
+  });
   setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
 
   return {
+    ripple: (x, y) => view.ripple(x, y),
     update(s) {
       const l = lampFor(s);
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
       view.show(s.position);
+      view.setEffect(s.effect);
       notes.textContent = ctx.deck.slides[s.position.slide]?.notes ?? "Sin notas.";
       prev.disabled = s.status !== "live";
       next.disabled = s.status !== "live";

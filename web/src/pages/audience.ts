@@ -202,8 +202,10 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     runner?.destroy();
     runner = null;
 
-    const pos = mode === "live" ? state.position : explorePos;
+    const following = mode === "live" && !unlockedAll;
+    const pos = following ? state.position : explorePos;
     view!.show(pos);
+    view!.setEffect(following ? state.effect : null);
     const lim = limit();
     posLabel.textContent = `${pos.slide + 1} / ${deck.slides.length}`;
     prevKey.disabled = pos.slide === 0 && pos.step === 0;
@@ -303,6 +305,9 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
           render();
           break;
         }
+        case "ripple":
+          if (mode === "live" && !unlockedAll && state && msg.slide === state.position.slide) view?.ripple(msg.x, msg.y);
+          break;
         case "error":
           if (msg.code === "not-found") local.remove(idKey(code));
           break;

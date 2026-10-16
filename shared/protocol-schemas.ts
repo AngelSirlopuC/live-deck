@@ -29,6 +29,11 @@ export const PresenterHelloSchema = z
 
 export const HelloSchema = z.discriminatedUnion("role", [AudienceHelloSchema, PresenterHelloSchema]);
 
+const unit = z.number().min(0).max(1);
+const rect = z.object({ x: unit, y: unit, w: unit, h: unit }).strict();
+const target = z.union([z.object({ elementId: z.string().max(40) }).strict(), z.object({ rect }).strict()]);
+const effect = z.object({ kind: z.enum(["focus", "zoom"]), target }).strict();
+
 export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("start") }).strict(),
   z.object({ t: z.literal("next") }).strict(),
@@ -36,6 +41,8 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("goto"), pos: position }).strict(),
   z.object({ t: z.literal("restrict"), restricted: z.boolean() }).strict(),
   z.object({ t: z.literal("end") }).strict(),
+  z.object({ t: z.literal("effect"), effect: effect.nullable() }).strict(),
+  z.object({ t: z.literal("ripple"), x: unit, y: unit }).strict(),
 ]);
 
 export const AudienceCommandSchema = z.discriminatedUnion("t", [z.object({ t: z.literal("ping") }).strict()]);
