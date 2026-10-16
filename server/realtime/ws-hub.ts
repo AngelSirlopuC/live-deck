@@ -281,8 +281,16 @@ export class WsHub {
         if (ev) this.broadcastMessage(entry, { t: "ripple", ...ev });
         return;
       }
+      case "summary":
+        return send(client.ws, { t: "summary", summary: s.summary() });
+      case "purge":
+        // Presenter deleted the session: drop it now instead of waiting for the TTL.
+        if (!s.isEnded) return send(client.ws, { t: "error", code: "bad-request", message: "End the session first." });
+        this.opts.registry.remove(entry);
+        for (const c of this.clients.get(s.code) ?? []) this.closeWith(c.ws, "ended");
+        return;
       case "end":
-        s.end();
+        s.end(now);
         this.opts.registry.markEnded(entry, this.opts.now());
         this.closeAudience(entry, "ended");
         break;

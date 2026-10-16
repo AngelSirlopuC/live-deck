@@ -374,3 +374,27 @@ describe("robustness", () => {
     expect(health.ok).toBe(true);
   });
 });
+
+describe("end of session", () => {
+  it("gives the presenter a summary and deletes the session on request", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    p.send({ t: "start" });
+    p.send({ t: "end" });
+    await p.waitFor((m) => m.t === "state" && m.state.status === "ended");
+    p.send({ t: "summary" });
+    const sum = await p.waitFor((m): m is Extract<ServerMessage, { t: "summary" }> => m.t === "summary");
+    expect(sum.summary.title).toBe("Live Deck — demo");
+    p.send({ t: "purge" });
+    await p.waitFor((m) => m.t === "closed" && m.reason === "ended");
+    expect((await fetch(`${base}/api/sessions/${s.code}`)).status).toBe(404);
+  });
+
+  it("does not hand summaries to the audience", async () => {
+    const s = await createSession();
+    const a = await audience(s, "Ana");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    a.send({ t: "summary" });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
+  });
+});

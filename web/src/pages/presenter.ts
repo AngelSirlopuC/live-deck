@@ -11,8 +11,9 @@ import { qrSvg } from "../ui/qr.ts";
 import { createPresenterAudience } from "../ui/presenter-audience.ts";
 import { createPresenterQuiz } from "../ui/presenter-quiz.ts";
 import { createReactionCounter, floatReactions } from "../ui/reactions.ts";
-import type { ChatMessage } from "../../../shared/protocol.ts";
+import type { ChatMessage, SessionSummary } from "../../../shared/protocol.ts";
 import { openShareSheet } from "../ui/share.ts";
+import { createEndPanel } from "../ui/summary.ts";
 
 const session = storage("session");
 const pinKey = (token: string) => `ld:pin:${token}`;
@@ -72,6 +73,13 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
       status = s;
       ui?.connection(s);
     },
+    onClosed: (reason) => {
+      if (reason !== "ended") return;
+      session.remove(pinKey(token));
+      root.replaceChildren(
+        h("main", { class: "aud-closed" }, h("span", { class: "lamp", "data-state": "off" }, "Fuera del aire"), h("h1", {}, "Sesión eliminada"), h("p", {}, "No queda ningún dato de esta sesión en el servidor.")),
+      );
+    },
     onMessage: (msg) => {
       if (msg.t === "welcome-presenter") {
         if (!ctx) {
@@ -89,6 +97,8 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
         ui?.update(ctx.state);
       } else if (msg.t === "ripple" && ctx && msg.slide === ctx.state.position.slide) {
         ui?.ripple(msg.x, msg.y);
+      } else if (msg.t === "summary") {
+        ui?.summary?.(msg.summary);
       } else if (msg.t === "reactions") {
         ui?.reactions?.(msg.counts, msg.totals ?? null);
       } else if (msg.t === "chat") {
@@ -118,6 +128,7 @@ interface PresenterUi {
   update(state: SessionSnapshot): void;
   ripple(x: number, y: number): void;
   reactions?(counts: number[], totals: number[] | null): void;
+  summary?(s: SessionSummary): void;
   chat?(op: "add", m: ChatMessage): void;
   chat?(op: "remove", id: string): void;
   chat?(op: "history", m: ChatMessage[]): void;
@@ -252,7 +263,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const actions = sessionActions(ctx);
   const transport = h("footer", { class: "console-transport" }, actions.start, prev, next, h("span", { class: "spacer" }), actions.restrict, h("span", { class: "transport-gap" }), actions.end);
 
-  root.replaceChildren(h("main", { class: "console" }, header, h("div", { class: "console-body" }, program, side), transport));
+  const body = h("div", { class: "console-body" }, program, side);
+  root.replaceChildren(h("main", { class: "console" }, header, body, transport));
+  let endPanel: ReturnType<typeof createEndPanel> | null = null;
 
   const assetBase = `/decks/${ctx.deckId}/`;
   const programView = new StageView(programHost, ctx.deck, { assetBase, joinUrl: ctx.joinUrl });
@@ -272,6 +285,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   return {
     ripple: (x, y) => programView.ripple(x, y),
+    summary(s) {
+      endPanel?.setSummary(s);
+    },
     reactions(counts, totals) {
       if (ctx.state.presenterView.showReactions) floatReactions(programFloaters, counts);
       if (ctx.state.presenterView.showReactionCounter) pa.counter.update(totals);
@@ -282,6 +298,16 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       else pa.chat.setHistory(arg as ChatMessage[]);
     },
     update(s) {
+      if (s.status === "ended" && !endPanel) {
+        endPanel = createEndPanel(async () => {
+          const ok = await confirmSheet("¿Borrar los datos ahora?", "Se eliminan votos, ranking y reacciones del servidor. Descarga el resumen antes.", "Borrar datos", true);
+          if (ok) ctx.send({ t: "purge" });
+        });
+        body.replaceChildren(endPanel.el);
+        transport.hidden = true;
+        for (const b of [qrBtn, screenBtn, remoteBtn]) b.hidden = true;
+        ctx.send({ t: "summary" });
+      }
       pa.update(s);
       const l = lampFor(s);
       lamp.dataset.state = l.state;

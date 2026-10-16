@@ -3,7 +3,7 @@ import { slideSteps, type Deck } from "../../shared/deck.ts";
 import { effectRect, type PersistentEffect } from "../../shared/effects.ts";
 import { isAfter, nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
 import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type PersonalState, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
-import type { PresenterView } from "../../shared/protocol.ts";
+import { REACTIONS, type PresenterView, type SessionSummary } from "../../shared/protocol.ts";
 import { QuizBook, type ViewerRole } from "./quiz.ts";
 import { Chat, ReactionMeter } from "./social.ts";
 import { pickAlias } from "./aliases.ts";
@@ -45,6 +45,8 @@ export class Session {
 
   private status: SessionStatus = "waiting";
   private startedAt: number | null = null;
+  private endedAt: number | null = null;
+  private peakAudience = 0;
   private restricted = false;
   private position: Position = { slide: 0, step: 0 };
   private highWater: Position = { slide: 0, step: 0 };
@@ -172,8 +174,22 @@ export class Session {
     };
   }
 
-  quizResults() {
-    return this.quizzes.results();
+  summary(): SessionSummary {
+    const name = (id: string) => this.identities.get(id)?.name ?? "?";
+    return {
+      title: this.deck.title,
+      code: this.code,
+      startedAt: this.startedAt,
+      endedAt: this.endedAt,
+      participants: this.identities.size,
+      peakAudience: this.peakAudience,
+      quizzes: this.quizzes.results().map((r) => {
+        const quiz = this.deck.slides.find((s) => s.id === r.slideId)!.quiz!;
+        return { slideId: r.slideId, question: quiz.question, options: [...quiz.options], counts: r.counts, total: r.total, correctIndex: r.correctIndex, revealed: r.status === "revealed" };
+      }),
+      leaderboard: this.quizzes.leaderboard(name, Number.MAX_SAFE_INTEGER),
+      reactions: REACTIONS.map((emoji, i) => ({ emoji, count: this.reactions.totals()[i] ?? 0 })),
+    };
   }
 
   restrict(restricted: boolean) {
@@ -181,7 +197,8 @@ export class Session {
     this.restricted = restricted;
   }
 
-  end() {
+  end(now: number = Date.now()) {
+    if (this.status !== "ended") this.endedAt = now;
     this.status = "ended";
     this.abandoned = false;
   }
@@ -257,6 +274,7 @@ export class Session {
 
   audienceConnected(id: string) {
     this.audienceSockets.set(id, (this.audienceSockets.get(id) ?? 0) + 1);
+    this.peakAudience = Math.max(this.peakAudience, this.audienceSockets.size);
   }
 
   audienceDisconnected(id: string) {

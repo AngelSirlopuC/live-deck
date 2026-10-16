@@ -183,3 +183,32 @@ describe("presenter effects", () => {
     expect(s.ripple(0.25, 0.75)).toEqual({ slide: 1, x: 0.25, y: 0.75 });
   });
 });
+
+describe("session summary", () => {
+  it("summarizes quizzes, leaderboard, reactions and attendance without chat", () => {
+    const s = make(1_000);
+    s.start(2_000);
+    const ana = s.join({ name: "Ana" });
+    const bea = s.join({ name: "Bea" });
+    s.audienceConnected(ana.id);
+    s.audienceConnected(bea.id);
+    s.goto({ slide: 3, step: 0 }, 3_000);
+    s.vote(ana.id, "quiz-vivo", 1, 3_100);
+    s.vote(bea.id, "quiz-vivo", 0, 3_100);
+    s.quizAction("reveal");
+    s.reactions.add(0);
+    s.reactions.add(0);
+    s.chat.setMode("text");
+    s.chat.post({ from: ana.id, name: "Ana", text: "secreto" }, 3_200);
+    s.end(60_000);
+
+    const sum = s.summary();
+    expect(sum).toMatchObject({ title: "Live Deck — demo", startedAt: 2_000, endedAt: 60_000, participants: 2, peakAudience: 2 });
+    expect(sum.quizzes).toEqual([
+      { slideId: "quiz-vivo", question: "¿Cuál es el principal enemigo de una buena presentación?", options: ["Demasiado texto", "Ninguna interacción", "Mal audio", "Diapositivas feas"], counts: [1, 1, 0, 0], total: 2, correctIndex: 1, revealed: true },
+    ]);
+    expect(sum.leaderboard.map((r) => r.name)).toEqual(["Ana", "Bea"]);
+    expect(sum.reactions[0]).toEqual({ emoji: "👏", count: 2 });
+    expect(JSON.stringify(sum)).not.toContain("secreto");
+  });
+});

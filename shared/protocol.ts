@@ -75,6 +75,7 @@ export type ServerMessage =
   | { t: "chat"; message: ChatMessage }
   | { t: "chat-delete"; id: string }
   | { t: "chat-history"; messages: ChatMessage[] }
+  | { t: "summary"; summary: SessionSummary }
   | { t: "closed"; reason: CloseReason }
   | { t: "error"; code: ErrorCode; message: string };
 
@@ -179,4 +180,25 @@ export interface PresenterView {
   showReactionCounter: boolean;
   /** Show the audience chat on the presenter console. */
   showChat: boolean;
+}
+
+/** What the presenter can download when the session ends. Chat is never included. */
+export interface SessionSummary {
+  title: string;
+  code: string;
+  startedAt: number | null;
+  endedAt: number | null;
+  participants: number;
+  peakAudience: number;
+  quizzes: Array<{
+    slideId: string;
+    question: string;
+    options: string[];
+    counts: number[];
+    total: number;
+    correctIndex: number;
+    revealed: boolean;
+  }>;
+  leaderboard: LeaderboardRow[];
+  reactions: Array<{ emoji: string; count: number }>;
 }

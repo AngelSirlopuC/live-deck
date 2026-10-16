@@ -50,6 +50,8 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("chat-pause"), paused: z.boolean() }).strict(),
   z.object({ t: z.literal("chat-delete"), id: z.string().max(20) }).strict(),
   z.object({ t: z.literal("chat-mute"), participantId: z.string().max(40) }).strict(),
+  z.object({ t: z.literal("summary") }).strict(),
+  z.object({ t: z.literal("purge") }).strict(),
 ]);
 
 // z.union (not discriminatedUnion): "chat" has two shapes, text or sticker.
