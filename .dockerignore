@@ -1,0 +1,16 @@
+# Keep the build context small and free of local state or secrets.
+node_modules
+dist
+.git
+.github
+odd
+tests
+.impeccable
+*.local
+.env*
+!.env.example
+deploy
+docs
+compose.yaml
+Dockerfile
+.dockerignore

@@ -1,0 +1,43 @@
+# Live Deck behind Caddy (automatic HTTPS via Let's Encrypt).
+#
+# 1. Point a DNS A/AAAA record for your domain at this server; open ports 80 and 443.
+# 2. Copy this file to /etc/caddy/Caddyfile (or merge it), replace deck.example.com.
+# 3. In Live Deck's .env set:
+#      PUBLIC_BASE_URL=https://deck.example.com   # join links and QR codes use it
+#      TRUST_PROXY=1                              # trust Caddy's X-Forwarded-* headers
+#    TRUST_PROXY=1 is safe only because compose.yaml binds the app to 127.0.0.1,
+#    so Caddy is the only client that can reach it.
+# 4. `caddy reload` (or restart the Caddy service).
+#
+# Caddy's reverse_proxy already:
+#   - upgrades WebSockets (the /ws endpoint) with no extra config;
+#   - keeps the original Host header (the app's WebSocket origin check compares
+#     the browser Origin with Host, so do NOT rewrite Host);
+#   - sets X-Forwarded-For, X-Forwarded-Proto and X-Forwarded-Host.
+# The explicit header_up lines below only document that behaviour.
+
+deck.example.com {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# - fonts: Google Fonts stylesheet + font files (web/index.html)
+		# - img: deck assets and QR codes (self), data:/blob: URLs, GIPHY stickers
+		#   loaded directly by attendees' browsers from *.giphy.com
+		# - connect: API calls (self) and the WebSocket on this same host
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.giphy.com; connect-src 'self' wss://{host}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Caddy on the host talking to the container's loopback port mapping.
+	# If Caddy runs in the same compose project, use `live-deck:8787` instead
+	# and remove the host port mapping from compose.yaml.
+	reverse_proxy 127.0.0.1:8787 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}

@@ -1,0 +1,27 @@
+# Live Deck self-hosting. Quick start: see docs/self-hosting.md
+#   cp .env.example .env   # then set ADMIN_KEY
+#   docker compose up -d --build
+services:
+  live-deck:
+    build: .
+    image: live-deck:local
+    env_file: .env
+    ports:
+      # Loopback only by default: put a reverse proxy (deploy/Caddyfile.example)
+      # in front for HTTPS. To let phones on the same Wi-Fi reach it directly,
+      # bind to the host's LAN address instead, e.g. "192.168.1.20:8787:8787",
+      # or "8787:8787" for every interface (only on a trusted network).
+      - "127.0.0.1:8787:8787"
+    volumes:
+      # Add or edit decks in ./decks without rebuilding the image. Read-only:
+      # the server never writes deck files. Decks are read from disk when a
+      # session is created, so no restart is needed.
+      - ./decks:/app/decks:ro
+    restart: unless-stopped
+    # Hardening: the app keeps all state in memory and writes nothing to disk.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
