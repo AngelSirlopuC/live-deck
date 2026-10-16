@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextPosition, prevPosition } from "../shared/nav.ts";
+import { exploreNext, isAfter, nextPosition, prevPosition } from "../shared/nav.ts";
 
 const slides = [
   { elements: [] },
@@ -22,5 +22,23 @@ describe("deck navigation", () => {
     expect(prevPosition(slides, { slide: 1, step: 2 })).toEqual({ slide: 1, step: 1 });
     expect(prevPosition(slides, { slide: 2, step: 0 })).toEqual({ slide: 1, step: 2 });
     expect(prevPosition(slides, { slide: 0, step: 0 })).toEqual({ slide: 0, step: 0 });
+  });
+});
+
+describe("explore navigation", () => {
+  it("never goes past the presenter's high water", () => {
+    const limit = { slide: 1, step: 1 };
+    expect(exploreNext(slides, { slide: 1, step: 0 }, limit)).toEqual({ slide: 1, step: 1 });
+    expect(exploreNext(slides, { slide: 1, step: 1 }, limit)).toEqual({ slide: 1, step: 1 });
+    expect(exploreNext(slides, { slide: 0, step: 0 }, limit)).toEqual({ slide: 1, step: 0 });
+  });
+
+  it("goes anywhere when the whole deck is unlocked", () => {
+    expect(exploreNext(slides, { slide: 1, step: 2 }, null)).toEqual({ slide: 2, step: 0 });
+  });
+
+  it("knows whether a position is still behind the limit", () => {
+    expect(isAfter({ slide: 2, step: 0 }, { slide: 1, step: 2 })).toBe(true);
+    expect(isAfter({ slide: 1, step: 2 }, { slide: 1, step: 2 })).toBe(false);
   });
 });

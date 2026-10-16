@@ -2,16 +2,8 @@ import type { IncomingMessage, Server } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import { publicDeck } from "../../shared/deck.ts";
-import {
-  AudienceCommandSchema,
-  HelloSchema,
-  PresenterCommandSchema,
-  type AudienceHello,
-  type CloseReason,
-  type ErrorCode,
-  type PresenterHello,
-  type ServerMessage,
-} from "../../shared/protocol.ts";
+import { AudienceCommandSchema, HelloSchema, PresenterCommandSchema } from "../../shared/protocol-schemas.ts";
+import type { AudienceHello, CloseReason, ErrorCode, PresenterHello, ServerMessage } from "../../shared/protocol.ts";
 import type { SessionEntry, SessionRegistry } from "../session/registry.ts";
 
 export interface HubOptions {
@@ -199,7 +191,7 @@ export class WsHub {
     const s = entry.session;
     switch (cmd.data.t) {
       case "start":
-        s.start();
+        s.start(this.opts.now());
         break;
       case "next":
         s.next();

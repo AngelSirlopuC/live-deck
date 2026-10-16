@@ -1,22 +1,28 @@
 import "./styles/base.css";
 import "./styles/stage.css";
+import "./styles/chrome.css";
+import { mountAudience } from "./pages/audience.ts";
+import { mountHome } from "./pages/home.ts";
+import { mountPresenter } from "./pages/presenter.ts";
 import { mountPreview } from "./pages/preview.ts";
 import { matchRoute } from "./router.ts";
 
 const root = document.getElementById("app")!;
 const route = matchRoute(location.pathname);
 
-function message(text: string) {
-  root.append(Object.assign(document.createElement("p"), { className: "page-message", textContent: text }));
-}
-
 switch (route.page) {
+  case "home":
+    void mountHome(root);
+    break;
   case "preview":
     void mountPreview(root, route.deckId);
     break;
-  case "home":
-    message("Live Deck");
+  case "presenter":
+    mountPresenter(root, route.token, route.surface);
+    break;
+  case "audience":
+    void mountAudience(root, route.code);
     break;
   default:
-    message("Página no encontrada.");
+    root.append(Object.assign(document.createElement("p"), { className: "page-message", textContent: "Página no encontrada." }));
 }

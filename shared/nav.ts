@@ -1,4 +1,5 @@
-import { slideSteps, type Slide } from "./deck.ts";
+import { slideSteps } from "./deck-core.ts";
+import type { Slide } from "./deck.ts";
 
 export interface Position {
   slide: number;
@@ -21,4 +22,14 @@ export function prevPosition(slides: readonly NavSlide[], pos: Position): Positi
   const previous = slides[pos.slide - 1];
   if (previous) return { slide: pos.slide - 1, step: slideSteps(previous) };
   return pos;
+}
+
+export function isAfter(a: Position, b: Position): boolean {
+  return a.slide > b.slide || (a.slide === b.slide && a.step > b.step);
+}
+
+/** "Next" while exploring: bounded by the presenter's high water, or free when `limit` is null. */
+export function exploreNext(slides: readonly NavSlide[], pos: Position, limit: Position | null): Position {
+  const next = nextPosition(slides, pos);
+  return limit && isAfter(next, limit) ? pos : next;
 }

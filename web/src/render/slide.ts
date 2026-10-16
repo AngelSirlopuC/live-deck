@@ -1,4 +1,5 @@
-import { DEFAULT_THEME, type DeckElement, type PublicSlide, type RenderableDeck, type TextStyle } from "../../../shared/deck.ts";
+import { DEFAULT_THEME, type PublicSlide, type RenderableDeck } from "../../../shared/deck-core.ts";
+import type { DeckElement, TextStyle } from "../../../shared/deck.ts";
 
 // Slides render on a fixed logical stage and are scaled with a CSS transform,
 // so geometry, font sizes, and effect targets are identical on every screen.

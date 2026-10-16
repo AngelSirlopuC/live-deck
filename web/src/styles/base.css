@@ -1,21 +1,35 @@
 :root {
-  --bg: #0b0d12;
-  --surface: #151923;
-  --surface-2: #1d2230;
-  --line: #2a3142;
-  --text: #f4f1ea;
-  --text-muted: #9aa3b2;
-  --accent: #ff7a45;
-  --accent-ink: #10131a;
-  --ok: #3ccf91;
-  --bad: #ff5d6c;
-  --radius: 14px;
+  /* Radio studio desk */
+  --bg: #14110d;
+  --desk: #1f1a14;
+  --panel: #2a241c;
+  --panel-hi: #352d23;
+  --seam: #3e3529;
+  --text: #efe4cc;
+  --text-muted: #b3a68b;
+  --amber: #ffb547;
+  --amber-ink: #241805;
+  --onair: #ff3b2f;
+  --signal: #5fd38d;
+  --danger: #e2574c;
+  --radius: 12px;
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-legend: "Oswald", "Arial Narrow", sans-serif;
   --font-body: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: dark;
+}
+
+::selection {
+  background: var(--amber);
+  color: var(--amber-ink);
+}
+
+* {
+  scrollbar-color: var(--seam) transparent;
 }
 
 *,
@@ -46,7 +60,7 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--amber);
   outline-offset: 2px;
 }
 

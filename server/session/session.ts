@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { slideSteps, type Deck } from "../../shared/deck.ts";
-import { nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
+import { isAfter, nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
 import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
 import { pickAlias } from "./aliases.ts";
 
@@ -16,7 +16,7 @@ export interface JoinRequest {
   resume?: { id: string; key: string };
 }
 
-const after = (a: Position, b: Position) => a.slide > b.slide || (a.slide === b.slide && a.step > b.step);
+
 
 /** Removes control characters, collapses whitespace and caps the length of a first name. */
 export function cleanName(raw: string): string {
@@ -40,6 +40,7 @@ export class Session {
   readonly createdAt: number;
 
   private status: SessionStatus = "waiting";
+  private startedAt: number | null = null;
   private restricted = false;
   private position: Position = { slide: 0, step: 0 };
   private highWater: Position = { slide: 0, step: 0 };
@@ -79,6 +80,7 @@ export class Session {
   snapshot(): SessionSnapshot {
     return {
       status: this.status,
+      startedAt: this.startedAt,
       restricted: this.restricted,
       position: { ...this.position },
       highWater: { ...this.highWater },
@@ -90,9 +92,10 @@ export class Session {
 
   // Presenter commands -------------------------------------------------------
 
-  start() {
+  start(now: number = Date.now()) {
     if (this.status !== "waiting") return;
     this.status = "live";
+    this.startedAt = now;
     this.highWater = { ...this.position };
   }
 
@@ -123,7 +126,7 @@ export class Session {
   private moveTo(pos: Position) {
     if (this.status !== "live") return;
     this.position = pos;
-    if (after(pos, this.highWater)) this.highWater = { ...pos };
+    if (isAfter(pos, this.highWater)) this.highWater = { ...pos };
   }
 
   // Presence -------------------------------------------------------------------

@@ -206,8 +206,8 @@
 }
 
 .quiz-option.is-correct {
-  border-color: var(--ok);
-  background: color-mix(in srgb, var(--ok) 18%, transparent);
+  border-color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 18%, transparent);
 }
 
 .quiz-option.is-wrong {

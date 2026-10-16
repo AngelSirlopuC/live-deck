@@ -118,8 +118,6 @@ export type Slide = z.infer<typeof SlideSchema>;
 export type Theme = z.infer<typeof ThemeSchema>;
 export type Deck = z.infer<typeof DeckSchema>;
 
-export const DEFAULT_THEME: Theme = { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" };
-
 export type ParseResult = { ok: true; deck: Deck } | { ok: false; error: string };
 
 export function parseDeck(input: unknown): ParseResult {
@@ -129,33 +127,5 @@ export function parseDeck(input: unknown): ParseResult {
   return { ok: false, error };
 }
 
-/** Number of fragment steps on a slide (0 when everything is visible at once). */
-export function slideSteps(slide: Pick<Slide, "elements">): number {
-  return slide.elements.reduce((max, el) => Math.max(max, el.fragment ?? 0), 0);
-}
-
-/** Quiz as the audience sees it before reveal: no answer. */
-export type PublicQuiz = Omit<Quiz, "correctIndex">;
-export type PublicSlide = Omit<Slide, "quiz" | "notes"> & { quiz?: PublicQuiz };
-export interface PublicDeck {
-  version: 1;
-  title: string;
-  theme?: Theme;
-  slides: PublicSlide[];
-}
-/** Anything the renderer can draw: a full deck or its public projection. */
-export type RenderableDeck = Deck | PublicDeck;
-
-/** Strips speaker notes and quiz answers so the deck is safe to send to the audience. */
-export function publicDeck(deck: Deck): PublicDeck {
-  return {
-    version: deck.version,
-    title: deck.title,
-    ...(deck.theme ? { theme: deck.theme } : {}),
-    slides: deck.slides.map(({ notes: _notes, quiz, ...slide }) => {
-      if (!quiz) return slide;
-      const { correctIndex: _answer, ...rest } = quiz;
-      return { ...slide, quiz: rest };
-    }),
-  };
-}
+export { DEFAULT_THEME, publicDeck, slideSteps } from "./deck-core.ts";
+export type { PublicDeck, PublicQuiz, PublicSlide, RenderableDeck } from "./deck-core.ts";
