@@ -357,3 +357,27 @@
     animation: none;
   }
 }
+
+.quiz-status {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 30px;
+  color: var(--theme-muted);
+}
+
+.quiz-option.is-leading .quiz-count {
+  color: var(--theme-fg);
+}
+
+.quiz-option.is-answer {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--signal) 70%, transparent);
+}
+
+.quiz-option.is-correct .quiz-key {
+  background: var(--signal);
+}
+
+.quiz-option {
+  transition: opacity 400ms ease, border-color 400ms ease, background 400ms ease;
+}

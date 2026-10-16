@@ -228,3 +228,70 @@ describe("live effects", () => {
     expect(await p.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
   });
 });
+
+describe("quiz over the wire", () => {
+  async function screen(s: CreateSessionResponse) {
+    const c = new TestClient();
+    await c.open();
+    c.send({ t: "hello", role: "presenter", token: s.presenterToken, pin: "2468", surface: "screen" });
+    await c.waitFor((m) => m.t === "welcome-presenter");
+    return c;
+  }
+
+  it("keeps a secret quiz hidden from audience and projector until reveal, then scores", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const scr = await screen(s);
+    const a = await audience(s, "Ana");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "start" });
+    p.send({ t: "goto", pos: { slide: 4, step: 0 } }); // quiz-secreto, correct = 1
+    await a.waitFor((m) => m.t === "state" && !!m.state.quizzes["quiz-secreto"]);
+
+    a.send({ t: "vote", slideId: "quiz-secreto", option: 1 });
+    const me = await a.waitFor((m) => m.t === "me" && m.me.votes["quiz-secreto"] === 1);
+    expect(me).toBeTruthy();
+
+    const pState = await p.waitFor((m) => m.t === "state" && m.state.quizzes["quiz-secreto"]?.total === 1);
+    expect(pState).toMatchObject({ state: { quizzes: { "quiz-secreto": { counts: [0, 1, 0, 0], correctIndex: 1 } } } });
+    const aState = await a.waitFor((m) => m.t === "state" && m.state.quizzes["quiz-secreto"]?.total === 1);
+    expect(aState).toMatchObject({ state: { quizzes: { "quiz-secreto": { counts: null, correctIndex: null } } } });
+    const sState = await scr.waitFor((m) => m.t === "state" && m.state.quizzes["quiz-secreto"]?.total === 1);
+    expect(sState).toMatchObject({ state: { quizzes: { "quiz-secreto": { counts: null, correctIndex: null } } } });
+
+    p.send({ t: "quiz", action: "reveal" });
+    await a.waitFor((m) => m.t === "state" && m.state.quizzes["quiz-secreto"]?.correctIndex === 1);
+    await a.waitFor((m) => m.t === "me" && m.me.score.correct === 1 && m.me.score.answered === 1);
+  });
+
+  it("refuses votes after the presenter closes voting", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Luis");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "start" });
+    p.send({ t: "goto", pos: { slide: 3, step: 0 } });
+    p.send({ t: "quiz", action: "close" });
+    await a.waitFor((m) => m.t === "state" && m.state.quizzes["quiz-vivo"]?.status === "closed");
+    a.send({ t: "vote", slideId: "quiz-vivo", option: 0 });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
+  });
+
+  it("shares the leaderboard with the audience only when the presenter enables it", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "start" });
+    p.send({ t: "goto", pos: { slide: 3, step: 0 } });
+    a.send({ t: "vote", slideId: "quiz-vivo", option: 1 });
+    await a.waitFor((m) => m.t === "me" && m.me.votes["quiz-vivo"] === 1);
+    p.send({ t: "quiz", action: "reveal" });
+    const hidden = await a.waitFor((m) => m.t === "state" && m.state.quizzes["quiz-vivo"]?.status === "revealed");
+    expect(hidden).toMatchObject({ state: { leaderboard: null, showScore: false } });
+    p.send({ t: "settings", showScore: true });
+    const shown = await a.waitFor((m) => m.t === "state" && m.state.showScore);
+    expect(shown).toMatchObject({ state: { leaderboard: [{ name: "Ana", correct: 1, rank: 1 }] } });
+    await a.waitFor((m) => m.t === "me" && m.me.rank?.rank === 1);
+  });
+});

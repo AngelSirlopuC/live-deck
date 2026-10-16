@@ -43,9 +43,14 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("end") }).strict(),
   z.object({ t: z.literal("effect"), effect: effect.nullable() }).strict(),
   z.object({ t: z.literal("ripple"), x: unit, y: unit }).strict(),
+  z.object({ t: z.literal("quiz"), action: z.enum(["close", "reveal"]) }).strict(),
+  z.object({ t: z.literal("settings"), showScore: z.boolean() }).strict(),
 ]);
 
-export const AudienceCommandSchema = z.discriminatedUnion("t", [z.object({ t: z.literal("ping") }).strict()]);
+export const AudienceCommandSchema = z.discriminatedUnion("t", [
+  z.object({ t: z.literal("ping") }).strict(),
+  z.object({ t: z.literal("vote"), slideId: z.string().max(40), option: z.number().int().min(0).max(5) }).strict(),
+]);
 
 export type AudienceHello = z.infer<typeof AudienceHelloSchema>;
 export type PresenterHello = z.infer<typeof PresenterHelloSchema>;

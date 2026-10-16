@@ -1,6 +1,8 @@
 import type { RenderableDeck } from "../../../shared/deck-core.ts";
 import { effectRect, zoomTransform, type PersistentEffect } from "../../../shared/effects.ts";
 import type { Position } from "../../../shared/nav.ts";
+import type { QuizView } from "../../../shared/protocol.ts";
+import { applyQuizView, type QuizOverlayOptions } from "./quiz-overlay.ts";
 import { STAGE_HEIGHT, STAGE_WIDTH, fitStage, renderSlide, type RenderOptions } from "./slide.ts";
 
 interface Zoom {
@@ -21,6 +23,7 @@ export class StageView {
   private extra: Omit<RenderOptions, "step" | "enterStep">;
   private effect: PersistentEffect | null = null;
   private zoom: Zoom = NO_ZOOM;
+  private quizState: { view: QuizView | null; opts: QuizOverlayOptions } = { view: null, opts: {} };
 
   constructor(host: HTMLElement, deck: RenderableDeck, extra: Omit<RenderOptions, "step" | "enterStep"> = {}) {
     this.host = host;
@@ -58,6 +61,13 @@ export class StageView {
     this.last = pos;
     if (!sameSlide) this.effect = null;
     this.applyEffect(false);
+    applyQuizView(next, this.quizState.view, this.quizState.opts);
+  }
+
+  /** Paints the quiz state of the slide currently shown. */
+  setQuiz(view: QuizView | null, opts: QuizOverlayOptions = {}) {
+    this.quizState = { view, opts };
+    if (this.stage) applyQuizView(this.stage, view, opts);
   }
 
   /** Shows (or clears) the presenter's persistent effect on the current slide. */

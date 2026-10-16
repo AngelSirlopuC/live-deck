@@ -165,7 +165,10 @@ function renderQuiz(slide: PublicSlide): HTMLElement {
     list.append(item);
   });
 
-  wrap.append(question, list);
+  const status = document.createElement("p");
+  status.className = "quiz-status";
+  status.setAttribute("aria-live", "polite");
+  wrap.append(question, list, status);
   return wrap;
 }
 

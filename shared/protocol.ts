@@ -38,6 +38,14 @@ export interface SessionSnapshot {
   audienceCount: number;
   /** Focus or zoom the presenter is holding on the current slide. */
   effect: PersistentEffect | null;
+  /** Every quiz opened so far, keyed by slide id, as this viewer may see it. */
+  quizzes: Record<string, QuizView>;
+  /** Presenter choice: show scores and the leaderboard to the audience during the session. */
+  showScore: boolean;
+  /** Top of the leaderboard; null for the audience while showScore is off. */
+  leaderboard: LeaderboardRow[] | null;
+  /** Server clock (epoch ms) when this snapshot was built, to align quiz timers. */
+  serverNow: number;
 }
 
 export interface Identity {
@@ -55,6 +63,7 @@ export type ServerMessage =
   | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; state: SessionSnapshot }
   | { t: "state"; state: SessionSnapshot }
   | { t: "ripple"; slide: number; x: number; y: number }
+  | { t: "me"; me: PersonalState }
   | { t: "closed"; reason: CloseReason }
   | { t: "error"; code: ErrorCode; message: string };
 
@@ -77,4 +86,33 @@ export interface SessionInfo {
   title: string;
   status: SessionStatus;
   restricted: boolean;
+}
+
+export type QuizStatus = "open" | "closed" | "revealed";
+
+/** Quiz state as one role sees it. Audience views hide secret counts and the answer until reveal. */
+export interface QuizView {
+  slideId: string;
+  status: QuizStatus;
+  /** Votes per option; null when hidden from this viewer. */
+  counts: number[] | null;
+  total: number;
+  /** Correct option; null until revealed (presenters always see it). */
+  correctIndex: number | null;
+  /** Epoch ms (server clock) when a timed quiz closes. */
+  endsAt: number | null;
+}
+
+export interface LeaderboardRow {
+  name: string;
+  correct: number;
+  answered: number;
+  rank: number;
+}
+
+/** Personal state sent only to one audience member. */
+export interface PersonalState {
+  votes: Record<string, number>;
+  score: { correct: number; answered: number };
+  rank: { rank: number; of: number } | null;
 }

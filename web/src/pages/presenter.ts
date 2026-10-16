@@ -8,6 +8,7 @@ import { icon } from "../ui/icons.ts";
 import { bindEffectTools, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
+import { createPresenterQuiz } from "../ui/presenter-quiz.ts";
 import { openShareSheet } from "../ui/share.ts";
 
 const session = storage("session");
@@ -51,6 +52,8 @@ interface PresenterContext {
   joinUrl: string;
   state: SessionSnapshot;
   send: (cmd: PresenterCommand) => void;
+  /** serverNow - Date.now() at the last snapshot, for quiz timers. */
+  clockOffset: number;
 }
 
 function connect(root: HTMLElement, token: string, surface: PresenterSurface, pin: string) {
@@ -69,15 +72,17 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
     onMessage: (msg) => {
       if (msg.t === "welcome-presenter") {
         if (!ctx) {
-          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, state: msg.state, send: (cmd) => conn.send(cmd) };
+          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
           document.title = `${msg.deck.title} · ${surface === "screen" ? "pantalla" : surface === "remote" ? "control" : "consola"}`;
           ui = surface === "screen" ? screenUi(root, ctx) : surface === "remote" ? remoteUi(root, ctx, token) : consoleUi(root, ctx, token);
         }
         ctx.state = msg.state;
+        ctx.clockOffset = msg.state.serverNow - Date.now();
         ui!.update(ctx.state);
         ui!.connection(status);
       } else if (msg.t === "state" && ctx) {
         ctx.state = msg.state;
+        ctx.clockOffset = msg.state.serverNow - Date.now();
         ui?.update(ctx.state);
       } else if (msg.t === "ripple" && ctx && msg.slide === ctx.state.position.slide) {
         ui?.ripple(msg.x, msg.y);
@@ -218,7 +223,8 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const timer = h("div", { class: "console-timer", "aria-label": "Tiempo transcurrido" }, "00:00");
   const slideNo = h("div", { class: "console-slide-no" });
   const notes = h("div", { class: "console-notes", tabindex: 0, "aria-label": "Notas del ponente" });
-  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), h("h2", { class: "legend" }, "Notas"), notes);
+  const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
+  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), pq.quizEl, h("h2", { class: "legend" }, "Notas"), notes, pq.boardEl);
 
   const prev = trusted("button", { type: "button", class: "key key-transport", "aria-label": "Anterior" }, `${icon("prev")}<span>Anterior</span>`);
   const next = trusted("button", { type: "button", class: "key key-transport key-primary", "aria-label": "Siguiente" }, `<span>Siguiente</span>${icon("next")}`);
@@ -238,7 +244,12 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   });
   bindDeckKeys(window, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
   bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effect);
-  setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
+  setInterval(() => {
+    timer.textContent = elapsed(ctx.state.startedAt);
+    pq.update(ctx.state, ctx.clockOffset);
+    const slide = ctx.deck.slides[ctx.state.position.slide]!;
+    programView.setQuiz(ctx.state.quizzes[slide.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
+  }, 1000);
 
   return {
     ripple: (x, y) => programView.ripple(x, y),
@@ -251,6 +262,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       count.textContent = `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       programView.show(s.position);
       programView.setEffect(s.effect);
+      const current = ctx.deck.slides[s.position.slide]!;
+      programView.setQuiz(s.quizzes[current.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
+      pq.update(s, ctx.clockOffset);
       const upcoming: Position = nextPosition(ctx.deck.slides, s.position);
       const atEnd = upcoming.slide === s.position.slide && upcoming.step === s.position.step;
       nextHost.hidden = atEnd;
@@ -314,11 +328,17 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
     }, 2000);
   });
 
+  setInterval(() => {
+    const view0 = ctx.state.quizzes[ctx.deck.slides[ctx.state.position.slide]!.id];
+    if (view0?.status === "open" && view0.endsAt) view.setQuiz(view0, { clockOffset: ctx.clockOffset });
+  }, 1000);
+
   return {
     ripple: (x, y) => view.ripple(x, y),
     update(s) {
       view.show(s.position);
       view.setEffect(s.effect);
+      view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { clockOffset: ctx.clockOffset });
     },
     connection() {},
   };
@@ -337,6 +357,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   prev.addEventListener("click", () => ctx.send({ t: "prev" }));
   next.addEventListener("click", () => ctx.send({ t: "next" }));
   const actions = sessionActions(ctx);
+  const rq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: false });
 
   root.replaceChildren(
     h(
@@ -344,7 +365,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       { class: "remote" },
       h("header", { class: "aud-bar" }, lamp, slideNo, h("span", { class: "spacer" }), timer),
       host,
-      notes,
+      h("div", { class: "remote-middle" }, rq.quizEl, notes),
       h("div", { class: "remote-transport" }, prev, next),
       h("div", { class: "remote-actions" }, actions.start, actions.restrict, actions.end),
     ),
@@ -367,6 +388,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
       view.show(s.position);
       view.setEffect(s.effect);
+      rq.update(s, ctx.clockOffset);
       notes.textContent = ctx.deck.slides[s.position.slide]?.notes ?? "Sin notas.";
       prev.disabled = s.status !== "live";
       next.disabled = s.status !== "live";

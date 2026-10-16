@@ -2,7 +2,8 @@ import { randomBytes } from "node:crypto";
 import { slideSteps, type Deck } from "../../shared/deck.ts";
 import { effectRect, type PersistentEffect } from "../../shared/effects.ts";
 import { isAfter, nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
-import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
+import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type PersonalState, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
+import { QuizBook, type ViewerRole } from "./quiz.ts";
 import { pickAlias } from "./aliases.ts";
 
 export interface SessionInit {
@@ -49,6 +50,8 @@ export class Session {
   private presenterLastSeen: number;
   private abandoned = false;
   private effect: PersistentEffect | null = null;
+  private showScore = false;
+  private readonly quizzes: QuizBook;
   private readonly identities = new Map<string, Identity>();
   private readonly takenNames = new Set<string>();
   private readonly audienceSockets = new Map<string, number>();
@@ -59,6 +62,7 @@ export class Session {
     this.deck = init.deck;
     this.createdAt = init.now;
     this.presenterLastSeen = init.now;
+    this.quizzes = new QuizBook((slideId) => this.deck.slides.find((s) => s.id === slideId)?.quiz ?? null);
   }
 
   get isEnded(): boolean {
@@ -79,7 +83,8 @@ export class Session {
     return this.presenterLastSeen;
   }
 
-  snapshot(): SessionSnapshot {
+  snapshot(role: ViewerRole = "audience", now: number = Date.now()): SessionSnapshot {
+    const name = (id: string) => this.identities.get(id)?.name ?? "?";
     return {
       status: this.status,
       startedAt: this.startedAt,
@@ -90,6 +95,10 @@ export class Session {
       abandoned: this.abandoned,
       audienceCount: this.audienceSockets.size,
       effect: this.effect,
+      quizzes: this.quizzes.views(role),
+      showScore: this.showScore,
+      leaderboard: role === "presenter" || this.showScore ? this.quizzes.leaderboard(name, 10) : null,
+      serverNow: now,
     };
   }
 
@@ -100,20 +109,52 @@ export class Session {
     this.status = "live";
     this.startedAt = now;
     this.highWater = { ...this.position };
+    this.quizzes.arrive(this.deck.slides[this.position.slide]!.id, now);
   }
 
-  next() {
-    this.moveTo(nextPosition(this.deck.slides, this.position));
+  next(now: number = Date.now()) {
+    this.moveTo(nextPosition(this.deck.slides, this.position), now);
   }
 
-  prev() {
-    this.moveTo(prevPosition(this.deck.slides, this.position));
+  prev(now: number = Date.now()) {
+    this.moveTo(prevPosition(this.deck.slides, this.position), now);
   }
 
-  goto(pos: Position) {
+  goto(pos: Position, now: number = Date.now()) {
     const slide = this.deck.slides[pos.slide];
     if (!slide) return;
-    this.moveTo({ slide: pos.slide, step: Math.min(pos.step, slideSteps(slide)) });
+    this.moveTo({ slide: pos.slide, step: Math.min(pos.step, slideSteps(slide)) }, now);
+  }
+
+  /** Close voting or reveal the answer of the quiz on the current slide. */
+  quizAction(action: "close" | "reveal") {
+    if (this.status !== "live") return;
+    const id = this.deck.slides[this.position.slide]!.id;
+    if (action === "close") this.quizzes.close(id);
+    else this.quizzes.reveal(id);
+  }
+
+  setShowScore(show: boolean) {
+    this.showScore = show;
+  }
+
+  /** Records an audience vote; false when voting is not possible right now. */
+  vote(participantId: string, slideId: string, option: number, now: number): boolean {
+    if (this.status !== "live" || this.abandoned || !this.identities.has(participantId)) return false;
+    return this.quizzes.vote(participantId, slideId, option, now);
+  }
+
+  personal(participantId: string): PersonalState {
+    const name = (id: string) => this.identities.get(id)?.name ?? "?";
+    return {
+      votes: this.quizzes.myVotes(participantId),
+      score: this.quizzes.score(participantId),
+      rank: this.showScore ? this.quizzes.rankOf(participantId, name) : null,
+    };
+  }
+
+  quizResults() {
+    return this.quizzes.results();
   }
 
   restrict(restricted: boolean) {
@@ -139,10 +180,11 @@ export class Session {
     return { slide: this.position.slide, x, y };
   }
 
-  private moveTo(pos: Position) {
+  private moveTo(pos: Position, now: number) {
     if (this.status !== "live") return;
     if (pos.slide !== this.position.slide) this.effect = null;
     this.position = pos;
+    this.quizzes.arrive(this.deck.slides[pos.slide]!.id, now);
     if (isAfter(pos, this.highWater)) this.highWater = { ...pos };
   }
 
@@ -161,8 +203,10 @@ export class Session {
 
   /** Advances time-based state. Returns true when the snapshot changed. */
   tick(now: number): boolean {
-    if (this.status === "ended" || this.abandoned || this.presenterSockets > 0) return false;
-    if (now - this.presenterLastSeen < ABANDON_AFTER_MS) return false;
+    if (this.status === "ended") return false;
+    const quizChanged = this.quizzes.tick(now);
+    if (this.abandoned || this.presenterSockets > 0) return quizChanged;
+    if (now - this.presenterLastSeen < ABANDON_AFTER_MS) return quizChanged;
     this.abandoned = true;
     return true;
   }

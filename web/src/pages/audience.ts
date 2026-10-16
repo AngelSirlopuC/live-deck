@@ -1,6 +1,6 @@
 import type { PublicDeck } from "../../../shared/deck.ts";
 import { exploreNext, isAfter, prevPosition, type Position } from "../../../shared/nav.ts";
-import { NAME_MAX, type CloseReason, type Identity, type SessionInfo, type SessionSnapshot } from "../../../shared/protocol.ts";
+import { NAME_MAX, type CloseReason, type Identity, type PersonalState, type SessionInfo, type SessionSnapshot } from "../../../shared/protocol.ts";
 import { Runner } from "../arcade/runner.ts";
 import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
@@ -8,6 +8,7 @@ import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
 import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
+import { createQuizPanel, createScorePanel, optionFromKey } from "../ui/quiz-panel.ts";
 import { openShareSheet } from "../ui/share.ts";
 
 type Mode = "live" | "explore";
@@ -105,6 +106,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   let view: StageView | null = null;
   let runner: Runner | null = null;
   let connStatus: ConnectionStatus = "connecting";
+  let personal: PersonalState | null = null;
+  let clockOffset = 0;
 
   // Shell -------------------------------------------------------------------
   const lamp = h("span", { class: "lamp", "data-state": "standby" }, "Conectando");
@@ -127,7 +130,9 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
 
   const banner = h("p", { class: "aud-banner", hidden: true });
   const who = h("p", { class: "aud-who" });
-  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, banner, who);
+  const quizPanel = createQuizPanel((slideId, option) => conn.send({ t: "vote", slideId, option }));
+  const scorePanel = createScorePanel();
+  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, banner, quizPanel.el, scorePanel.el, who);
 
   const waiting = h("section", { class: "aud-waiting", hidden: true });
   const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, waiting);
@@ -140,7 +145,27 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     clearTimeout(chromeTimer);
     chromeTimer = window.setTimeout(() => shell.classList.remove("chrome-visible"), 3500);
   };
-  stageHost.addEventListener("click", showChrome);
+  stageHost.addEventListener("click", (e) => {
+    // Tapping an option on a quiz slide votes; elsewhere it reveals the landscape chrome.
+    const option = (e.target as HTMLElement).closest<HTMLElement>("[data-option-index]");
+    const qs = quizPanel.state;
+    if (option && qs && qs.view?.status === "open" && !qs.readOnly) conn.send({ t: "vote", slideId: qs.slideId, option: Number(option.dataset.optionIndex) });
+    else showChrome();
+  });
+  window.addEventListener("keydown", (e) => {
+    const qs = quizPanel.state;
+    const el = e.target as HTMLElement | null;
+    if (!qs || qs.readOnly || qs.view?.status !== "open" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    const option = optionFromKey(e.key, qs.quiz.options.length);
+    if (option === null) return;
+    e.preventDefault();
+    conn.send({ t: "vote", slideId: qs.slideId, option });
+  });
+  // Countdown for timed quizzes.
+  setInterval(() => {
+    if (quizPanel.state?.view?.status === "open" && quizPanel.state.view.endsAt) render();
+  }, 1000);
 
   // Navigation ---------------------------------------------------------------
   const limit = (): Position | null => (unlockedAll ? null : (state?.highWater ?? { slide: 0, step: 0 }));
@@ -206,6 +231,15 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     const pos = following ? state.position : explorePos;
     view!.show(pos);
     view!.setEffect(following ? state.effect : null);
+
+    const shown = deck.slides[pos.slide]!;
+    const quizView = state.quizzes[shown.id] ?? null;
+    const myVote = personal?.votes[shown.id];
+    view!.setQuiz(quizView, { myVote, clockOffset });
+    quizPanel.update(
+      shown.quiz ? { slideId: shown.id, quiz: shown.quiz, view: quizView, myVote, readOnly: unlockedAll || state.abandoned, clockOffset } : null,
+    );
+    scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
     const lim = limit();
     posLabel.textContent = `${pos.slide + 1} / ${deck.slides.length}`;
     prevKey.disabled = pos.slide === 0 && pos.step === 0;
@@ -294,13 +328,19 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
             void qrSvg(joinUrl).then((svg) => view?.setOptions({ qrSvg: svg }));
           }
           state = msg.state;
+          clockOffset = state.serverNow - Date.now();
           if (!state.abandoned) abandonDismissed = false;
           render();
           break;
         }
+        case "me":
+          personal = msg.me;
+          render();
+          break;
         case "state": {
           const wasAbandoned = state?.abandoned;
           state = msg.state;
+          clockOffset = state.serverNow - Date.now();
           if (wasAbandoned && !state.abandoned) abandonDismissed = false;
           render();
           break;
@@ -310,6 +350,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
           break;
         case "error":
           if (msg.code === "not-found") local.remove(idKey(code));
+          else if (msg.code === "bad-request" && quizPanel.state) quizPanel.error("La votación ya está cerrada.");
+          else if (msg.code === "rate-limited") quizPanel.error("Vas muy rápido. Espera un momento.");
           break;
       }
     },

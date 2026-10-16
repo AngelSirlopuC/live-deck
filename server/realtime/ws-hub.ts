@@ -3,7 +3,8 @@ import type { Duplex } from "node:stream";
 import { WebSocketServer, type RawData, type WebSocket } from "ws";
 import { publicDeck } from "../../shared/deck.ts";
 import { AudienceCommandSchema, HelloSchema, PresenterCommandSchema } from "../../shared/protocol-schemas.ts";
-import type { AudienceHello, CloseReason, ErrorCode, PresenterHello, ServerMessage } from "../../shared/protocol.ts";
+import type { AudienceHello, CloseReason, ErrorCode, PresenterHello, PresenterSurface, ServerMessage } from "../../shared/protocol.ts";
+import type { ViewerRole } from "../session/quiz.ts";
 import type { SessionEntry, SessionRegistry } from "../session/registry.ts";
 
 export interface HubOptions {
@@ -17,11 +18,16 @@ export interface HubOptions {
 }
 
 type Client =
-  | { kind: "presenter"; ws: WebSocket; entry: SessionEntry; bucket: Bucket }
+  | { kind: "presenter"; ws: WebSocket; entry: SessionEntry; surface: PresenterSurface; bucket: Bucket }
   | { kind: "audience"; ws: WebSocket; entry: SessionEntry; id: string; bucket: Bucket };
 
 const HELLO_TIMEOUT_MS = 10_000;
 const HEARTBEAT_MS = 30_000;
+/** Vote bursts are coalesced into one state broadcast per window. */
+const BROADCAST_COALESCE_MS = 250;
+
+/** The projector screen is public, so it gets the audience view of quizzes. */
+const roleOf = (c: Client): ViewerRole => (c.kind === "presenter" && c.surface !== "screen" ? "presenter" : "audience");
 
 /** Token bucket: `rate` messages per second, bursts up to `burst`. */
 class Bucket {
@@ -66,6 +72,7 @@ export class WsHub {
   private readonly timers: NodeJS.Timeout[] = [];
   private readonly opts: HubOptions;
   private readonly alive = new WeakSet<WebSocket>();
+  private readonly pending = new Map<string, NodeJS.Timeout>();
 
   constructor(opts: HubOptions) {
     this.opts = opts;
@@ -79,6 +86,7 @@ export class WsHub {
 
   close() {
     for (const t of this.timers) clearInterval(t);
+    for (const t of this.pending.values()) clearTimeout(t);
     for (const ws of this.wss.clients) ws.terminate();
     this.wss.close();
   }
@@ -135,7 +143,7 @@ export class WsHub {
       return this.reject(ws, auth.reason, message);
     }
     const { entry } = auth;
-    const client: Client = { kind: "presenter", ws, entry, bucket: new Bucket(15, 30, now) };
+    const client: Client = { kind: "presenter", ws, entry, surface: hello.surface, bucket: new Bucket(15, 30, now) };
     this.add(client);
     entry.session.presenterJoined(now);
     send(ws, {
@@ -144,7 +152,7 @@ export class WsHub {
       deckId: entry.session.deckId,
       code: entry.session.code,
       joinUrl: `${this.opts.baseUrl(req)}/s/${entry.session.code}`,
-      state: entry.session.snapshot(),
+      state: entry.session.snapshot(roleOf(client), now),
     });
     this.broadcast(entry);
     ws.on("message", (data) => this.onPresenterMessage(client, data));
@@ -172,8 +180,9 @@ export class WsHub {
       deck: publicDeck(s.deck),
       deckId: s.deckId,
       joinUrl: `${this.opts.baseUrl(req)}/s/${s.code}`,
-      state: s.snapshot(),
+      state: s.snapshot("audience", this.opts.now()),
     });
+    send(ws, { t: "me", me: s.personal(you.id) });
     this.broadcast(entry);
     ws.on("message", (data) => this.onAudienceMessage(client, data));
     ws.on("close", () => {
@@ -189,19 +198,30 @@ export class WsHub {
     if (!cmd.success) return send(client.ws, { t: "error", code: "bad-request", message: "Unknown command." });
     const { entry } = client;
     const s = entry.session;
+    const now = this.opts.now();
     switch (cmd.data.t) {
       case "start":
-        s.start(this.opts.now());
+        s.start(now);
         break;
       case "next":
-        s.next();
+        s.next(now);
         break;
       case "prev":
-        s.prev();
+        s.prev(now);
         break;
       case "goto":
-        s.goto(cmd.data.pos);
+        s.goto(cmd.data.pos, now);
         break;
+      case "quiz":
+        s.quizAction(cmd.data.action);
+        this.broadcast(entry);
+        if (cmd.data.action === "reveal") this.sendPersonal(entry);
+        return;
+      case "settings":
+        s.setShowScore(cmd.data.showScore);
+        this.broadcast(entry);
+        this.sendPersonal(entry);
+        return;
       case "restrict":
         s.restrict(cmd.data.restricted);
         if (cmd.data.restricted) this.closeAudience(entry, "restricted");
@@ -227,7 +247,37 @@ export class WsHub {
     if (!client.bucket.take(this.opts.now())) return send(client.ws, { t: "error", code: "rate-limited", message: "Slow down." });
     const cmd = AudienceCommandSchema.safeParse(parse(data));
     if (!cmd.success) return send(client.ws, { t: "error", code: "bad-request", message: "Unknown command." });
-    // ping: liveness only; later tasks add votes, reactions and chat here.
+    const s = client.entry.session;
+    switch (cmd.data.t) {
+      case "ping":
+        return;
+      case "vote":
+        if (!s.vote(client.id, cmd.data.slideId, cmd.data.option, this.opts.now())) {
+          return send(client.ws, { t: "error", code: "bad-request", message: "Voting is closed." });
+        }
+        send(client.ws, { t: "me", me: s.personal(client.id) });
+        this.scheduleBroadcast(client.entry);
+        return;
+    }
+  }
+
+  /** Sends each audience member their own votes, score and rank. */
+  private sendPersonal(entry: SessionEntry) {
+    for (const c of this.clients.get(entry.session.code) ?? []) {
+      if (c.kind === "audience") send(c.ws, { t: "me", me: entry.session.personal(c.id) });
+    }
+  }
+
+  private scheduleBroadcast(entry: SessionEntry) {
+    const code = entry.session.code;
+    if (this.pending.has(code)) return;
+    this.pending.set(
+      code,
+      setTimeout(() => {
+        this.pending.delete(code);
+        this.broadcast(entry);
+      }, BROADCAST_COALESCE_MS),
+    );
   }
 
   private add(client: Client) {
@@ -247,8 +297,17 @@ export class WsHub {
     for (const c of this.clients.get(entry.session.code) ?? []) if (c.kind === "audience") this.closeWith(c.ws, reason);
   }
 
+  /** Sends the state snapshot, built once per viewer role. */
   private broadcast(entry: SessionEntry) {
-    this.broadcastMessage(entry, { t: "state", state: entry.session.snapshot() });
+    const now = this.opts.now();
+    const payloads = new Map<ViewerRole, string>();
+    for (const c of this.clients.get(entry.session.code) ?? []) {
+      if (c.ws.readyState !== c.ws.OPEN) continue;
+      const role = roleOf(c);
+      let payload = payloads.get(role);
+      if (!payload) payloads.set(role, (payload = JSON.stringify({ t: "state", state: entry.session.snapshot(role, now) } satisfies ServerMessage)));
+      c.ws.send(payload);
+    }
   }
 
   private broadcastMessage(entry: SessionEntry, msg: ServerMessage) {
