@@ -1818,3 +1818,13 @@ select:focus-visible {
 .console-main .monitor-program .monitor-host {
   width: min(100%, calc((100dvh - 470px) * 16 / 9));
 }
+
+/* Documenter drift fixes */
+.aud-pos {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.monitor-program .monitor-label {
+  color: color-mix(in srgb, var(--onair) 75%, var(--text));
+}

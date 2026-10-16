@@ -45,7 +45,7 @@ function askPin(root: HTMLElement, token: string, surface: PresenterSurface, err
     connect(root, token, surface, input.value);
   });
   const surfaceName = surface === "screen" ? "Pantalla del proyector" : surface === "remote" ? "Control móvil" : "Consola del ponente";
-  root.replaceChildren(h("main", { class: "join" }, h("span", { class: "lamp", "data-state": "off" }, surfaceName), h("h1", { class: "join-title" }, "Ingresa tu PIN"), form));
+  root.replaceChildren(h("main", { class: "join" }, h("h1", { class: "join-title" }, `Ingresa tu PIN · ${surfaceName}`), form));
   input.focus();
 }
 
