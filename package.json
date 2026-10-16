@@ -1,0 +1,31 @@
+{
+  "name": "live-deck",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:web": "vite --config vite.config.ts",
+    "dev:server": "node --watch server/main.ts",
+    "build": "tsc --noEmit && vite build --config vite.config.ts",
+    "start": "NODE_ENV=production node server/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "qrcode": "1.5.4",
+    "ws": "8.22.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/qrcode": "1.5.6",
+    "@types/ws": "8.18.2",
+    "jsdom": "26.1.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "vitest": "3.2.7"
+  }
+}
