@@ -29,7 +29,7 @@ export async function mountHome(root: HTMLElement) {
   const deckSelect = h("select", { id: "deck" });
   const pinInput = h("input", { id: "pin", inputmode: "numeric", pattern: "[0-9]*", maxlength: 8, autocomplete: "off", required: true });
   const error = h("p", { class: "form-error", role: "alert" });
-  const submit = h("button", { type: "submit", class: "key key-onair" }, "Crear sesión");
+  const submit = h("button", { type: "submit", class: "key key-primary" }, "Crear sesión");
 
   const fillDecks = (list: DeckSummary[]) => {
     deckSelect.replaceChildren(...list.map((d) => h("option", { value: d.id }, `${d.title} · ${d.slides} diapositivas`)));
@@ -90,7 +90,6 @@ export async function mountHome(root: HTMLElement) {
     h(
       "main",
       { class: "home" },
-      h("span", { class: "lamp", "data-state": "standby" }, "Live Deck"),
       h("h1", { class: "home-title" }, "Sal al aire con tu presentación"),
       h("p", { class: "home-lead" }, "Crea una sesión, proyecta la pantalla y comparte el código. El público sigue, vota y reacciona desde su celular."),
       form,
@@ -99,13 +98,13 @@ export async function mountHome(root: HTMLElement) {
 }
 
 function showCreated(root: HTMLElement, s: CreateSessionResponse) {
-  const open = trusted("a", { class: "key key-onair", href: `/p/${s.presenterToken}` }, `${icon("play")}<span>Abrir consola</span>`);
+  const open = trusted("a", { class: "key key-primary", href: `/p/${s.presenterToken}` }, `${icon("play")}<span>Abrir consola</span>`);
   root.replaceChildren(
     h(
       "main",
       { class: "home" },
-      h("span", { class: "lamp", "data-state": "standby" }, `Sesión ${s.code}`),
       h("h1", { class: "home-title" }, "Sesión creada"),
+      h("p", { class: "home-lead" }, "Código de la sesión: ", h("strong", { class: "home-code" }, s.code)),
       h("dl", { class: "home-links" },
         h("dt", { class: "legend" }, "Enlace del público"),
         h("dd", {}, h("code", {}, s.joinUrl)),

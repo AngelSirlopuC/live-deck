@@ -50,6 +50,8 @@ export class Runner {
     });
     document.addEventListener("visibilitychange", this.onVisibility);
     this.draw();
+    // Canvas text does not wait for web fonts; redraw once they are ready.
+    void Promise.all([document.fonts?.load("600 16px 'JetBrains Mono'"), document.fonts?.load("600 20px 'Oswald'")]).then(() => this.draw());
   }
 
   /** Jump, or (re)start when idle or after a crash. */

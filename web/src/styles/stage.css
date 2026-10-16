@@ -361,7 +361,8 @@
 
 .quiz-status {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
   font-size: 30px;
   color: var(--theme-muted);
 }

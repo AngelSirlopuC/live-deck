@@ -198,7 +198,7 @@ function sessionActions(ctx: PresenterContext) {
 function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): PresenterUi {
   const lamp = h("span", { class: "lamp" });
   const count = h("span", { class: "console-stat" });
-  const codeTag = h("span", { class: "console-stat" }, `Código ${ctx.code}`);
+  const codeTag = h("span", { class: "console-stat" }, "Código ", h("span", { class: "num" }, ctx.code));
   const conn = h("span", { class: "console-conn", role: "status", "aria-live": "polite" });
   const qrBtn = trusted("button", { type: "button", class: "key" }, `${icon("qr")}<span>Enlace del público</span>`);
   const screenBtn = trusted("button", { type: "button", class: "key" }, `${icon("screen")}<span>Abrir pantalla</span>`);
@@ -251,7 +251,10 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const notes = h("div", { class: "console-notes", tabindex: 0, "aria-label": "Notas del ponente" });
   const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
   const pa = createPresenterAudience(ctx.send);
-  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), pq.quizEl, h("h2", { class: "legend" }, "Notas"), notes, pq.boardEl, pa.el);
+  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), h("h2", { class: "legend" }, "Notas"), notes);
+  // Audience-facing controls live on the desk under the program monitor so the
+  // next-slide monitor and timer never scroll out of view.
+  const desk = h("div", { class: "console-desk" }, pq.quizEl, pq.boardEl, pa.el);
   const programFloaters = h("div", { class: "floaters", "aria-hidden": "true" });
   // Inside the host so the stage clipping also clips the floaters.
   programHost.append(programFloaters);
@@ -263,7 +266,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const actions = sessionActions(ctx);
   const transport = h("footer", { class: "console-transport" }, actions.start, prev, next, h("span", { class: "spacer" }), actions.restrict, h("span", { class: "transport-gap" }), actions.end);
 
-  const body = h("div", { class: "console-body" }, program, side);
+  const body = h("div", { class: "console-body" }, h("div", { class: "console-main" }, program, desk), side);
   root.replaceChildren(h("main", { class: "console" }, header, body, transport));
   let endPanel: ReturnType<typeof createEndPanel> | null = null;
 

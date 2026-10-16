@@ -167,7 +167,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       return me?.id;
     },
   });
-  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, banner, quizPanel.el, scorePanel.el, chat.el, who);
+  const idle = h("p", { class: "aud-idle" }, "Cuando el ponente abra el chat o haga una pregunta, aparecerá aquí.");
+  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, who, banner, quizPanel.el, scorePanel.el, chat.el, idle);
 
   const waiting = h("section", { class: "aud-waiting", hidden: true });
   const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, waiting);
@@ -249,6 +250,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     lamp.textContent = waitingNow ? "En espera" : onAir ? "En vivo" : mode === "explore" ? "Explorando" : "Sin señal";
 
     liveKey.setAttribute("aria-pressed", String(mode === "live"));
+    liveKey.querySelector("span")!.textContent = mode === "explore" && !unlockedAll ? "Volver al aire" : "En vivo";
     exploreKey.setAttribute("aria-pressed", String(mode === "explore"));
     liveKey.disabled = unlockedAll && !state.presenterOnline;
 
@@ -276,10 +278,14 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     );
     scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
     chat.el.hidden = state.chat.mode === "off";
+    idle.hidden = !chat.el.hidden || !quizPanel.el.hidden || !scorePanel.el.hidden;
     chat.setState(state.chat);
     reactionBar.setEnabled(state.status === "live");
     const lim = limit();
-    posLabel.textContent = `${pos.slide + 1} / ${deck.slides.length}`;
+    posLabel.textContent =
+      mode === "explore" && !unlockedAll && state.presenterOnline
+        ? `${pos.slide + 1} / ${deck.slides.length} · en el aire: ${state.position.slide + 1}`
+        : `${pos.slide + 1} / ${deck.slides.length}`;
     prevKey.disabled = pos.slide === 0 && pos.step === 0;
     nextKey.disabled = !isAfter(exploreNext(deck.slides, pos, lim), pos);
 
@@ -298,7 +304,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     const bestLine = h("p", { class: "arcade-best" });
     runner = new Runner((score, best) => (bestLine.textContent = score >= best && score > 0 ? `¡Nuevo récord: ${score}!` : `Puntaje ${score} · récord ${best}`));
     const qr = h("div", { class: "aud-waiting-qr" });
-    void qrSvg(joinUrl, "#efe4cc").then((svg) => (qr.innerHTML = svg));
+    void qrSvg(joinUrl).then((svg) => (qr.innerHTML = svg));
     waiting.replaceChildren(
       h("h1", { class: "aud-waiting-title" }, "La presentación empieza pronto"),
       h("p", { class: "aud-waiting-sub" }, `${deck!.title}. Cuando el ponente inicie, la verás aquí automáticamente.`),

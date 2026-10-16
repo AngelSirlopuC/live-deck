@@ -1719,3 +1719,102 @@ select:focus-visible {
 .end-panel .sheet-actions {
   width: 100%;
 }
+
+/* Finish-review fixes ---------------------------------------------------------- */
+.home-code {
+  font-family: var(--font-mono);
+  color: var(--amber);
+  letter-spacing: 0.06em;
+}
+
+.aud-waiting-qr {
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--text);
+}
+
+.aud-idle {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.aud-who {
+  margin-bottom: 12px;
+}
+
+/* Words in the body face; mono only for numerals. */
+.quiz-panel-status,
+.pq-status,
+.end-stats,
+.console-stat,
+.console-conn,
+.chat-status {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.console-stat .num {
+  font-family: var(--font-mono);
+}
+
+/* Console: program + desk on the left, pinned next/timer/notes on the right. */
+.console-main {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  min-height: 0;
+}
+
+.console-main .monitor-program .monitor-host {
+  width: min(100%, calc((100dvh - 360px) * 16 / 9));
+}
+
+.console-desk {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+  overflow: auto;
+  min-height: 0;
+}
+
+.console-side {
+  overflow: hidden;
+}
+
+.monitor-next .monitor-host {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--signal) 40%, transparent);
+}
+
+.monitor-next .monitor-label {
+  color: color-mix(in srgb, var(--signal) 70%, var(--text-muted));
+}
+
+@media (max-width: 900px) {
+  .console-main .monitor-program .monitor-host {
+    width: 100%;
+  }
+  .console-side {
+    overflow: visible;
+  }
+}
+
+/* Landscape tap controls sit on an opaque desk bar, not over the slide text. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .aud-bar,
+  .aud-controls {
+    background: var(--bg);
+  }
+}
+
+.key-switch {
+  white-space: nowrap;
+  padding: 0 10px;
+  letter-spacing: 0.05em;
+}
+
+/* Leave the desk under the program monitor enough room for quiz and audience controls. */
+.console-main .monitor-program .monitor-host {
+  width: min(100%, calc((100dvh - 470px) * 16 / 9));
+}

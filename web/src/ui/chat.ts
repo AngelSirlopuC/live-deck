@@ -62,7 +62,8 @@ export function createChatPanel(opts: ChatPanelOptions) {
       const canText = state.mode === "text" || state.mode === "mixed";
       const canSticker = (state.mode === "sticker" || state.mode === "mixed") && !!opts.stickersEnabled;
       el.dataset.mode = state.mode;
-      status.textContent = state.mode === "off" ? MODE_COPY.off : state.paused ? "El ponente pausó el chat." : MODE_COPY[state.mode];
+      status.textContent = state.mode === "off" ? MODE_COPY.off : state.paused ? "El ponente pausó el chat." : "";
+      status.hidden = !status.textContent;
       const writable = !!opts.onSend && state.mode !== "off" && !state.paused;
       form.hidden = !writable;
       input.hidden = !canText;
