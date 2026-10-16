@@ -1,0 +1,152 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { parseDeck } from "../shared/deck.ts";
+import { ABANDON_AFTER_MS } from "../shared/protocol.ts";
+import { Session } from "../server/session/session.ts";
+
+const parsed = parseDeck(JSON.parse(readFileSync(new URL("../decks/demo/deck.json", import.meta.url), "utf8")));
+if (!parsed.ok) throw new Error(parsed.error);
+const deck = parsed.deck;
+
+function make(now = 0) {
+  return new Session({ code: "ABC234", deckId: "demo", deck, now });
+}
+
+describe("session lifecycle", () => {
+  it("starts waiting and ignores navigation until started", () => {
+    const s = make();
+    expect(s.snapshot().status).toBe("waiting");
+    s.next();
+    expect(s.snapshot().position).toEqual({ slide: 0, step: 0 });
+    s.start();
+    s.next();
+    expect(s.snapshot().status).toBe("live");
+    expect(s.snapshot().position).toEqual({ slide: 1, step: 0 });
+  });
+
+  it("tracks the furthest shown position as high water, also after going back", () => {
+    const s = make();
+    s.start();
+    s.next(); // slide 1 step 0
+    s.next(); // slide 1 step 1
+    s.next(); // slide 1 step 2
+    s.prev();
+    s.prev();
+    expect(s.snapshot().position).toEqual({ slide: 1, step: 0 });
+    expect(s.snapshot().highWater).toEqual({ slide: 1, step: 2 });
+  });
+
+  it("clamps goto to the deck and the slide's fragment steps", () => {
+    const s = make();
+    s.start();
+    s.goto({ slide: 1, step: 20 });
+    expect(s.snapshot().position).toEqual({ slide: 1, step: 4 });
+    expect(() => s.goto({ slide: 99, step: 0 })).not.toThrow();
+    expect(s.snapshot().position).toEqual({ slide: 1, step: 4 });
+  });
+
+  it("freezes after end", () => {
+    const s = make();
+    s.start();
+    s.end();
+    s.next();
+    s.start();
+    expect(s.snapshot().status).toBe("ended");
+    expect(s.snapshot().position).toEqual({ slide: 0, step: 0 });
+  });
+
+  it("restricts and reopens access", () => {
+    const s = make();
+    s.restrict(true);
+    expect(s.snapshot().restricted).toBe(true);
+    s.restrict(false);
+    expect(s.snapshot().restricted).toBe(false);
+  });
+});
+
+describe("presenter presence", () => {
+  it("marks the session abandoned after 15 minutes without a presenter, and recovers on reconnect", () => {
+    const s = make(0);
+    s.presenterJoined(0);
+    s.start();
+    s.presenterLeft(1_000);
+    s.tick(1_000 + ABANDON_AFTER_MS - 1);
+    expect(s.snapshot().abandoned).toBe(false);
+    expect(s.snapshot().presenterOnline).toBe(false);
+    s.tick(1_000 + ABANDON_AFTER_MS);
+    expect(s.snapshot().abandoned).toBe(true);
+    expect(s.snapshot().status).toBe("live");
+    s.presenterJoined(1_000 + ABANDON_AFTER_MS + 5);
+    expect(s.snapshot().abandoned).toBe(false);
+    expect(s.snapshot().presenterOnline).toBe(true);
+  });
+
+  it("stays online while any presenter surface is connected", () => {
+    const s = make(0);
+    s.presenterJoined(0);
+    s.presenterJoined(0);
+    s.presenterLeft(10);
+    s.tick(10 + ABANDON_AFTER_MS * 2);
+    expect(s.snapshot().presenterOnline).toBe(true);
+    expect(s.snapshot().abandoned).toBe(false);
+  });
+
+  it("counts a session that never had a presenter from its creation time", () => {
+    const s = make(0);
+    s.tick(ABANDON_AFTER_MS);
+    expect(s.snapshot().abandoned).toBe(true);
+  });
+
+  it("reports whether a tick changed the snapshot", () => {
+    const s = make(0);
+    expect(s.tick(10)).toBe(false);
+    expect(s.tick(ABANDON_AFTER_MS)).toBe(true);
+    expect(s.tick(ABANDON_AFTER_MS + 10)).toBe(false);
+  });
+});
+
+describe("audience identity", () => {
+  it("keeps the given first name, cleaned", () => {
+    const s = make();
+    const me = s.join({ name: "  Ana \u0007  María  " });
+    expect(me.name).toBe("Ana María");
+    expect(me.anonymous).toBe(false);
+  });
+
+  it("gives anonymous users unique creative aliases instead of numbers", () => {
+    const s = make();
+    const names = new Set<string>();
+    for (let i = 0; i < 150; i++) {
+      const me = s.join({ name: null });
+      expect(me.anonymous).toBe(true);
+      expect(me.name).not.toMatch(/\d/);
+      expect(me.name.split(" ").length).toBeGreaterThanOrEqual(2);
+      names.add(me.name);
+    }
+    expect(names.size).toBe(150);
+  });
+
+  it("treats a blank name as anonymous", () => {
+    expect(make().join({ name: "   " }).anonymous).toBe(true);
+  });
+
+  it("resumes the same identity with the right key only", () => {
+    const s = make();
+    const me = s.join({ name: "Luis" });
+    expect(s.join({ resume: { id: me.id, key: me.resumeKey } })).toEqual(me);
+    const other = s.join({ resume: { id: me.id, key: "wrong" }, name: "Luis" });
+    expect(other.id).not.toBe(me.id);
+  });
+
+  it("counts connected audience members", () => {
+    const s = make();
+    const a = s.join({ name: "A" });
+    s.audienceConnected(a.id);
+    s.audienceConnected(a.id);
+    expect(s.snapshot().audienceCount).toBe(1);
+    s.audienceDisconnected(a.id);
+    expect(s.snapshot().audienceCount).toBe(1);
+    s.audienceDisconnected(a.id);
+    expect(s.snapshot().audienceCount).toBe(0);
+  });
+});

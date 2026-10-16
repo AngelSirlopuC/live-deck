@@ -23,3 +23,24 @@ export class DeckStore {
     return join(this.root, id, "assets");
   }
 }
+
+export interface DeckSummary {
+  id: string;
+  title: string;
+  slides: number;
+}
+
+export async function listDecks(store: DeckStore, root: string): Promise<DeckSummary[]> {
+  const { readdir } = await import("node:fs/promises");
+  const out: DeckSummary[] = [];
+  for (const dirent of await readdir(root, { withFileTypes: true })) {
+    if (!dirent.isDirectory() || !DECK_ID.test(dirent.name)) continue;
+    try {
+      const deck = await store.load(dirent.name);
+      out.push({ id: dirent.name, title: deck.title, slides: deck.slides.length });
+    } catch {
+      // Invalid decks are skipped from the list; loading them reports the error.
+    }
+  }
+  return out.sort((a, b) => a.title.localeCompare(b.title));
+}

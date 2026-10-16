@@ -3,12 +3,24 @@ import { fileURLToPath } from "node:url";
 import { createApp } from "./app.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const port = Number(process.env.PORT ?? 8787);
-const host = process.env.HOST ?? "0.0.0.0";
+const env = process.env;
+const production = env.NODE_ENV === "production";
+const port = Number(env.PORT ?? 8787);
+const host = env.HOST ?? "0.0.0.0";
+
+const adminKey = env.ADMIN_KEY?.trim() || null;
+if (production && !adminKey) {
+  console.error("ADMIN_KEY is required in production: it protects session creation.");
+  process.exit(1);
+}
 
 const app = createApp({
-  decksDir: process.env.DECKS_DIR ?? `${root}decks`,
-  distDir: process.env.NODE_ENV === "production" ? `${root}dist` : null,
+  decksDir: env.DECKS_DIR ?? `${root}decks`,
+  distDir: production ? `${root}dist` : null,
+  adminKey,
+  publicBaseUrl: env.PUBLIC_BASE_URL?.trim() || null,
+  trustProxy: env.TRUST_PROXY === "1",
+  allowedOrigins: (env.ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean),
 });
 
 const server = createServer(app.handle);
