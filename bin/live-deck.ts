@@ -1,0 +1,215 @@
+#!/usr/bin/env node
+// Live Deck authoring CLI. Zero dependencies beyond the project itself; runs on
+// Node >= 24 with native TypeScript: `node bin/live-deck.ts <command>`.
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import { DeckSchema, parseDeck, type Deck } from "../shared/deck.ts";
+import { DECK_ID } from "../server/decks.ts";
+
+const REPO = fileURLToPath(new URL("..", import.meta.url));
+const DECKS_DIR = resolve(process.env.DECKS_DIR || join(REPO, "decks"));
+
+const USAGE = `Usage: live-deck <command> [args]
+
+Commands:
+  validate <deck.json | deck-dir | deck-id>   Check a deck against format v1 and its assets
+  new <id> [--title "..."]                     Scaffold decks/<id>/deck.json from a template
+  list                                         List decks with title and slide count
+  help                                         Show this help
+
+Deck ids: lowercase letters, digits and dashes (${DECK_ID.source}).
+Decks root: ${DECKS_DIR} (override with DECKS_DIR).
+Preview a deck in the browser at /preview/<id>.
+`;
+
+interface Report {
+  deck?: Deck;
+  errors: string[];
+  warnings: string[];
+}
+
+/** Resolves a CLI argument to a deck.json path: file, directory, or bare deck id. */
+function resolveDeckFile(arg: string): string {
+  const looksLikePath = arg.endsWith(".json") || arg.includes("/") || arg.includes(sep) || arg.startsWith(".");
+  if (!looksLikePath) return join(DECKS_DIR, arg, "deck.json");
+  const p = resolve(arg);
+  return existsSync(p) && statSync(p).isDirectory() ? join(p, "deck.json") : p;
+}
+
+function check(file: string): Report {
+  const report: Report = { errors: [], warnings: [] };
+  if (!existsSync(file)) {
+    report.errors.push(`deck: file not found: ${file}`);
+    return report;
+  }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(file, "utf8"));
+  } catch (err) {
+    report.errors.push(`deck: invalid JSON: ${(err as Error).message}`);
+    return report;
+  }
+  const parsed = parseDeck(raw);
+  if (!parsed.ok) {
+    // parseDeck joins issues into one string; re-run the same schema to print one per line.
+    const result = DeckSchema.safeParse(raw);
+    const issues = result.success ? [] : result.error.issues;
+    report.errors.push(...(issues.length ? issues.map((i) => `${i.path.join(".") || "deck"}: ${i.message}`) : [parsed.error]));
+    return report;
+  }
+  const deck = parsed.deck;
+  report.deck = deck;
+  const deckDir = dirname(file);
+  deck.slides.forEach((slide, s) => {
+    slide.elements.forEach((el, e) => {
+      if (el.type === "image" && el.src.startsWith("assets/") && !existsSync(join(deckDir, el.src))) {
+        report.errors.push(`slides.${s}.elements.${e}.src: asset not found: ${el.src}`);
+      }
+    });
+  });
+  if (!deck.slides[0]?.elements.some((el) => el.type === "qr")) {
+    report.warnings.push("slides.0: first slide has no qr element; the audience cannot scan to join");
+  }
+  return report;
+}
+
+function validate(args: string[]): number {
+  const target = args[0];
+  if (!target) {
+    process.stderr.write(`validate needs a deck path, directory or id\n\n${USAGE}`);
+    return 2;
+  }
+  const report = check(resolveDeckFile(target));
+  for (const w of report.warnings) process.stderr.write(`warning: ${w}\n`);
+  if (report.errors.length || !report.deck) {
+    for (const e of report.errors) process.stdout.write(`${e}\n`);
+    return 1;
+  }
+  const quizzes = report.deck.slides.filter((s) => s.quiz).length;
+  process.stdout.write(`OK ${report.deck.title} (${report.deck.slides.length} slides, ${quizzes} quizzes)\n`);
+  return 0;
+}
+
+function template(title: string): Deck {
+  return {
+    version: 1,
+    title,
+    theme: { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" },
+    slides: [
+      {
+        id: "cover",
+        notes: "Welcome the audience and ask them to scan the QR code.",
+        elements: [
+          { id: "title", type: "text", box: { x: 0.07, y: 0.22, w: 0.52, h: 0.36 }, text: title, style: { fontSize: 96, fontWeight: 800, font: "display", lineHeight: 1.05 } },
+          { id: "subtitle", type: "text", box: { x: 0.07, y: 0.64, w: 0.48, h: 0.12 }, text: "Scan the code to join from your phone.", style: { fontSize: 36, color: "#9aa3b2", lineHeight: 1.3 } },
+          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 }, style: { background: "#f4f1ea", color: "#10131a" } },
+        ],
+      },
+      {
+        id: "points",
+        notes: "Each point appears on 'next'.",
+        elements: [
+          { id: "heading", type: "text", box: { x: 0.07, y: 0.1, w: 0.86, h: 0.14 }, text: "Three key points", style: { fontSize: 80, fontWeight: 800, font: "display" } },
+          { id: "p1", type: "text", box: { x: 0.07, y: 0.32, w: 0.86, h: 0.14 }, text: "First point", fragment: 1, style: { fontSize: 44 } },
+          { id: "p2", type: "text", box: { x: 0.07, y: 0.5, w: 0.86, h: 0.14 }, text: "Second point", fragment: 2, style: { fontSize: 44 } },
+          { id: "p3", type: "text", box: { x: 0.07, y: 0.68, w: 0.86, h: 0.14 }, text: "Third point", fragment: 3, style: { fontSize: 44 } },
+        ],
+      },
+      {
+        id: "quiz-1",
+        layout: "quiz",
+        notes: "Votes stay hidden until you reveal the answer.",
+        elements: [],
+        quiz: { question: "Which point matters most?", options: ["First", "Second", "Third"], correctIndex: 1, display: "secret", timerSec: 30 },
+      },
+      {
+        id: "closing",
+        notes: "Thank the audience and end the session to download the summary.",
+        elements: [
+          { id: "thanks", type: "text", box: { x: 0.07, y: 0.3, w: 0.86, h: 0.26 }, text: "Thank you", style: { fontSize: 180, fontWeight: 800, font: "display", align: "center", valign: "middle" } },
+        ],
+      },
+    ],
+  };
+}
+
+function scaffold(args: string[]): number {
+  const id = args[0];
+  if (!id || id.startsWith("-")) {
+    process.stderr.write(`new needs a deck id\n\n${USAGE}`);
+    return 2;
+  }
+  if (!DECK_ID.test(id)) {
+    process.stderr.write(`invalid deck id "${id}": use lowercase letters, digits and dashes (${DECK_ID.source})\n`);
+    return 1;
+  }
+  const t = args.indexOf("--title");
+  const title = t >= 0 ? args[t + 1] : undefined;
+  if (t >= 0 && !title) {
+    process.stderr.write("--title needs a value\n");
+    return 2;
+  }
+  const dir = join(DECKS_DIR, id);
+  const file = join(dir, "deck.json");
+  if (existsSync(file)) {
+    process.stderr.write(`deck "${id}" already exists at ${file}; refusing to overwrite\n`);
+    return 1;
+  }
+  const deck = template(title ?? id);
+  const parsed = parseDeck(deck);
+  if (!parsed.ok) {
+    process.stderr.write(`template is invalid: ${parsed.error}\n`);
+    return 1;
+  }
+  mkdirSync(join(dir, "assets"), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(deck, null, 2)}\n`, { flag: "wx" });
+  process.stdout.write(`Created ${file}\nValidate: node bin/live-deck.ts validate ${id}\nPreview:  /preview/${id}\n`);
+  return 0;
+}
+
+function list(): number {
+  if (!existsSync(DECKS_DIR)) {
+    process.stderr.write(`decks root not found: ${DECKS_DIR}\n`);
+    return 1;
+  }
+  const ids = readdirSync(DECKS_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && DECK_ID.test(d.name))
+    .map((d) => d.name)
+    .sort();
+  if (!ids.length) process.stdout.write(`no decks in ${DECKS_DIR}\n`);
+  const width = Math.max(0, ...ids.map((id) => id.length));
+  for (const id of ids) {
+    const report = check(join(DECKS_DIR, id, "deck.json"));
+    const name = id.padEnd(width);
+    if (report.deck && !report.errors.length) {
+      process.stdout.write(`${name}  ${report.deck.slides.length} slides  ${report.deck.title}\n`);
+    } else {
+      process.stdout.write(`${name}  INVALID  ${report.errors[0] ?? "unknown error"}\n`);
+    }
+  }
+  return 0;
+}
+
+function main(argv: string[]): number {
+  const [command, ...args] = argv;
+  switch (command) {
+    case undefined:
+    case "help":
+    case "--help":
+    case "-h":
+      process.stdout.write(USAGE);
+      return 0;
+    case "validate":
+      return validate(args);
+    case "new":
+      return scaffold(args);
+    case "list":
+      return list();
+    default:
+      process.stderr.write(`unknown command "${command}"\n\n${USAGE}`);
+      return 2;
+  }
+}
+
+process.exitCode = main(process.argv.slice(2));
