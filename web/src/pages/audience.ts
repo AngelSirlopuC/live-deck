@@ -1,6 +1,6 @@
 import type { PublicDeck } from "../../../shared/deck.ts";
 import { exploreNext, isAfter, prevPosition, type Position } from "../../../shared/nav.ts";
-import { NAME_MAX, type CloseReason, type Identity, type PersonalState, type SessionInfo, type SessionSnapshot } from "../../../shared/protocol.ts";
+import { NAME_MAX, REACTIONS, type CloseReason, type ErrorCode, type Identity, type PersonalState, type SessionInfo, type SessionSnapshot, type Sticker } from "../../../shared/protocol.ts";
 import { Runner } from "../arcade/runner.ts";
 import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
@@ -8,13 +8,25 @@ import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
 import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
+import { createChatPanel } from "../ui/chat.ts";
 import { createQuizPanel, createScorePanel, optionFromKey } from "../ui/quiz-panel.ts";
+import { createReactionBar, floatReactions } from "../ui/reactions.ts";
 import { openShareSheet } from "../ui/share.ts";
 
 type Mode = "live" | "explore";
 type StoredIdentity = { id: string; key: string };
 
 const local = storage("local");
+
+const CHAT_ERROR_COPY: Partial<Record<ErrorCode, string>> = {
+  "chat-closed": "El chat está cerrado.",
+  "chat-paused": "El ponente pausó el chat.",
+  "chat-mode": "Ese tipo de mensaje no está permitido ahora.",
+  "chat-muted": "El ponente te silenció en el chat.",
+  "chat-rate": "Vas muy rápido. Espera unos segundos.",
+  "chat-empty": "El mensaje está vacío.",
+  "chat-sticker": "Ese sticker no está disponible.",
+};
 const idKey = (code: string) => `ld:id:${code}`;
 
 const CLOSED_COPY: Record<CloseReason | "rejected", { title: string; body: string }> = {
@@ -108,6 +120,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   let connStatus: ConnectionStatus = "connecting";
   let personal: PersonalState | null = null;
   let clockOffset = 0;
+  let stickersEnabled = false;
+  const ownPending: number[] = REACTIONS.map(() => 0);
 
   // Shell -------------------------------------------------------------------
   const lamp = h("span", { class: "lamp", "data-state": "standby" }, "Conectando");
@@ -118,7 +132,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
 
   const stageHost = h("div", { class: "aud-stage-host" });
   const notice = h("div", { class: "aud-notice", role: "status", "aria-live": "polite" });
-  const stageWrap = h("div", { class: "aud-stage" }, stageHost, notice);
+  const floaters = h("div", { class: "floaters", "aria-hidden": "true" });
+  const stageWrap = h("div", { class: "aud-stage" }, stageHost, floaters, notice);
 
   const liveKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "live", "aria-pressed": "true" }, `${icon("radio")}<span>En vivo</span>`);
   const exploreKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "explore", "aria-pressed": "false" }, `${icon("compass")}<span>Explorar</span>`);
@@ -126,13 +141,33 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   const nextKey = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Diapositiva siguiente" }, icon("next"));
   const posLabel = h("span", { class: "aud-pos", "aria-live": "polite" });
   const exploreNav = h("div", { class: "aud-explore-nav" }, prevKey, posLabel, nextKey);
-  const controls = h("div", { class: "aud-controls" }, h("div", { class: "switch", role: "group", "aria-label": "Modo de vista" }, liveKey, exploreKey), exploreNav);
+  const reactionBar = createReactionBar((i) => {
+    if (state?.status !== "live") return;
+    ownPending[i]!++;
+    floatReactions(floaters, REACTIONS.map((_, k) => (k === i ? 1 : 0)));
+    conn.send({ t: "react", i });
+  });
+  const controls = h("div", { class: "aud-controls" }, h("div", { class: "switch", role: "group", "aria-label": "Modo de vista" }, liveKey, exploreKey), exploreNav, reactionBar.el);
 
   const banner = h("p", { class: "aud-banner", hidden: true });
   const who = h("p", { class: "aud-who" });
   const quizPanel = createQuizPanel((slideId, option) => conn.send({ t: "vote", slideId, option }));
   const scorePanel = createScorePanel();
-  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, banner, quizPanel.el, scorePanel.el, who);
+  const chat = createChatPanel({
+    onSend: (m) => conn.send({ t: "chat", ...m }),
+    searchStickers: async (q) => {
+      const res = await fetch(`/api/sessions/${code}/stickers?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error(String(res.status));
+      return (await res.json()) as Sticker[];
+    },
+    get stickersEnabled() {
+      return stickersEnabled;
+    },
+    get myId() {
+      return me?.id;
+    },
+  });
+  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, banner, quizPanel.el, scorePanel.el, chat.el, who);
 
   const waiting = h("section", { class: "aud-waiting", hidden: true });
   const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, waiting);
@@ -240,6 +275,9 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       shown.quiz ? { slideId: shown.id, quiz: shown.quiz, view: quizView, myVote, readOnly: unlockedAll || state.abandoned, clockOffset } : null,
     );
     scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
+    chat.el.hidden = state.chat.mode === "off";
+    chat.setState(state.chat);
+    reactionBar.setEnabled(state.status === "live");
     const lim = limit();
     posLabel.textContent = `${pos.slide + 1} / ${deck.slides.length}`;
     prevKey.disabled = pos.slide === 0 && pos.step === 0;
@@ -320,6 +358,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       switch (msg.t) {
         case "welcome-audience": {
           me = msg.you;
+          stickersEnabled = msg.features.stickers;
           local.write(idKey(code), { id: me.id, key: me.resumeKey });
           joinUrl = msg.joinUrl;
           if (!deck) {
@@ -337,6 +376,25 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
           personal = msg.me;
           render();
           break;
+        case "reactions": {
+          // Our own taps were already floated locally; show only everyone else's.
+          const others = msg.counts.map((n, i) => {
+            const mine = Math.min(n, ownPending[i] ?? 0);
+            ownPending[i] = (ownPending[i] ?? 0) - mine;
+            return n - mine;
+          });
+          if (mode === "live" || unlockedAll) floatReactions(floaters, others);
+          break;
+        }
+        case "chat":
+          chat.add(msg.message);
+          break;
+        case "chat-delete":
+          chat.remove(msg.id);
+          break;
+        case "chat-history":
+          chat.setHistory(msg.messages);
+          break;
         case "state": {
           const wasAbandoned = state?.abandoned;
           state = msg.state;
@@ -350,6 +408,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
           break;
         case "error":
           if (msg.code === "not-found") local.remove(idKey(code));
+          else if (CHAT_ERROR_COPY[msg.code]) chat.error(CHAT_ERROR_COPY[msg.code]!);
           else if (msg.code === "bad-request" && quizPanel.state) quizPanel.error("La votación ya está cerrada.");
           else if (msg.code === "rate-limited") quizPanel.error("Vas muy rápido. Espera un momento.");
           break;

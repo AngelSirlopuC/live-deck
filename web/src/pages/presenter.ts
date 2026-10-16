@@ -8,7 +8,10 @@ import { icon } from "../ui/icons.ts";
 import { bindEffectTools, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
+import { createPresenterAudience } from "../ui/presenter-audience.ts";
 import { createPresenterQuiz } from "../ui/presenter-quiz.ts";
+import { createReactionCounter, floatReactions } from "../ui/reactions.ts";
+import type { ChatMessage } from "../../../shared/protocol.ts";
 import { openShareSheet } from "../ui/share.ts";
 
 const session = storage("session");
@@ -86,6 +89,14 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
         ui?.update(ctx.state);
       } else if (msg.t === "ripple" && ctx && msg.slide === ctx.state.position.slide) {
         ui?.ripple(msg.x, msg.y);
+      } else if (msg.t === "reactions") {
+        ui?.reactions?.(msg.counts, msg.totals ?? null);
+      } else if (msg.t === "chat") {
+        ui?.chat?.("add", msg.message);
+      } else if (msg.t === "chat-delete") {
+        ui?.chat?.("remove", msg.id);
+      } else if (msg.t === "chat-history") {
+        ui?.chat?.("history", msg.messages);
       } else if (msg.t === "error") {
         if (msg.code === "unauthorized") {
           session.remove(pinKey(token));
@@ -106,6 +117,10 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
 interface PresenterUi {
   update(state: SessionSnapshot): void;
   ripple(x: number, y: number): void;
+  reactions?(counts: number[], totals: number[] | null): void;
+  chat?(op: "add", m: ChatMessage): void;
+  chat?(op: "remove", id: string): void;
+  chat?(op: "history", m: ChatMessage[]): void;
   connection(status: ConnectionStatus): void;
 }
 
@@ -224,7 +239,11 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const slideNo = h("div", { class: "console-slide-no" });
   const notes = h("div", { class: "console-notes", tabindex: 0, "aria-label": "Notas del ponente" });
   const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
-  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), pq.quizEl, h("h2", { class: "legend" }, "Notas"), notes, pq.boardEl);
+  const pa = createPresenterAudience(ctx.send);
+  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), pq.quizEl, h("h2", { class: "legend" }, "Notas"), notes, pq.boardEl, pa.el);
+  const programFloaters = h("div", { class: "floaters", "aria-hidden": "true" });
+  // Inside the host so the stage clipping also clips the floaters.
+  programHost.append(programFloaters);
 
   const prev = trusted("button", { type: "button", class: "key key-transport", "aria-label": "Anterior" }, `${icon("prev")}<span>Anterior</span>`);
   const next = trusted("button", { type: "button", class: "key key-transport key-primary", "aria-label": "Siguiente" }, `<span>Siguiente</span>${icon("next")}`);
@@ -253,7 +272,17 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   return {
     ripple: (x, y) => programView.ripple(x, y),
+    reactions(counts, totals) {
+      if (ctx.state.presenterView.showReactions) floatReactions(programFloaters, counts);
+      if (ctx.state.presenterView.showReactionCounter) pa.counter.update(totals);
+    },
+    chat(op: "add" | "remove" | "history", arg: unknown) {
+      if (op === "add") pa.chat.add(arg as ChatMessage);
+      else if (op === "remove") pa.chat.remove(arg as string);
+      else pa.chat.setHistory(arg as ChatMessage[]);
+    },
     update(s) {
+      pa.update(s);
       const l = lampFor(s);
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
@@ -306,7 +335,11 @@ function openRemoteSheet(url: string) {
 function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
   const host = h("div", { class: "screen-host" });
   const hint = h("p", { class: "screen-hint" }, "Doble clic o tecla F para pantalla completa");
-  root.replaceChildren(h("main", { class: "screen" }, host, hint));
+  const floaters = h("div", { class: "floaters floaters-screen", "aria-hidden": "true" });
+  const counter = createReactionCounter();
+  counter.el.classList.add("screen-counter");
+  counter.update(null);
+  root.replaceChildren(h("main", { class: "screen" }, host, floaters, counter.el, hint));
   const view = new StageView(host, ctx.deck, { assetBase: `/decks/${ctx.deckId}/`, joinUrl: ctx.joinUrl });
   void qrSvg(ctx.joinUrl).then((svg) => view.setOptions({ qrSvg: svg }));
 
@@ -335,7 +368,12 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
 
   return {
     ripple: (x, y) => view.ripple(x, y),
+    reactions(counts, totals) {
+      if (ctx.state.presenterView.showReactions) floatReactions(floaters, counts);
+      counter.update(ctx.state.presenterView.showReactionCounter ? totals : null);
+    },
     update(s) {
+      if (!s.presenterView.showReactionCounter) counter.update(null);
       view.show(s.position);
       view.setEffect(s.effect);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { clockOffset: ctx.clockOffset });
