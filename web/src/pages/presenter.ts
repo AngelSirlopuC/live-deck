@@ -17,11 +17,22 @@ import { createEndPanel } from "../ui/summary.ts";
 import { openPresentDialog } from "../ui/present-dialog.ts";
 import { planPresentation, type PresentPlan, type Rect } from "../ui/present-plan.ts";
 import { nativeScreen } from "../ui/screens.ts";
+import { receiverMessage, startProjection, type Projection } from "../ui/present-api.ts";
 
 const session = storage("session");
 const pinKey = (token: string) => `ld:pin:${token}`;
 
 export function mountPresenter(root: HTMLElement, token: string, surface: PresenterSurface) {
+  // Presented by Chrome on a display: wait for the console to hand over the PIN.
+  const handover = surface === "screen" ? receiverMessage() : null;
+  if (handover) {
+    root.replaceChildren(h("p", { class: "page-message" }, "Conectando con la consola…"));
+    void handover.then((msg) => {
+      const pin = (msg as { t?: string; pin?: string })?.t === "auth" ? (msg as { pin: string }).pin : "";
+      connect(root, token, surface, pin);
+    });
+    return;
+  }
   const pin = session.read<string>(pinKey(token));
   if (pin) connect(root, token, surface, pin);
   else askPin(root, token, surface);
@@ -379,12 +390,20 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       syncPresentButton();
       return;
     }
-    const req = await openPresentDialog();
+    const req = await openPresentDialog(`/p/${token}/screen`);
     if (!req) return;
     const plan = planPresentation(req, req.screens, req.currentId);
     if (ctx.state.status === "waiting") ctx.send({ t: "start" });
     else if (req.fromStart) ctx.send({ t: "goto", pos: { slide: 0, step: 0 } });
 
+    if (plan.useDisplay) {
+      // The display page runs isolated in Chrome; it gets the PIN over the
+      // presentation connection, never in the URL.
+      const pin = session.read<string>(pinKey(token)) ?? "";
+      projection = await startProjection(`/p/${token}/screen`, (send) => send({ t: "auth", pin }), hideSharing);
+      if (projection) showSharing("la pantalla elegida en Chrome");
+      return;
+    }
     if (plan.projectorWindow) {
       // The console stays here; the slide opens covering the chosen screen.
       projectorWin = window.open(`/p/${token}/screen?present=1`, "live-deck-screen", features(plan.projectorWindow));
@@ -406,6 +425,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   });
   // "Presentando en …" banner while the projection lives on another screen.
   let projectorWin: Window | null = null;
+  let projection: Projection | null = null;
   const shareLabel = h("p", { class: "share-banner-text" });
   const stopShare = trusted("button", { type: "button", class: "key key-danger" }, `${icon("power")}<span>Detener</span>`);
   const shareBanner = h("div", { class: "share-banner", role: "status", hidden: true }, h("span", { class: "share-dot", "aria-hidden": "true" }), shareLabel, stopShare);
@@ -414,15 +434,20 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     shareBanner.hidden = true;
     presentBtn.hidden = ctx.state.status === "ended";
     projectorWin = null;
+    projection = null;
   };
   const showSharing = (where: string) => {
-    shareLabel.textContent = `Presentando en ${where === "una ventana aparte" ? where : `«${where}»`}. Haz clic una vez en la diapositiva de esa pantalla para verla en pantalla completa.`;
+    shareLabel.textContent =
+      where === "la pantalla elegida en Chrome"
+        ? "Presentando en la pantalla elegida en Chrome."
+        : `Presentando en ${where === "una ventana aparte" ? where : `«${where}»`}. Haz clic una vez en la diapositiva de esa pantalla para verla en pantalla completa.`;
     shareBanner.hidden = false;
     presentBtn.hidden = true;
   };
   stopShare.addEventListener("click", () => {
     channel?.postMessage({ t: "close-screen" });
     projectorWin?.close();
+    projection?.stop();
     hideSharing();
   });
   window.setInterval(() => {

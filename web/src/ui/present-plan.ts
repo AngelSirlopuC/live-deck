@@ -22,8 +22,12 @@ export interface PresentOptions {
   fullscreen: boolean;
   /** Screen id to project on; null = wherever this tab is. */
   target: string | null;
-  /** "window": a projector window to drag manually (screens could not be listed). */
-  mode: "tab" | "window";
+  /**
+   * "display": Chrome's Presentation API picker renders the slide fullscreen on
+   * the chosen monitor or Cast device, with no browser window.
+   * "window": a projector window to drag manually (screens could not be listed).
+   */
+  mode: "tab" | "window" | "display";
 }
 
 export interface Rect {
@@ -36,6 +40,8 @@ export interface Rect {
 export interface PresentPlan {
   /** This tab becomes the projection (current screen). */
   projectInTab: boolean;
+  /** Present through the Presentation API (Chrome's display picker). */
+  useDisplay: boolean;
   fullscreen: boolean;
   /** A projector window covering another screen; the console stays in this tab. */
   projectorWindow: Rect | null;
@@ -53,14 +59,18 @@ export function planPresentation(opts: PresentOptions, screens: readonly ScreenC
   const target = screens.find((s) => s.id === opts.target) ?? null;
   const current = screens.find((s) => s.id === currentId) ?? null;
 
+  if (opts.mode === "display") {
+    return { projectInTab: false, useDisplay: true, fullscreen: true, projectorWindow: null, screenLabel: "la pantalla elegida en Chrome", presenterWindow: null, floatingControls: false };
+  }
   if (opts.mode === "window") {
-    return { projectInTab: false, fullscreen: false, projectorWindow: { left: 80, top: 80, width: 1280, height: 720 }, screenLabel: "una ventana aparte", presenterWindow: null, floatingControls: false };
+    return { projectInTab: false, useDisplay: false, fullscreen: false, projectorWindow: { left: 80, top: 80, width: 1280, height: 720 }, screenLabel: "una ventana aparte", presenterWindow: null, floatingControls: false };
   }
   if (target && target.id !== currentId) {
-    return { projectInTab: false, fullscreen: false, projectorWindow: full(target), screenLabel: target.label, presenterWindow: null, floatingControls: false };
+    return { projectInTab: false, useDisplay: false, fullscreen: false, projectorWindow: full(target), screenLabel: target.label, presenterWindow: null, floatingControls: false };
   }
   return {
     projectInTab: true,
+    useDisplay: false,
     fullscreen: opts.fullscreen,
     projectorWindow: null,
     screenLabel: "esta pantalla",

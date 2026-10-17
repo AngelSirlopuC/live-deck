@@ -2693,3 +2693,7 @@ select:focus-visible {
 .screen-start[hidden] {
   display: none;
 }
+
+.po-permission.is-irrelevant {
+  display: none !important;
+}

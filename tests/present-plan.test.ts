@@ -45,3 +45,13 @@ describe("presentation plan", () => {
     expect(plan.screenLabel).toBe("una ventana aparte");
   });
 });
+
+describe("presentation api mode", () => {
+  it("presents through Chrome's display picker and keeps the console", () => {
+    const plan = planPresentation({ presenterView: true, fullscreen: true, target: null, mode: "display" }, [], null);
+    expect(plan.useDisplay).toBe(true);
+    expect(plan.projectInTab).toBe(false);
+    expect(plan.projectorWindow).toBeNull();
+    expect(plan.presenterWindow).toBeNull();
+  });
+});

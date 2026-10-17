@@ -66,6 +66,16 @@ Without a key, chat works in text mode and the console disables sticker modes.
 
 Press **Presentar** in the console and pick where the slide goes:
 
+- **Monitor externo o Chromecast** (Chrome and Edge, default). Chrome shows its
+  own display picker and renders the slide **fullscreen on that monitor, with no
+  browser window and no extra click** (Presentation API). Connect the monitor in
+  **extended** mode: mirrored displays are not offered. The console stays in its
+  tab with a **Presentando** banner and **Detener**. The presented page runs
+  isolated in Chrome and receives the presenter PIN over the presentation
+  connection, never in the URL.
+
+The options below are the fallback for browsers without that API:
+
 - **Another screen** (projector, external monitor, TV). The browser asks once
   for permission to see your screens (window management, Chrome and Edge). The
   slide opens covering that screen; **click it once** to go fullscreen (browsers

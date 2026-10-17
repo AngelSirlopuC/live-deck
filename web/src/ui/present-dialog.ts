@@ -1,6 +1,7 @@
 import { h, storage, trusted } from "./dom.ts";
 import { icon } from "./icons.ts";
 import type { PresentOptions, ScreenChoice } from "./present-plan.ts";
+import { displaysAvailable, presentationApiSupported } from "./present-api.ts";
 import { loadScreens, screenPermission } from "./screens.ts";
 
 const local = storage("local");
@@ -13,13 +14,16 @@ export interface PresentRequest extends PresentOptions {
 }
 
 /** Presentation options dialog (Google Slides style). Resolves null on cancel. */
-export function openPresentDialog(): Promise<PresentRequest | null> {
+export function openPresentDialog(displayUrl: string): Promise<PresentRequest | null> {
   return new Promise((resolve) => {
     const saved = local.read<{ presenterView: boolean; fromStart: boolean; fullscreen: boolean }>(PREFS) ?? { presenterView: true, fromStart: false, fullscreen: true };
     let screens: ScreenChoice[] = [];
     let currentId: string | null = null;
     let target: string | null = null;
-    let mode: "tab" | "window" = "tab";
+    const apiSupported = presentationApiSupported();
+    let displayFound: boolean | null = null;
+    // Chrome's own picker is the best path: fullscreen on the monitor, no browser window.
+    let mode: "tab" | "window" | "display" = apiSupported ? "display" : "tab";
 
     const option = (id: string, title: string, hint: string, checked: boolean, art: string) => {
       const input = h("input", { type: "checkbox", id, checked });
@@ -34,7 +38,19 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
     const note = h("p", { class: "po-note", hidden: true }, "La consola se queda en esta pestaña. En la otra pantalla, un clic sobre la diapositiva la pone en pantalla completa.");
     const permission = h("div", { class: "po-permission", hidden: true });
     const renderScreens = () => {
-      const items: Array<{ id: string | null; label: string; detail: string; mode: "tab" | "window"; internal: boolean }> = [];
+      const items: Array<{ id: string | null; label: string; detail: string; mode: "tab" | "window" | "display"; internal: boolean }> = [];
+      if (apiSupported) {
+        items.push({
+          id: null,
+          label: "Monitor externo o Chromecast",
+          detail:
+            displayFound === false
+              ? "Chrome no detecta otra pantalla: conéctala en modo extendido (no espejo)"
+              : "Chrome te deja elegirlo y lo proyecta a pantalla completa, sin abrir ventanas",
+          mode: "display",
+          internal: false,
+        });
+      }
       if (screens.length === 0) items.push({ id: null, label: "Pantalla actual", detail: "Esta pestaña muestra la diapositiva", mode: "tab", internal: true });
       for (const s of screens) {
         items.push({ id: s.id, label: `${s.label}${s.id === currentId ? " (actual)" : ""}`, detail: `${s.width}×${s.height}${s.isPrimary ? " · principal" : ""}`, mode: "tab", internal: s.isInternal });
@@ -42,14 +58,20 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
       // Only needed when the browser cannot list screens.
       if (screens.length === 0) items.push({ id: null, label: "Ventana aparte", detail: "Arrástrala al proyector y haz clic en ella para pantalla completa", mode: "window", internal: false });
       const syncPresenterOption = () => {
-        const elsewhere = mode === "window" || (target !== null && target !== currentId);
+        const elsewhere = mode !== "tab" || (target !== null && target !== currentId);
         presenter.row.hidden = elsewhere;
         full.row.hidden = elsewhere;
         note.hidden = !elsewhere;
+        note.textContent =
+          mode === "display"
+            ? "La consola se queda en esta pestaña. Al iniciar, Chrome te pide elegir la pantalla y proyecta la diapositiva a pantalla completa."
+            : "La consola se queda en esta pestaña. En la otra pantalla, un clic sobre la diapositiva la pone en pantalla completa.";
+        // The window-management permission only matters when not using Chrome's picker.
+        permission.classList.toggle("is-irrelevant", mode === "display");
       };
       list.replaceChildren(
         ...items.map((it, i) => {
-          const checked = it.mode === mode && (it.mode === "window" || it.id === target);
+          const checked = it.mode === mode && (it.mode !== "tab" || it.id === target);
           const input = h("input", { type: "radio", name: "po-screen", id: `po-s${i}`, checked });
           input.addEventListener("change", () => {
             target = it.id;
@@ -68,7 +90,7 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
         screens = found.screens;
         currentId = found.currentId;
         // Default to an external screen when one exists: that is usually the projector.
-        if (target === null && mode === "tab") target = screens.find((s) => s.id !== currentId)?.id ?? currentId;
+        if (target === null && mode === "tab") target = currentId;
       }
       renderScreens();
     };
@@ -80,9 +102,16 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
     });
 
     void (async () => {
+      if (apiSupported) {
+        displayFound = await displaysAvailable(displayUrl, (v) => {
+          displayFound = v;
+          renderScreens();
+        });
+      }
       let state = await screenPermission();
-      // Ask right away: the click that opened this dialog lets the browser show its prompt.
-      if (state === "granted" || state === "prompt") {
+      // Without Chrome's picker, ask right away: the click that opened this dialog
+      // lets the browser show its prompt. With the picker it is not needed.
+      if (state === "granted" || (state === "prompt" && !apiSupported)) {
         await refresh();
         state = await screenPermission();
       } else renderScreens();
