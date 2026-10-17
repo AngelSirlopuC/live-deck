@@ -64,31 +64,23 @@ Without a key, chat works in text mode and the console disables sticker modes.
 
 ### Presenting on a projector
 
-Press **Presentar** in the console. As in Google Slides you choose:
+Press **Presentar** in the console and pick where the slide goes:
 
-- **Vista de presentador**: the console (current and next slide, notes, timer,
-  quiz, chat, controls) opens in its own window, and this tab shows only the
-  slide. Project the slide, keep the controls on your laptop.
-- **Mostrar desde el principio** and **Pantalla completa**.
-- **Pantalla de presentación**: this screen, another connected screen, or a
-  separate window you drag to the projector.
+- **Another screen** (projector, external monitor, TV). The browser asks once
+  for permission to see your screens (window management, Chrome and Edge). The
+  slide opens covering that screen; **click it once** to go fullscreen (browsers
+  require that click on the window itself). Your console stays in its tab with a
+  **Presentando en «…»** banner and a **Detener** button that closes the
+  projection.
+- **This screen**. The tab shows only the slide, fullscreen. Tick **Vista de
+  presentador** to keep the console in a separate window, or leave it off to get
+  an auto-hiding control bar on the slide. Esc or **Salir** ends it.
+- **Ventana aparte**, offered when the browser cannot list screens: a projector
+  window to drag to the other screen, then click it for fullscreen.
 
-To list other screens, press **Permitir** to grant the browser's window
-management permission (Chrome and Edge). The slide then goes fullscreen on the
-screen you picked and the presenter view opens on the other one, from a single
-click. Without the permission (or in other browsers), the presenter view still
-opens; if the browser needs another click for fullscreen, a **Pantalla
-completa** button appears over the slide. Leaving fullscreen (Esc) ends the
-projection and brings the console back. Allow pop-ups for the site so the
-presenter view can open.
-
-While projecting, the presenter view's main button becomes **Dejar de
-presentar**; once stopped it is **Presentar** again, so you can pick another
-mode. If the presenter view is closed, the projection shows **Abrir vista de
-presentador** and **Dejar de presentar**, and moving the mouse over it reveals a
-**Salir** button in the corner. Ending the session also ends the projection.
-
-The phone remote (**Control móvil**) works alongside any of these.
+**Mostrar desde el principio** jumps to the first slide. Allow pop-ups for the
+site so the projector or presenter window can open. The phone remote (**Control
+móvil**) works alongside any of these.
 
 ## Creating presentations
 

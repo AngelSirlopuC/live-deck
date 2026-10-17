@@ -26,19 +26,27 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
       const row = h("label", { class: "po-option", for: id }, input, h("span", { class: "po-text" }, h("strong", {}, title), hint ? h("span", {}, hint) : null), h("span", { class: `po-art po-art-${art}`, "aria-hidden": "true" }));
       return { input, row };
     };
-    const presenter = option("po-presenter", "Vista de presentador", "Notas, siguiente diapositiva, quiz, chat y controles en una ventana aparte", saved.presenterView, "presenter");
+    const presenter = option("po-presenter", "Vista de presentador", "Solo con una pantalla: la consola se abre en una ventana aparte y esta pestaña muestra la diapositiva", saved.presenterView, "presenter");
     const fromStart = option("po-start", "Mostrar la presentación desde el principio", "", saved.fromStart, "start");
     const full = option("po-full", "Pantalla completa", "", saved.fullscreen, "full");
 
     const list = h("div", { class: "po-screens", role: "radiogroup", "aria-label": "Pantalla de presentación" });
+    const note = h("p", { class: "po-note", hidden: true }, "La consola se queda en esta pestaña. En la otra pantalla, un clic sobre la diapositiva la pone en pantalla completa.");
     const permission = h("div", { class: "po-permission", hidden: true });
     const renderScreens = () => {
-      const items: Array<{ id: string | null; label: string; detail: string; mode: "tab" | "window" }> = [];
-      if (screens.length === 0) items.push({ id: null, label: "Pantalla actual", detail: "Esta pestaña muestra la diapositiva", mode: "tab" });
+      const items: Array<{ id: string | null; label: string; detail: string; mode: "tab" | "window"; internal: boolean }> = [];
+      if (screens.length === 0) items.push({ id: null, label: "Pantalla actual", detail: "Esta pestaña muestra la diapositiva", mode: "tab", internal: true });
       for (const s of screens) {
-        items.push({ id: s.id, label: `${s.label}${s.id === currentId ? " (actual)" : ""}`, detail: `${s.width}×${s.height}${s.isPrimary ? " · principal" : ""}`, mode: "tab" });
+        items.push({ id: s.id, label: `${s.label}${s.id === currentId ? " (actual)" : ""}`, detail: `${s.width}×${s.height}${s.isPrimary ? " · principal" : ""}`, mode: "tab", internal: s.isInternal });
       }
-      items.push({ id: null, label: "Ventana aparte", detail: screens.length > 1 ? "Se abre en otra pantalla" : "Arrástrala al proyector y pulsa F", mode: "window" });
+      // Only needed when the browser cannot list screens.
+      if (screens.length === 0) items.push({ id: null, label: "Ventana aparte", detail: "Arrástrala al proyector y haz clic en ella para pantalla completa", mode: "window", internal: false });
+      const syncPresenterOption = () => {
+        const elsewhere = mode === "window" || (target !== null && target !== currentId);
+        presenter.row.hidden = elsewhere;
+        full.row.hidden = elsewhere;
+        note.hidden = !elsewhere;
+      };
       list.replaceChildren(
         ...items.map((it, i) => {
           const checked = it.mode === mode && (it.mode === "window" || it.id === target);
@@ -46,10 +54,12 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
           input.addEventListener("change", () => {
             target = it.id;
             mode = it.mode;
+            syncPresenterOption();
           });
-          return h("label", { class: "po-screen", for: `po-s${i}` }, input, h("span", { class: "po-text" }, h("strong", {}, it.label), h("span", {}, it.detail)), trusted("span", { class: "po-screen-icon", "aria-hidden": "true" }, icon(it.mode === "window" ? "screen" : "laptop")));
+          return h("label", { class: "po-screen", for: `po-s${i}` }, input, h("span", { class: "po-text" }, h("strong", {}, it.label), h("span", {}, it.detail)), trusted("span", { class: "po-screen-icon", "aria-hidden": "true" }, icon(it.internal ? "laptop" : "screen")));
         }),
       );
+      syncPresenterOption();
     };
 
     const refresh = async () => {
@@ -70,9 +80,12 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
     });
 
     void (async () => {
-      const state = await screenPermission();
-      if (state === "granted") await refresh();
-      else renderScreens();
+      let state = await screenPermission();
+      // Ask right away: the click that opened this dialog lets the browser show its prompt.
+      if (state === "granted" || state === "prompt") {
+        await refresh();
+        state = await screenPermission();
+      } else renderScreens();
       if (state === "prompt") {
         permission.hidden = false;
         permission.replaceChildren(h("p", {}, "Permite que Live Deck vea tus otras pantallas para proyectar en ellas"), allow);
@@ -96,6 +109,7 @@ export function openPresentDialog(): Promise<PresentRequest | null> {
       full.row,
       h("h3", { class: "legend" }, "Pantalla de presentación"),
       list,
+      note,
       permission,
       h("div", { class: "sheet-actions po-actions" }, cancel, start),
     );

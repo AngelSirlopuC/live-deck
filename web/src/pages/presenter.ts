@@ -53,6 +53,8 @@ function askPin(root: HTMLElement, token: string, surface: PresenterSurface, err
 }
 
 interface PresenterContext {
+  /** Presenter token: also names the channel between console and projection windows. */
+  token: string;
   deck: Deck;
   deckId: string;
   code: string;
@@ -90,7 +92,7 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
     onMessage: (msg) => {
       if (msg.t === "welcome-presenter") {
         if (!ctx) {
-          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, baseUrl: msg.baseUrl, stickers: msg.features.stickers, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
+          ctx = { token, deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, baseUrl: msg.baseUrl, stickers: msg.features.stickers, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
           document.title = `${msg.deck.title} · ${surface === "screen" ? "pantalla" : surface === "remote" ? "control" : "consola"}`;
           ui = surface === "screen" ? screenUi(root, ctx) : surface === "remote" ? remoteUi(root, ctx, token) : consoleUi(root, ctx, token);
         }
@@ -384,16 +386,17 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     else if (req.fromStart) ctx.send({ t: "goto", pos: { slide: 0, step: 0 } });
 
     if (plan.projectorWindow) {
-      const w = window.open(`/p/${token}/screen`, "live-deck-screen", features(plan.projectorWindow));
-      if (!w) notifyBlocked();
+      // The console stays here; the slide opens covering the chosen screen.
+      projectorWin = window.open(`/p/${token}/screen?present=1`, "live-deck-screen", features(plan.projectorWindow));
+      if (!projectorWin) return notifyBlocked();
+      showSharing(plan.screenLabel);
       return;
     }
     setPresenting(true, plan);
-    // Fullscreen first: with window-management permission Chrome still lets the
-    // same click open the presenter window afterwards (fullscreen companion window).
+    // Fullscreen first: Chrome may still let the same click open the presenter window.
     usedFullscreen = plan.fullscreen;
-    pendingScreen = plan.fullscreenScreen;
-    if (plan.fullscreen) await goFullscreen(plan.fullscreenScreen);
+    pendingScreen = null;
+    if (plan.fullscreen) await goFullscreen(null);
     syncFsPrompt();
     if (plan.presenterWindow) {
       lastPresenterRect = plan.presenterWindow;
@@ -401,6 +404,30 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       if (!presenterWin) notifyBlocked();
     }
   });
+  // "Presentando en …" banner while the projection lives on another screen.
+  let projectorWin: Window | null = null;
+  const shareLabel = h("p", { class: "share-banner-text" });
+  const stopShare = trusted("button", { type: "button", class: "key key-danger" }, `${icon("power")}<span>Detener</span>`);
+  const shareBanner = h("div", { class: "share-banner", role: "status", hidden: true }, h("span", { class: "share-dot", "aria-hidden": "true" }), shareLabel, stopShare);
+  consoleEl.insertBefore(shareBanner, body);
+  const hideSharing = () => {
+    shareBanner.hidden = true;
+    presentBtn.hidden = ctx.state.status === "ended";
+    projectorWin = null;
+  };
+  const showSharing = (where: string) => {
+    shareLabel.textContent = `Presentando en ${where === "una ventana aparte" ? where : `«${where}»`}. Haz clic una vez en la diapositiva de esa pantalla para verla en pantalla completa.`;
+    shareBanner.hidden = false;
+    presentBtn.hidden = true;
+  };
+  stopShare.addEventListener("click", () => {
+    channel?.postMessage({ t: "close-screen" });
+    projectorWin?.close();
+    hideSharing();
+  });
+  window.setInterval(() => {
+    if (projectorWin && projectorWin.closed) hideSharing();
+  }, 1000);
   const notifyBlocked = () =>
     void confirmSheet("El navegador bloqueó la ventana", "Permite ventanas emergentes para este sitio y vuelve a pulsar Presentar.", "Entendido", false);
   presentExit.addEventListener("click", () => setPresenting(false));
@@ -535,6 +562,22 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
 
   const fullscreen = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
   host.addEventListener("dblclick", fullscreen);
+  // Opened from the console's Presentar: one click here completes fullscreen
+  // (browsers do not let another window start fullscreen without it).
+  if (new URLSearchParams(location.search).has("present")) {
+    const start = trusted("button", { type: "button", class: "screen-start" }, `${icon("expand")}<span>Haz clic para presentar en pantalla completa</span>`);
+    root.querySelector(".screen")!.append(start);
+    const sync = () => (start.hidden = !!document.fullscreenElement);
+    start.addEventListener("click", () => void document.documentElement.requestFullscreen().catch(() => {}));
+    document.addEventListener("fullscreenchange", sync);
+    sync();
+  }
+  if (typeof BroadcastChannel === "function") {
+    const ch = new BroadcastChannel(`live-deck-present:${ctx.token}`);
+    ch.addEventListener("message", (e: MessageEvent<{ t: string }>) => {
+      if (e.data.t === "close-screen") window.close();
+    });
+  }
   window.addEventListener("keydown", (e) => {
     if (e.key === "f" || e.key === "F") fullscreen();
   });

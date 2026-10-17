@@ -1,5 +1,5 @@
-// Where the projection and the presenter view go, from the chosen options and
-// the screens the browser reports (Window Management API). Pure: no DOM.
+// Where the projection and the controls go, from the chosen options and the
+// screens the browser reports (Window Management API). Pure: no DOM.
 
 export interface ScreenChoice {
   id: string;
@@ -17,12 +17,12 @@ export interface ScreenChoice {
 }
 
 export interface PresentOptions {
-  /** Open the console (notes, next slide, quiz, chat, controls) in its own window. */
+  /** On a single screen: open the console in its own window while this tab projects. */
   presenterView: boolean;
   fullscreen: boolean;
   /** Screen id to project on; null = wherever this tab is. */
   target: string | null;
-  /** "tab": this tab becomes the projection. "window": open a separate projector window. */
+  /** "window": a projector window to drag manually (screens could not be listed). */
   mode: "tab" | "window";
 }
 
@@ -34,52 +34,37 @@ export interface Rect {
 }
 
 export interface PresentPlan {
-  /** Project in this tab (false when a separate projector window is used). */
+  /** This tab becomes the projection (current screen). */
   projectInTab: boolean;
   fullscreen: boolean;
-  /** Screen id for requestFullscreen({ screen }); null = current screen. */
-  fullscreenScreen: string | null;
-  presenterWindow: Rect | null;
+  /** A projector window covering another screen; the console stays in this tab. */
   projectorWindow: Rect | null;
-  /** Show the auto-hiding control bar over the projection (no separate presenter view). */
+  /** Human name of where the projection goes, for the console banner. */
+  screenLabel: string;
+  /** Console window when projecting on the only screen with presenter view. */
+  presenterWindow: Rect | null;
+  /** Auto-hiding control bar over an in-tab projection. */
   floatingControls: boolean;
 }
 
-const DEFAULT_WINDOW = { width: 1280, height: 800 };
-
-const area = (s: ScreenChoice): Rect => ({ left: s.availLeft, top: s.availTop, width: s.availWidth, height: s.availHeight });
+const full = (s: ScreenChoice): Rect => ({ left: s.left, top: s.top, width: s.width, height: s.height });
 
 export function planPresentation(opts: PresentOptions, screens: readonly ScreenChoice[], currentId: string | null): PresentPlan {
   const target = screens.find((s) => s.id === opts.target) ?? null;
   const current = screens.find((s) => s.id === currentId) ?? null;
-  // The presenter view goes to a screen that is not showing the projection.
-  const other = screens.find((s) => s.id !== (target?.id ?? currentId)) ?? null;
-  const presenterHome = target && current && target.id !== current.id ? current : other;
-
-  const presenterWindow = opts.presenterView
-    ? presenterHome
-      ? area(presenterHome)
-      : { left: (current?.availLeft ?? 0) + 80, top: (current?.availTop ?? 0) + 80, ...DEFAULT_WINDOW }
-    : null;
 
   if (opts.mode === "window") {
-    const place = target ?? other;
-    return {
-      projectInTab: false,
-      fullscreen: false,
-      fullscreenScreen: null,
-      projectorWindow: place ? area(place) : { left: 80, top: 80, ...DEFAULT_WINDOW },
-      presenterWindow: null,
-      floatingControls: false,
-    };
+    return { projectInTab: false, fullscreen: false, projectorWindow: { left: 80, top: 80, width: 1280, height: 720 }, screenLabel: "una ventana aparte", presenterWindow: null, floatingControls: false };
   }
-
+  if (target && target.id !== currentId) {
+    return { projectInTab: false, fullscreen: false, projectorWindow: full(target), screenLabel: target.label, presenterWindow: null, floatingControls: false };
+  }
   return {
     projectInTab: true,
     fullscreen: opts.fullscreen,
-    fullscreenScreen: opts.fullscreen && target ? target.id : null,
-    presenterWindow,
     projectorWindow: null,
+    screenLabel: "esta pantalla",
+    presenterWindow: opts.presenterView ? { left: (current?.availLeft ?? 0) + 80, top: (current?.availTop ?? 0) + 80, width: 1280, height: 800 } : null,
     floatingControls: !opts.presenterView,
   };
 }

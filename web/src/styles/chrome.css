@@ -2626,3 +2626,70 @@ select:focus-visible {
   min-height: 40px;
   opacity: 0.85;
 }
+
+.po-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--signal) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--signal) 40%, var(--seam));
+  font-size: 0.9rem;
+}
+
+.po-option[hidden] {
+  display: none;
+}
+
+/* Console banner while the projection is on another screen. */
+.share-banner:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--onair) 14%, var(--bg));
+  border-bottom: 1px solid color-mix(in srgb, var(--onair) 45%, var(--seam));
+}
+
+.share-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--onair);
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--onair) 70%, transparent);
+}
+
+.share-banner-text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.share-banner .key {
+  min-height: 40px;
+}
+
+/* Projector window: one click to go fullscreen. */
+.screen-start {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  border: 0;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  font: 600 clamp(1.2rem, 2.4vw, 2rem) var(--font-body);
+  cursor: pointer;
+}
+
+.screen-start .icon {
+  width: 56px;
+  height: 56px;
+}
+
+.screen-start[hidden] {
+  display: none;
+}
