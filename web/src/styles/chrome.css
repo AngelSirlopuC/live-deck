@@ -1470,60 +1470,160 @@ select:focus-visible {
 }
 
 /* Chat ------------------------------------------------------------------------------ */
+/* A running log, not a stack of cards: one sender's turn reads as one block. */
 .chat {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
 }
 
-.chat .legend {
+.chat-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 48px;
+  padding-right: 56px;
+}
+
+.chat .chat-title {
   margin: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  line-height: 48px;
+  letter-spacing: -0.02em;
 }
 
-.chat-status {
+.chat .chat-mode {
+  margin: 0;
+  font-family: var(--font-legend);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.chat:not([data-mode="off"]):not([data-paused]) .chat-mode::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--signal);
+  vertical-align: 0.15em;
+}
+
+.sheet .chat .chat-status {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--desk);
+  border: 1px solid var(--seam);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.chat .chat-status {
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-muted);
 }
 
-.chat-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.chat-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 42vh;
-  min-height: 60px;
+}
+
+.chat-list {
+  list-style: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 -8px;
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--seam) transparent;
+  /* Messages fade under the header instead of being sliced off. */
+  mask-image: linear-gradient(to bottom, transparent, #000 14px, #000 calc(100% - 6px), transparent);
+}
+
+.chat-list:empty {
+  display: none;
 }
 
 .chat-msg {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 8px;
-  padding: 8px 10px;
+  position: relative;
+  margin-top: 10px;
+  padding: 7px 10px 8px;
   border-radius: 10px;
-  background: var(--panel);
-  border: 1px solid var(--seam);
   overflow-wrap: anywhere;
 }
 
+.chat-msg:first-child {
+  margin-top: 0;
+}
+
+.chat-msg.is-cont {
+  margin-top: 0;
+  padding-top: 2px;
+}
+
+.chat-msg.is-cont .chat-meta {
+  display: none;
+}
+
 .chat-msg.is-mine {
-  border-color: #6b5430;
+  background: color-mix(in srgb, var(--amber) 9%, transparent);
+}
+
+.chat-msg.is-mine.is-cont {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.chat-msg:has(+ .is-cont) {
+  padding-bottom: 2px;
+}
+
+.chat-msg.is-mine:has(+ .is-mine.is-cont) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.chat-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 
 .chat-name {
-  font-weight: 700;
-  color: var(--amber);
+  font-weight: 600;
   font-size: 0.9rem;
+  color: var(--amber);
 }
 
-.chat-text {
-  flex: 1 1 100%;
-  line-height: 1.4;
+.chat-time {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.chat .chat-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.42;
+  color: var(--text);
 }
 
 .chat-sticker {
@@ -1532,27 +1632,129 @@ select:focus-visible {
   max-width: 140px;
   height: auto;
   max-height: 120px;
+  margin-top: 2px;
+  border-radius: 6px;
 }
 
+/* Presenter moderation: quiet icon keys on the message's top edge. */
 .chat-mods {
-  margin-left: auto;
+  position: absolute;
+  top: 4px;
+  right: 6px;
   display: flex;
-  gap: 6px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--panel-hi);
+  box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.5);
 }
 
 .chat-mod {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border: 0;
+  border-radius: 6px;
   background: none;
-  padding: 2px 4px;
   color: var(--text-muted);
-  font-size: 0.78rem;
-  text-decoration: underline;
-  text-underline-offset: 3px;
   cursor: pointer;
 }
 
-.chat-mod:hover {
+.chat-mod .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.chat-mod:hover,
+.chat-mod:focus-visible {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
   color: #ffb3ab;
+}
+
+@media (hover: hover) {
+  .chat-mods {
+    opacity: 0;
+    transition: opacity 120ms var(--ease-out);
+  }
+  .chat-msg:hover,
+  .chat-msg:focus-within {
+    background: var(--panel-hi);
+  }
+  .chat-msg:hover .chat-mods,
+  .chat-msg:focus-within .chat-mods {
+    opacity: 1;
+  }
+}
+
+.chat-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 140px;
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.chat-empty[hidden] {
+  display: none;
+}
+
+.chat-empty .icon {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 6px;
+  color: var(--seam);
+  stroke-width: 1.6;
+}
+
+.chat-empty strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chat-empty span {
+  font-size: 0.92rem;
+}
+
+.chat-jump {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px 0 14px;
+  border: 1px solid #c98a2a;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffc76d, var(--amber));
+  color: var(--amber-ink);
+  font: 600 0.85rem/1 var(--font-body);
+  box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.6);
+  transform: translateX(-50%);
+  cursor: pointer;
+  animation: chat-jump-in 220ms var(--ease-out);
+}
+
+.chat-jump[hidden] {
+  display: none;
+}
+
+.chat-jump .icon {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes chat-jump-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
 }
 
 .chat-form {
@@ -1560,6 +1762,23 @@ select:focus-visible {
   grid-template-columns: auto 1fr auto;
   gap: 6px;
   align-items: center;
+  margin: 0 -20px;
+  padding: 10px 20px calc(12px + var(--safe-bottom));
+  background: var(--desk);
+  border-top: 1px solid var(--seam);
+}
+
+.chat-form[hidden] {
+  display: none;
+}
+
+/* With only one control besides the input, keep the grid tight. */
+.chat-form:has(.chat-sticker-btn[hidden]) {
+  grid-template-columns: 1fr auto;
+}
+
+.chat-form:has(.chat-input[hidden]) {
+  grid-template-columns: 1fr;
 }
 
 .chat-form .chat-input {
@@ -1570,17 +1789,82 @@ select:focus-visible {
   display: none;
 }
 
+.chat-send .icon {
+  width: 20px;
+  height: 20px;
+  transform: translateX(-1px);
+}
+
 .chat-sticker-btn {
   padding: 0 12px;
   font-family: var(--font-mono);
   font-weight: 700;
 }
 
-.chat-error {
-  margin: 0;
-  min-height: 1.2em;
+.chat-sticker-btn[hidden] {
+  display: none;
+}
+
+.chat .chat-error {
+  margin: -4px 0 0;
   font-size: 0.85rem;
   color: #ffb3ab;
+}
+
+.chat-error:empty {
+  display: none;
+}
+
+/* Sheets: audience chat and the presenter drawer. */
+.chat-sheet {
+  display: flex;
+  flex-direction: column;
+  height: min(78dvh, 640px);
+  padding-top: 14px;
+  padding-bottom: 0;
+}
+
+.chat-sheet:not([open]) {
+  display: none;
+}
+
+.chat-sheet .chat {
+  flex: 1;
+}
+
+/* Nothing to read while the chat is closed: the sheet shrinks to its note. */
+.chat-sheet:has(.chat[data-mode="off"]):not(.chat-drawer) {
+  height: fit-content;
+  padding-bottom: calc(20px + var(--safe-bottom));
+}
+
+.chat-drawer {
+  width: min(540px, calc(100vw - 24px));
+  height: min(86dvh, 760px);
+  padding-bottom: 14px;
+}
+
+.chat-drawer > h2 {
+  margin: 0 0 6px;
+  line-height: 48px;
+}
+
+.chat-drawer .chat {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--seam);
+}
+
+.chat-drawer .chat-head {
+  display: none;
+}
+
+.chat-drawer .pa-note {
+  margin: 8px 0 0;
+}
+
+.chat-drawer .pq-switch {
+  margin-top: 10px;
 }
 
 .sticker-sheet input {
@@ -1655,10 +1939,6 @@ select:focus-visible {
   --key-bg: linear-gradient(180deg, #ffc76d, var(--amber));
   --key-fg: var(--amber-ink);
   border-color: #c98a2a;
-}
-
-.pa .chat-list {
-  max-height: 300px;
 }
 
 @media (orientation: landscape) and (max-height: 560px) {
@@ -1875,24 +2155,10 @@ select:focus-visible {
   font-size: clamp(1.15rem, 5.4vw, 1.45rem);
 }
 
-/* Participation panel scrolls on its own; the chat composer stays reachable. */
+/* Participation panel scrolls on its own. */
 .aud-panel {
   min-height: 0;
   overscroll-behavior: contain;
-}
-
-.chat-form {
-  position: sticky;
-  bottom: calc(-16px - var(--safe-bottom));
-  margin: 0 -16px;
-  padding: 10px 16px calc(10px + var(--safe-bottom));
-  background: var(--desk);
-  border-top: 1px solid var(--seam);
-  z-index: 1;
-}
-
-.chat-list {
-  max-height: none;
 }
 
 .vote {
@@ -2152,35 +2418,6 @@ select:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
-.chat-sheet {
-  display: flex;
-  flex-direction: column;
-  height: min(78dvh, 640px);
-  padding-bottom: 0;
-}
-
-.chat-sheet:not([open]) {
-  display: none;
-}
-
-.chat-sheet .chat {
-  flex: 1;
-  min-height: 0;
-  grid-template-rows: auto auto 1fr auto auto;
-  margin: 0;
-}
-
-.chat-sheet .chat-list {
-  min-height: 0;
-  max-height: none;
-}
-
-.chat-sheet .chat-form {
-  position: static;
-  margin: 0 -20px;
-  padding: 10px 20px calc(12px + var(--safe-bottom));
-}
-
 .screen-board {
   position: absolute;
   bottom: 24px;
@@ -2319,51 +2556,11 @@ select:focus-visible {
   white-space: nowrap;
 }
 
-/* Chat sheet: messages fill the sheet, the composer sits at the bottom. */
-.chat-sheet .chat {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.chat-sheet .chat-list {
-  flex: 1 1 auto;
-}
-
-.chat-sheet .chat-form {
-  margin-top: auto;
-}
-
-.chat-sheet .chat-form[hidden] {
-  display: none;
-}
-
-.chat-sheet .chat-error:empty {
-  display: none;
-}
-
-.chat-sticker-btn[hidden] {
-  display: none;
-}
-
-/* With only one control besides the input, keep the grid tight. */
-.chat-form:has(.chat-sticker-btn[hidden]) {
-  grid-template-columns: 1fr auto;
-}
-
-.chat-form:has(.chat-input[hidden]) {
-  grid-template-columns: 1fr;
-}
-
 .pa-note {
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-muted);
   line-height: 1.45;
-}
-
-.chat-drawer .chat > .legend {
-  display: none;
 }
 
 /* Keep the console header on one line on laptop widths. */
@@ -2398,11 +2595,6 @@ select:focus-visible {
 .sticker-pick {
   min-width: 0;
   overflow: hidden;
-}
-
-/* The sender's name sits above the message, sticker or text. */
-.chat-name {
-  flex-basis: 100%;
 }
 
 /* Preview page overlay: .key sets position: relative, so pin these explicitly. */
@@ -2867,58 +3059,52 @@ select:focus-visible {
   margin: 0;
 }
 
-.presenter-chat .chat > .legend {
-  display: none;
-}
-
 .presenter-chat .chat-list {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
 }
 
-/* Moderation hidden until hover, keyboard focus, or the "⋯" button. */
-.chat-msg.is-moderated {
-  position: relative;
-  padding-right: 34px;
-}
-
+/* Moderation: on pointer devices the icon chip shows on hover or focus; on
+   touch it hides behind the "more" key until tapped. */
 .chat-more {
   position: absolute;
   top: 4px;
-  right: 4px;
-  width: 26px;
-  height: 26px;
+  right: 6px;
+  display: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
-  font-size: 1.1rem;
-  line-height: 1;
   cursor: pointer;
-  opacity: 0;
 }
 
-.chat-msg.is-moderated .chat-mods {
-  display: none;
-}
-
-.chat-msg.is-moderated:hover .chat-more,
-.chat-msg.is-moderated:focus-within .chat-more,
-.chat-msg.is-moderated.is-open .chat-more {
-  opacity: 1;
-}
-
-.chat-msg.is-moderated:hover .chat-mods,
-.chat-msg.is-moderated:focus-within .chat-mods,
-.chat-msg.is-moderated.is-open .chat-mods {
-  display: flex;
+.chat-more .icon {
+  width: 18px;
+  height: 18px;
 }
 
 @media (hover: none) {
-  .chat-more {
-    opacity: 1;
+  .chat-msg.is-moderated {
+    padding-right: 44px;
   }
+  .chat-more {
+    display: grid;
+  }
+  .chat-msg.is-moderated .chat-mods {
+    display: none;
+  }
+  .chat-msg.is-moderated.is-open .chat-mods {
+    display: flex;
+    right: 42px;
+  }
+}
+
+.presenter-chat .chat-head {
+  display: none;
 }
 
 /* Console layout v3: the program monitor is sized by the available height so

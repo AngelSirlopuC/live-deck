@@ -14,20 +14,32 @@ export interface ChatPanelOptions {
 
 const MODE_COPY: Record<ChatMode, string> = {
   off: "El ponente todavía no abrió el chat.",
-  text: "Chat de texto",
-  sticker: "Chat de stickers",
-  mixed: "Chat de texto y stickers",
+  text: "Solo texto",
+  sticker: "Solo stickers",
+  mixed: "Texto y stickers",
 };
+
+/** Messages from one sender this close together read as one turn. */
+const GROUP_MS = 3 * 60_000;
+const timeFormat = new Intl.DateTimeFormat("es-PE", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
 export function createChatPanel(opts: ChatPanelOptions) {
   const list = h("ol", { class: "chat-list", "aria-live": "polite", "aria-relevant": "additions" });
   const status = h("p", { class: "chat-status" });
+  const modeLine = h("p", { class: "chat-mode" });
+  const emptyTitle = h("strong", {});
+  const emptyText = h("span", {});
+  const empty = trusted("div", { class: "chat-empty" }, icon("chat"));
+  empty.append(emptyTitle, emptyText);
+  const jump = trusted("button", { type: "button", class: "chat-jump", hidden: true }, `<span>Mensajes nuevos</span>${icon("down")}`);
+  const scroller = h("div", { class: "chat-scroll" }, list, empty, jump);
   const input = h("input", { class: "chat-input", type: "text", maxlength: CHAT_TEXT_MAX, placeholder: "Escribe un mensaje", enterkeyhint: "send", autocomplete: "off", "aria-label": "Mensaje" });
-  const send = trusted("button", { type: "submit", class: "key key-icon key-primary", "aria-label": "Enviar" }, icon("next"));
-  const stickerBtn = h("button", { type: "button", class: "key chat-sticker-btn" }, "GIF");
+  const send = trusted("button", { type: "submit", class: "key key-icon key-primary chat-send", "aria-label": "Enviar" }, icon("send"));
+  const stickerBtn = h("button", { type: "button", class: "key chat-sticker-btn", "aria-label": "Enviar un sticker" }, "GIF");
   const form = h("form", { class: "chat-form" }, stickerBtn, input, send);
   const error = h("p", { class: "chat-error", role: "status", "aria-live": "polite" });
-  const el = h("section", { class: "chat", "aria-label": "Chat" }, h("h2", { class: "legend" }, "Chat"), status, list, form, error);
+  const head = h("header", { class: "chat-head" }, h("h2", { class: "chat-title" }, "Chat"), modeLine);
+  const el = h("section", { class: "chat", "aria-label": "Chat" }, head, status, scroller, form, error);
   let state: ChatState = { mode: "off", paused: false };
 
   form.addEventListener("submit", (e) => {
@@ -39,15 +51,33 @@ export function createChatPanel(opts: ChatPanelOptions) {
   });
   stickerBtn.addEventListener("click", () => openStickerPicker(opts.searchStickers!, (s) => opts.onSend?.({ stickerId: s.id })));
 
+  const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  const toEnd = () => {
+    list.scrollTop = list.scrollHeight;
+    jump.hidden = true;
+  };
+  jump.addEventListener("click", () => list.scrollTo({ top: list.scrollHeight, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
+  list.addEventListener("scroll", () => {
+    if (nearBottom()) jump.hidden = true;
+  }, { passive: true });
+
   function render(m: ChatMessage): HTMLElement {
-    const li = h("li", { class: `chat-msg${m.from === opts.myId ? " is-mine" : ""}`, "data-id": m.id }, h("span", { class: "chat-name" }, m.name));
-    if (m.text) li.append(h("span", { class: "chat-text" }, m.text));
+    const mine = m.from === opts.myId;
+    const when = new Date(m.at);
+    const meta = h(
+      "span",
+      { class: "chat-meta" },
+      h("span", { class: "chat-name" }, mine ? "Tú" : m.name),
+      h("time", { class: "chat-time", datetime: when.toISOString() }, timeFormat.format(when)),
+    );
+    const li = h("li", { class: `chat-msg${mine ? " is-mine" : ""}`, "data-id": m.id, "data-from": m.from, "data-at": m.at }, meta);
+    if (m.text) li.append(h("p", { class: "chat-text" }, m.text));
     if (m.sticker) li.append(h("img", { class: "chat-sticker", src: m.sticker.url, alt: m.sticker.title || "Sticker", width: m.sticker.width, height: m.sticker.height, loading: "lazy", referrerpolicy: "no-referrer" }));
     if (opts.moderate) {
-      // Moderation stays out of sight: shown on hover/focus, or with "⋯" on touch.
-      const more = h("button", { type: "button", class: "chat-more", "aria-label": `Acciones para el mensaje de ${m.name}`, "aria-expanded": "false" }, "⋯");
-      const del = h("button", { type: "button", class: "chat-mod" }, "Borrar");
-      const mute = h("button", { type: "button", class: "chat-mod" }, "Silenciar");
+      // Moderation stays out of sight: shown on hover/focus, or with the "more" key on touch.
+      const more = trusted("button", { type: "button", class: "chat-more", "aria-label": `Acciones para el mensaje de ${m.name}`, "aria-expanded": "false" }, icon("more"));
+      const del = trusted("button", { type: "button", class: "chat-mod", "aria-label": `Borrar mensaje de ${m.name}`, title: "Borrar mensaje" }, icon("trash"));
+      const mute = trusted("button", { type: "button", class: "chat-mod chat-mod-mute", "aria-label": `Silenciar a ${m.name}`, title: `Silenciar a ${m.name}` }, icon("mute"));
       more.addEventListener("click", () => {
         const open = li.classList.toggle("is-open");
         more.setAttribute("aria-expanded", String(open));
@@ -60,7 +90,26 @@ export function createChatPanel(opts: ChatPanelOptions) {
     return li;
   }
 
-  const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  /** Hide the name on a sender's follow-up messages; recheck after removals. */
+  function regroup(li: Element | null) {
+    if (!(li instanceof HTMLElement)) return;
+    const prev = li.previousElementSibling as HTMLElement | null;
+    const cont = !!prev && prev.dataset.from === li.dataset.from && Number(li.dataset.at) - Number(prev.dataset.at) < GROUP_MS;
+    li.classList.toggle("is-cont", cont);
+  }
+
+  function renderEmpty() {
+    const none = list.childElementCount === 0;
+    empty.hidden = !none || state.mode === "off";
+    if (!none) return;
+    if (opts.moderate) {
+      emptyTitle.textContent = "Sin mensajes todavía";
+      emptyText.textContent = "Lo que escriba el público aparecerá aquí.";
+    } else {
+      emptyTitle.textContent = "Sin mensajes todavía";
+      emptyText.textContent = state.paused ? "El chat está en pausa." : "Escribe el primero.";
+    }
+  }
 
   return {
     el,
@@ -69,32 +118,46 @@ export function createChatPanel(opts: ChatPanelOptions) {
       const canText = state.mode === "text" || state.mode === "mixed";
       const canSticker = (state.mode === "sticker" || state.mode === "mixed") && !!opts.stickersEnabled;
       el.dataset.mode = state.mode;
+      el.toggleAttribute("data-paused", state.paused);
       // The presenter (moderator) reads how to act; the audience reads what happened.
       const off = opts.moderate ? "Chat cerrado. Ábrelo desde ⚙ para que el público escriba." : MODE_COPY.off;
       const paused = opts.moderate ? "Chat en pausa: el público no puede escribir." : "El ponente pausó el chat.";
       status.textContent = state.mode === "off" ? off : state.paused ? paused : "";
       status.hidden = !status.textContent;
+      modeLine.textContent = state.mode === "off" ? "Cerrado" : state.paused ? "En pausa" : MODE_COPY[state.mode];
       const writable = !!opts.onSend && state.mode !== "off" && !state.paused;
       form.hidden = !writable;
       input.hidden = !canText;
       send.hidden = !canText;
       stickerBtn.hidden = !canSticker;
+      renderEmpty();
     },
     setHistory(messages: ChatMessage[]) {
       list.replaceChildren(...messages.map(render));
-      list.scrollTop = list.scrollHeight;
+      for (const li of list.children) regroup(li);
+      renderEmpty();
+      toEnd();
     },
     add(m: ChatMessage) {
-      const stick = nearBottom();
-      list.append(render(m));
-      while (list.childElementCount > 100) list.firstElementChild?.remove();
-      if (stick) list.scrollTop = list.scrollHeight;
+      const stick = nearBottom() || m.from === opts.myId;
+      const li = render(m);
+      list.append(li);
+      regroup(li);
+      while (list.childElementCount > 100) {
+        list.firstElementChild?.remove();
+        regroup(list.firstElementChild);
+      }
+      renderEmpty();
+      if (stick) toEnd();
+      else jump.hidden = false;
     },
-    scrollToEnd() {
-      list.scrollTop = list.scrollHeight;
-    },
+    scrollToEnd: toEnd,
     remove(id: string) {
-      list.querySelector(`[data-id="${CSS.escape(id)}"]`)?.remove();
+      const li = list.querySelector(`[data-id="${CSS.escape(id)}"]`);
+      const next = li?.nextElementSibling ?? null;
+      li?.remove();
+      regroup(next);
+      renderEmpty();
     },
     error(message: string) {
       error.textContent = message;

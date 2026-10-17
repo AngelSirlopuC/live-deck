@@ -183,7 +183,7 @@ A warm, low-light desk palette where three backlit signal colors each carry exac
 - **Recessed Well** (well): the darkest inset surface: lamp housing, switch tray, inputs, meters, vote and reaction keycaps, quiz bar tracks, code blocks.
 - **Studio Black** (bg): page background and the top and transport bars.
 - **Desk Charcoal** (desk): the audience app, console, and remote body.
-- **Console Panel** (panel): cards, notes, sheets, chat messages, leaderboard rows; the lower stop of the key gradient.
+- **Console Panel** (panel): cards, notes, sheets, leaderboard rows; the lower stop of the key gradient.
 - **Raised Panel** (panel-hi): the upper stop of the key gradient and pressed reaction keys.
 - **Seam** (seam): every 1px border, divider, and scrollbar thumb.
 - **Engraved Cream** (text): primary text, and the light card behind QR codes.
@@ -275,7 +275,7 @@ A well-housed status pill (6px) with a 9px LED and an Oswald caps label. **Off:*
 - **Label:** a legend above, with an optional muted hint.
 
 ### Cards / Containers
-- **Corner Style:** 10px for desk cards (quiz, audience, notes, chat messages), 12px for waiting-room cards, 16px end panel.
+- **Corner Style:** 10px for desk cards (quiz, audience, notes) and chat message highlights, 12px for waiting-room cards, 16px end panel.
 - **Background:** Console Panel; meters and code blocks use the Recessed Well.
 - **Shadow Strategy:** flat; see The Physical Desk Rule.
 - **Border:** 1px seam; "mine" and current-user rows switch the border to Amber Bezel.
@@ -286,6 +286,9 @@ The audience's quiz answers as physical keys: 56px, 12px corners, a 40px Well ke
 
 ### Monitors
 Program and next-slide monitors on the console: legend label above, 16:9 host with 10px corners and a seam border. Program carries the red tally ring, next carries the green tally ring.
+
+### Chat Log
+The chat is a running log, not a stack of cards. Each message is a borderless row: amber sender name, JetBrains Mono 24-hour time (0.72rem, muted), body text below. Follow-up messages from the same sender within three minutes drop the name line and read as one turn. The viewer's own turn reads "Tú" on an amber wash (amber at 9% over the panel), never an amber border. The list fades under the header with a mask instead of clipping. Presenter moderation is a pair of 32px icon keys (trash, mute) on a lifted chip at the message's top-right, shown on hover or focus on pointer devices and always on touch; hover tints them Fault Red. Empty and closed states are centered notes; a closed audience chat shrinks its sheet to fit. A "Mensajes nuevos" amber pill appears when a message arrives while the reader is scrolled up.
 
 ### Sheets
 Bottom sheets on phones (centered from 700px): 18px corners, Console Panel, Bricolage headline, muted copy, a row of flexible keys, and an icon close key top right. Enter by sliding 24px up over 280ms.
