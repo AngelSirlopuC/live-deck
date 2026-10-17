@@ -1,4 +1,5 @@
 import type { QuizView } from "../../../shared/protocol.ts";
+import { rankOptions } from "../../../shared/ranking.ts";
 
 export interface QuizOverlayOptions {
   /** This viewer's own vote, highlighted on the slide. */
@@ -27,19 +28,44 @@ export function applyQuizView(stage: HTMLElement, view: QuizView | null, opts: Q
   const quiz = stage.querySelector<HTMLElement>(".quiz");
   if (!quiz) return;
   quiz.dataset.status = view?.status ?? "idle";
-  const max = view?.counts ? Math.max(0, ...view.counts) : 0;
-  for (const item of quiz.querySelectorAll<HTMLElement>("[data-option-index]")) {
+  const items = [...quiz.querySelectorAll<HTMLElement>("[data-option-index]")];
+  const counts = view?.counts ?? null;
+  const ranking = !!counts && quiz.dataset.results !== "grid";
+  const ranks = counts ? rankOptions(counts) : [];
+  const anyVotes = !!counts && counts.some((c) => c > 0);
+
+  // Remember where items were so a re-order can glide instead of jump.
+  const before = ranking && quiz.isConnected ? new Map(items.map((el) => [el, el.getBoundingClientRect().top])) : null;
+  quiz.dataset.view = ranking ? "ranking" : "grid";
+
+  for (const item of items) {
     const i = Number(item.dataset.optionIndex);
-    const count = view?.counts?.[i];
+    const count = counts?.[i];
     const share = count !== undefined && view && view.total > 0 ? count / view.total : 0;
+    const position = ranks.findIndex((r) => r.index === i);
+    const rank = ranks[position]?.rank;
     item.style.setProperty("--share", String(share));
+    item.style.order = ranking ? String(position + 1) : "";
     item.querySelector(".quiz-count")!.textContent = count !== undefined ? `${Math.round(share * 100)}%` : "";
+    item.querySelector(".quiz-rank")!.textContent = ranking && rank ? `${rank}º` : "";
     const revealed = view?.status === "revealed";
     item.classList.toggle("is-correct", revealed && view?.correctIndex === i);
     item.classList.toggle("is-wrong", revealed && view?.correctIndex !== i);
     item.classList.toggle("is-answer", !revealed && !!opts.presenter && view?.correctIndex === i);
-    item.classList.toggle("is-leading", count !== undefined && count > 0 && count === max);
+    item.classList.toggle("is-first", anyVotes && rank === 1);
+    item.classList.toggle("is-leading", anyVotes && rank === 1);
     item.classList.toggle("is-mine", opts.myVote === i);
   }
   quiz.querySelector(".quiz-status")!.textContent = view ? quizStatusText(view, opts.clockOffset) : "";
+
+  if (before) {
+    for (const item of items) {
+      const from = before.get(item)!;
+      const to = item.getBoundingClientRect().top;
+      const scale = item.getBoundingClientRect().height / (item.offsetHeight || 1) || 1;
+      const dy = (from - to) / scale;
+      if (Math.abs(dy) < 1) continue;
+      item.animate?.([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], { duration: 450, easing: "cubic-bezier(0.16, 1, 0.3, 1)" });
+    }
+  }
 }

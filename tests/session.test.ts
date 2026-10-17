@@ -143,11 +143,17 @@ describe("audience identity", () => {
     const a = s.join({ name: "A" });
     s.audienceConnected(a.id);
     s.audienceConnected(a.id);
-    expect(s.snapshot().audienceCount).toBe(1);
+    expect(s.snapshot("presenter").audienceCount).toBe(1);
     s.audienceDisconnected(a.id);
-    expect(s.snapshot().audienceCount).toBe(1);
+    expect(s.snapshot("presenter").audienceCount).toBe(1);
     s.audienceDisconnected(a.id);
-    expect(s.snapshot().audienceCount).toBe(0);
+    expect(s.snapshot("presenter").audienceCount).toBe(0);
+  });
+
+  it("keeps the audience size for the presenter only", () => {
+    const s = make();
+    s.audienceConnected(s.join({ name: "A" }).id);
+    expect(s.snapshot("audience").audienceCount).toBeNull();
   });
 });
 

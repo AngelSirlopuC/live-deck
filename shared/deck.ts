@@ -66,6 +66,8 @@ export const QuizSchema = z
     // live: votes visible while voting; secret: hidden until the presenter reveals.
     display: z.enum(["live", "secret"]),
     timerSec: z.number().int().min(5).max(600).optional(),
+    // How visible results are shown: options re-ordered by votes (default) or the fixed A-F grid.
+    results: z.enum(["ranking", "grid"]).optional(),
   })
   .strict()
   .refine((q) => q.correctIndex < q.options.length, { message: "correctIndex must point to an option", path: ["correctIndex"] });

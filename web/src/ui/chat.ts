@@ -13,7 +13,7 @@ export interface ChatPanelOptions {
 }
 
 const MODE_COPY: Record<ChatMode, string> = {
-  off: "El chat está cerrado.",
+  off: "El ponente todavía no abrió el chat.",
   text: "Chat de texto",
   sticker: "Chat de stickers",
   mixed: "Chat de texto y stickers",
@@ -79,6 +79,9 @@ export function createChatPanel(opts: ChatPanelOptions) {
       list.append(render(m));
       while (list.childElementCount > 100) list.firstElementChild?.remove();
       if (stick) list.scrollTop = list.scrollHeight;
+    },
+    scrollToEnd() {
+      list.scrollTop = list.scrollHeight;
     },
     remove(id: string) {
       list.querySelector(`[data-id="${CSS.escape(id)}"]`)?.remove();

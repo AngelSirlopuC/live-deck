@@ -7,7 +7,7 @@ import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
-import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
+import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
 import { createChatPanel } from "../ui/chat.ts";
 import { createQuizPanel, createScorePanel, optionFromKey } from "../ui/quiz-panel.ts";
@@ -127,10 +127,10 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   // Shell -------------------------------------------------------------------
   const lamp = h("span", { class: "lamp", "data-state": "standby" }, "Conectando");
   const title = h("span", { class: "aud-title" });
-  const count = h("span", { class: "aud-count", "aria-label": "Personas conectadas" });
+  const chatBtn = trusted("button", { type: "button", class: "key key-icon chat-btn", "aria-label": "Abrir chat" }, `${icon("chat")}<span class="badge" hidden></span>`);
   const shareBtn = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Compartir sesión" }, icon("share"));
   const fullBtn = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Pantalla completa", "aria-pressed": "false" }, icon("expand"));
-  const bar = h("header", { class: "aud-bar" }, lamp, title, count, fullBtn, shareBtn);
+  const bar = h("header", { class: "aud-bar" }, lamp, title, chatBtn, fullBtn, shareBtn);
 
   const stageHost = h("div", { class: "aud-stage-host" });
   const notice = h("div", { class: "aud-notice", role: "status", "aria-live": "polite" });
@@ -171,8 +171,30 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       return me?.id;
     },
   });
-  const idle = h("p", { class: "aud-idle" }, "Cuando el ponente abra el chat o haga una pregunta, aparecerá aquí.");
-  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, who, banner, quizPanel.el, scorePanel.el, chat.el, idle);
+  const idle = h("p", { class: "aud-idle" }, "Cuando el ponente haga una pregunta, aparecerá aquí. Para conversar, usa el botón de chat.");
+  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, who, banner, quizPanel.el, scorePanel.el, idle);
+
+  // Chat lives in its own sheet, always one tap away from the header.
+  const chatClose = trusted("button", { type: "button", class: "key key-icon sheet-close", "aria-label": "Cerrar chat" }, icon("close"));
+  const chatSheet = h("dialog", { class: "sheet chat-sheet", "aria-label": "Chat" }, chatClose, chat.el);
+  document.body.append(chatSheet);
+  const badge = chatBtn.querySelector<HTMLElement>(".badge")!;
+  let unread = 0;
+  const setUnread = (n: number) => {
+    unread = n;
+    badge.hidden = n === 0;
+    badge.textContent = n > 9 ? "9+" : String(n);
+    chatBtn.setAttribute("aria-label", n ? `Abrir chat, ${n} mensajes nuevos` : "Abrir chat");
+  };
+  chatBtn.addEventListener("click", () => {
+    chatSheet.showModal();
+    setUnread(0);
+    chat.scrollToEnd();
+  });
+  chatClose.addEventListener("click", () => chatSheet.close());
+  chatSheet.addEventListener("click", (e) => {
+    if (e.target === chatSheet) chatSheet.close();
+  });
 
   const waiting = h("section", { class: "aud-waiting", hidden: true });
   const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, waiting);
@@ -211,7 +233,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     const qs = quizPanel.state;
     const el = e.target as HTMLElement | null;
     if (!qs || qs.readOnly || qs.view?.status !== "open" || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    if (el && isTextEntry(el)) return;
     const option = optionFromKey(e.key, qs.quiz.options.length);
     if (option === null) return;
     e.preventDefault();
@@ -261,7 +283,6 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     shell.dataset.mode = mode;
     shell.dataset.status = waitingNow ? "waiting" : "live";
     title.textContent = deck.title;
-    count.textContent = String(state.audienceCount);
     who.textContent = `Participas como ${me.name}`;
 
     const onAir = !waitingNow && mode === "live" && state.presenterOnline && !unlockedAll;
@@ -296,8 +317,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       shown.quiz ? { slideId: shown.id, quiz: shown.quiz, view: quizView, myVote, readOnly: unlockedAll || state.abandoned, clockOffset } : null,
     );
     scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
-    chat.el.hidden = state.chat.mode === "off";
-    idle.hidden = !chat.el.hidden || !quizPanel.el.hidden || !scorePanel.el.hidden;
+    idle.hidden = !quizPanel.el.hidden || !scorePanel.el.hidden;
+    chatBtn.classList.toggle("is-live", state.chat.mode !== "off" && !state.chat.paused);
     chat.setState(state.chat);
     reactionBar.setEnabled(state.status === "live");
     const lim = limit();
@@ -417,6 +438,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
         }
         case "chat":
           chat.add(msg.message);
+          if (!chatSheet.open && msg.message.from !== me?.id) setUnread(unread + 1);
           break;
         case "chat-delete":
           chat.remove(msg.id);

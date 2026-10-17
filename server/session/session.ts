@@ -104,7 +104,7 @@ export class Session {
       highWater: { ...this.highWater },
       presenterOnline: this.presenterSockets > 0,
       abandoned: this.abandoned,
-      audienceCount: this.audienceSockets.size,
+      audienceCount: role === "presenter" ? this.audienceSockets.size : null,
       effect: this.effect,
       quizzes: this.quizzes.views(role),
       showScore: this.showScore,

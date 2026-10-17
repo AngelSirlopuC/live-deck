@@ -6,11 +6,19 @@ export interface NavHandlers {
 const NEXT_KEYS = new Set(["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"]);
 const PREV_KEYS = new Set(["ArrowLeft", "ArrowUp", "PageUp", "Backspace"]);
 
-/** Keyboard and presentation-clicker navigation. Ignores typing in form fields. */
+const NON_TEXT_INPUTS = new Set(["checkbox", "radio", "button", "submit", "reset", "range", "color", "file"]);
+
+/** True for fields where arrow keys and Backspace edit text. */
+export function isTextEntry(el: HTMLElement): boolean {
+  if (el.isContentEditable || el.tagName === "TEXTAREA" || el.tagName === "SELECT") return true;
+  return el.tagName === "INPUT" && !NON_TEXT_INPUTS.has((el as HTMLInputElement).type);
+}
+
+/** Keyboard and presentation-clicker navigation. Ignores typing in text fields. */
 export function bindDeckKeys(target: Window, nav: NavHandlers): () => void {
   const onKey = (e: KeyboardEvent) => {
     const el = e.target as HTMLElement | null;
-    if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+    if (el && isTextEntry(el)) return;
     // A focused button handles its own activation keys; arrows still navigate.
     if (el && /^(BUTTON|A|SUMMARY)$/.test(el.tagName) && (e.key === "Enter" || e.key === " ")) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -27,12 +35,12 @@ export function bindDeckKeys(target: Window, nav: NavHandlers): () => void {
 }
 
 /** Horizontal swipe navigation for touch screens. */
-export function bindSwipe(el: HTMLElement, nav: NavHandlers, threshold = 40, rotated: () => boolean = () => false): () => void {
+export function bindSwipe(el: HTMLElement, nav: NavHandlers, threshold = 40, rotated: () => boolean = () => false, enabled: () => boolean = () => true): () => void {
   let startX = 0;
   let startY = 0;
   let tracking = false;
   const down = (e: PointerEvent) => {
-    if (e.pointerType !== "touch") return;
+    if (e.pointerType !== "touch" || !enabled()) return;
     tracking = true;
     startX = e.clientX;
     startY = e.clientY;

@@ -78,6 +78,7 @@ Renders the session join QR and URL at runtime. No payload.
 | `correctIndex` | integer | 0-based, must be < options length. Exactly one correct answer. |
 | `display` | `"live"` \| `"secret"` | live: votes visible while voting. secret: hidden until the presenter reveals. |
 | `timerSec` | integer | Optional, 5–600. |
+| `results` | `"ranking"` \| `"grid"` | Optional. How visible results show: `"ranking"` (default) re-orders options by votes and highlights first place; `"grid"` keeps the fixed A–F layout. |
 
 The answer and notes are stripped before the deck reaches the audience.
 

@@ -1,5 +1,6 @@
 import type { PublicQuiz } from "../../../shared/deck-core.ts";
 import type { LeaderboardRow, PersonalState, QuizView } from "../../../shared/protocol.ts";
+import { rankOptions } from "../../../shared/ranking.ts";
 import { quizStatusText } from "../render/quiz-overlay.ts";
 import { h } from "./dom.ts";
 
@@ -50,7 +51,10 @@ export function createQuizPanel(onVote: (slideId: string, option: number) => voi
         }),
       );
     }
+    const ranks = view?.counts ? rankOptions(view.counts) : [];
+    const leaderVotes = ranks[0]?.count ?? 0;
     list.querySelectorAll<HTMLButtonElement>(".vote").forEach((b, i) => {
+      b.classList.toggle("is-first", leaderVotes > 0 && view?.counts?.[i] === leaderVotes);
       b.disabled = !open;
       b.setAttribute("aria-pressed", String(myVote === i));
       const revealed = view?.status === "revealed";
@@ -104,10 +108,16 @@ export function createScorePanel() {
   return {
     el,
     update(showScore: boolean, me: PersonalState | null, rows: LeaderboardRow[] | null, myName: string) {
-      el.hidden = !showScore || !rows || rows.length === 0;
+      el.hidden = !showScore;
       if (el.hidden) return;
       const s = me?.score;
-      mine.textContent = s && s.answered ? `Tus aciertos: ${s.correct} de ${s.answered}${me?.rank ? ` · Puesto ${me.rank.rank} de ${me.rank.of}` : ""}` : "Responde un quiz para entrar al ranking.";
+      mine.textContent =
+        s && s.answered
+          ? `Tus aciertos: ${s.correct} de ${s.answered}${me?.rank ? ` · Puesto ${me.rank.rank} de ${me.rank.of}` : ""}`
+          : rows && rows.length
+            ? "Responde la próxima pregunta para entrar al ranking."
+            : "El ranking aparece cuando el ponente revele la primera respuesta.";
+      board.hidden = !rows || rows.length === 0;
       board.replaceChildren(
         ...rows!.map((r) =>
           h("li", { class: r.name === myName ? "is-me" : "" }, h("span", { class: "lb-rank" }, String(r.rank)), h("span", { class: "lb-name" }, r.name), h("span", { class: "lb-score" }, `${r.correct}/${r.answered}`)),

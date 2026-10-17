@@ -140,6 +140,8 @@ function renderQuiz(slide: PublicSlide): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "quiz";
   wrap.dataset.optionCount = String(quiz.options.length);
+  wrap.dataset.results = quiz.results ?? "ranking";
+  wrap.dataset.view = "grid";
 
   const question = document.createElement("h2");
   question.className = "quiz-question";
@@ -161,7 +163,9 @@ function renderQuiz(slide: PublicSlide): HTMLElement {
     bar.className = "quiz-bar";
     const count = document.createElement("span");
     count.className = "quiz-count";
-    item.append(bar, key, text, count);
+    const rank = document.createElement("span");
+    rank.className = "quiz-rank";
+    item.append(bar, rank, key, text, count);
     list.append(item);
   });
 

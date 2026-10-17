@@ -4,6 +4,15 @@ import type { StageView } from "../render/stage-view.ts";
 
 export type EffectTool = "ripple" | "focus" | "zoom";
 
+/**
+ * Pressing a tool's key or button: selects it; pressed again it toggles off,
+ * removing its effect when that effect is on screen.
+ */
+export function pressTool(current: EffectTool, pressed: EffectTool, active: PersistentEffect["kind"] | null): { tool: EffectTool; clear: boolean } {
+  if (pressed !== current || pressed === "ripple") return { tool: pressed, clear: false };
+  return { tool: "ripple", clear: active === pressed };
+}
+
 const DRAG_MIN_PX = 8;
 
 /**
@@ -51,7 +60,8 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
     const p = view.toSlidePoint(e.clientX, e.clientY);
 
     if (tool === "ripple") {
-      if (p) send({ t: "ripple", x: p.x, y: p.y });
+      // A swipe is navigation, not a pointer tap.
+      if (p && Math.hypot(e.clientX - s.cx, e.clientY - s.cy) < DRAG_MIN_PX * 2) send({ t: "ripple", x: p.x, y: p.y });
       return;
     }
     if (dragged && p) {

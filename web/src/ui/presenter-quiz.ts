@@ -1,5 +1,6 @@
 import type { Deck } from "../../../shared/deck.ts";
 import type { PresenterCommand, SessionSnapshot } from "../../../shared/protocol.ts";
+import { rankOptions } from "../../../shared/ranking.ts";
 import { quizStatusText } from "../render/quiz-overlay.ts";
 import { h } from "./dom.ts";
 import { OPTION_KEYS } from "./quiz-panel.ts";
@@ -34,11 +35,14 @@ export function createPresenterQuiz(deck: Deck, send: (cmd: PresenterCommand) =>
       quizBox.hidden = !slide.quiz;
       if (slide.quiz) {
         status.textContent = view ? quizStatusText(view, clockOffset) : "La votación se abre al iniciar.";
+        const ranked = rankOptions(slide.quiz.options.map((_, i) => view?.counts?.[i] ?? 0));
+        const lead = ranked[0]?.count ?? 0;
         bars.replaceChildren(
-          ...slide.quiz.options.map((label, i) => {
-            const count = view?.counts?.[i] ?? 0;
+          ...ranked.map(({ index: i, count, rank }) => {
+            const label = slide.quiz!.options[i]!;
             const share = view && view.total ? count / view.total : 0;
-            const li = h("li", { class: i === slide.quiz!.correctIndex ? "is-answer" : "" }, h("span", { class: "pq-key" }, OPTION_KEYS[i]!), h("span", { class: "pq-label" }, label), h("span", { class: "pq-count" }, String(count)));
+            const cls = [i === slide.quiz!.correctIndex ? "is-answer" : "", lead > 0 && count === lead ? "is-first" : ""].join(" ").trim();
+            const li = h("li", { class: cls }, h("span", { class: "pq-key" }, lead > 0 ? `${rank}º` : OPTION_KEYS[i]!), h("span", { class: "pq-label" }, `${OPTION_KEYS[i]} · ${label}`), h("span", { class: "pq-count" }, String(count)));
             li.style.setProperty("--share", String(share));
             return li;
           }),

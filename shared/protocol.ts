@@ -35,7 +35,8 @@ export interface SessionSnapshot {
   presenterOnline: boolean;
   /** Presenter has been gone for ABANDON_AFTER_MS; audience may unlock the whole deck. */
   abandoned: boolean;
-  audienceCount: number;
+  /** Connected audience members; null for the audience (presenter-only information). */
+  audienceCount: number | null;
   /** Focus or zoom the presenter is holding on the current slide. */
   effect: PersistentEffect | null;
   /** Every quiz opened so far, keyed by slide id, as this viewer may see it. */

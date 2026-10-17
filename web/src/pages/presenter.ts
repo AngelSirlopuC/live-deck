@@ -5,10 +5,10 @@ import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
-import { bindEffectTools, type EffectTool } from "../ui/effect-tools.ts";
-import { bindDeckKeys, bindSwipe } from "../ui/input.ts";
+import { bindEffectTools, pressTool, type EffectTool } from "../ui/effect-tools.ts";
+import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
-import { createPresenterAudience } from "../ui/presenter-audience.ts";
+import { createPresenterAudience, createPresenterChat } from "../ui/presenter-audience.ts";
 import { createPresenterQuiz } from "../ui/presenter-quiz.ts";
 import { createReactionCounter, floatReactions } from "../ui/reactions.ts";
 import type { ChatMessage, SessionSummary } from "../../../shared/protocol.ts";
@@ -209,7 +209,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   screenBtn.addEventListener("click", () => window.open(`/p/${token}/screen`, "live-deck-screen", "noopener"));
   remoteBtn.addEventListener("click", () => openRemoteSheet(`${ctx.baseUrl}/p/${token}/remote`));
 
-  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), qrBtn, screenBtn, remoteBtn);
+  const chatUi = createPresenterChat(ctx.send);
+  const presentBtn = trusted("button", { type: "button", class: "key key-primary" }, `${icon("expand")}<span>Modo presentación</span>`);
+  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), presentBtn, chatUi.button, qrBtn, screenBtn, remoteBtn);
 
   const programHost = h("div", { class: "monitor-host" });
   const nextHost = h("div", { class: "monitor-host" });
@@ -222,7 +224,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     ] as const
   ).map(([id, label, kbd]) => {
     const b = h("button", { type: "button", class: "key", "data-tool": id, "aria-pressed": String(id === tool), "aria-keyshortcuts": kbd }, label, " ", h("kbd", {}, kbd));
-    b.addEventListener("click", () => setTool(id));
+    b.addEventListener("click", () => press(id));
     return b;
   });
   const clearFx = h("button", { type: "button", class: "key key-ghost", "aria-keyshortcuts": "Escape" }, "Quitar efecto ", h("kbd", {}, "Esc"));
@@ -231,20 +233,34 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     tool = t;
     for (const b of toolKeys) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
   };
+  // Pressing the selected tool again turns it off and removes its effect.
+  const press = (t: EffectTool) => {
+    const next = pressTool(tool, t, ctx.state.effect?.kind ?? null);
+    if (next.clear) ctx.send({ t: "effect", effect: null });
+    setTool(next.tool);
+  };
   window.addEventListener("keydown", (e) => {
     const el = e.target as HTMLElement | null;
-    if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    if (el && isTextEntry(el)) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    if (k === "r") setTool("ripple");
-    else if (k === "f") setTool("focus");
-    else if (k === "z") setTool("zoom");
+    if (k === "r") press("ripple");
+    else if (k === "f") press("focus");
+    else if (k === "z") press("zoom");
     else if (e.key === "Escape" && !document.querySelector("dialog[open]")) ctx.send({ t: "effect", effect: null });
   });
+  // Shown only in presentation mode: the slide fills the screen and this bar
+  // floats over it while the mouse moves.
+  const presentPrev = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Anterior" }, icon("prev"));
+  const presentNext = trusted("button", { type: "button", class: "key key-icon key-primary", "aria-label": "Siguiente" }, icon("next"));
+  const presentExit = trusted("button", { type: "button", class: "key", "aria-label": "Salir del modo presentación" }, `${icon("shrink")}<span>Salir</span>`);
+  presentPrev.addEventListener("click", () => ctx.send({ t: "prev" }));
+  presentNext.addEventListener("click", () => ctx.send({ t: "next" }));
+  const presentNav = h("div", { class: "present-nav" }, presentPrev, presentNext);
   const program = h(
     "section",
     { class: "monitor monitor-program", "aria-label": "Diapositiva actual" },
-    h("div", { class: "monitor-head" }, h("span", { class: "monitor-label" }, "Programa"), h("div", { class: "fx-tools", role: "toolbar", "aria-label": "Efectos en vivo" }, ...toolKeys, clearFx)),
+    h("div", { class: "monitor-head" }, h("span", { class: "monitor-label" }, "Programa"), presentNav, h("div", { class: "fx-tools", role: "toolbar", "aria-label": "Efectos en vivo" }, ...toolKeys, clearFx), presentExit),
     programHost,
   );
   const nextMon = h("section", { class: "monitor monitor-next", "aria-label": "Siguiente" }, h("span", { class: "monitor-label" }, "Siguiente"), nextHost);
@@ -269,7 +285,36 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const transport = h("footer", { class: "console-transport" }, actions.start, prev, next, h("span", { class: "spacer" }), actions.restrict, h("span", { class: "transport-gap" }), actions.end);
 
   const body = h("div", { class: "console-body" }, h("div", { class: "console-main" }, program, desk), side);
-  root.replaceChildren(h("main", { class: "console" }, header, body, transport));
+  const consoleEl = h("main", { class: "console" }, header, body, transport);
+  root.replaceChildren(consoleEl);
+
+  // Presentation mode: same tab, slide fullscreen, presenter keeps every control.
+  let presenting = false;
+  let idleTimer: number | undefined;
+  const wake = () => {
+    if (!presenting) return;
+    consoleEl.classList.add("controls-visible");
+    clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(() => consoleEl.classList.remove("controls-visible"), 2500);
+  };
+  const setPresenting = (on: boolean) => {
+    presenting = on;
+    consoleEl.classList.toggle("is-presenting", on);
+    if (on) {
+      void document.documentElement.requestFullscreen?.().catch(() => {});
+      wake();
+    } else {
+      consoleEl.classList.remove("controls-visible");
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    }
+    window.dispatchEvent(new Event("resize"));
+  };
+  presentBtn.addEventListener("click", () => setPresenting(true));
+  presentExit.addEventListener("click", () => setPresenting(false));
+  document.addEventListener("fullscreenchange", () => {
+    if (presenting && !document.fullscreenElement) setPresenting(false);
+  });
+  window.addEventListener("pointermove", wake);
   let endPanel: ReturnType<typeof createEndPanel> | null = null;
 
   const assetBase = `/decks/${ctx.deckId}/`;
@@ -298,9 +343,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       if (ctx.state.presenterView.showReactionCounter) pa.counter.update(totals);
     },
     chat(op: "add" | "remove" | "history", arg: unknown) {
-      if (op === "add") pa.chat.add(arg as ChatMessage);
-      else if (op === "remove") pa.chat.remove(arg as string);
-      else pa.chat.setHistory(arg as ChatMessage[]);
+      if (op === "add") chatUi.add(arg as ChatMessage);
+      else if (op === "remove") chatUi.remove(arg as string);
+      else chatUi.history(arg as ChatMessage[]);
     },
     update(s) {
       if (s.status === "ended" && !endPanel) {
@@ -314,6 +359,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
         ctx.send({ t: "summary" });
       }
       pa.update(s);
+      chatUi.update(s);
       const l = lampFor(s);
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
@@ -370,7 +416,8 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
   const counter = createReactionCounter();
   counter.el.classList.add("screen-counter");
   counter.update(null);
-  root.replaceChildren(h("main", { class: "screen" }, host, floaters, counter.el, hint));
+  const board = h("section", { class: "screen-board", "aria-label": "Ranking", hidden: true }, h("h2", { class: "legend" }, "Ranking"), h("ol", { class: "leaderboard" }));
+  root.replaceChildren(h("main", { class: "screen" }, host, floaters, counter.el, board, hint));
   const view = new StageView(host, ctx.deck, { assetBase: `/decks/${ctx.deckId}/`, joinUrl: ctx.joinUrl });
   void qrSvg(ctx.joinUrl).then((svg) => view.setOptions({ qrSvg: svg }));
 
@@ -405,6 +452,15 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
     },
     update(s) {
       if (!s.presenterView.showReactionCounter) counter.update(null);
+      // Public leaderboard on revealed quiz slides, only when the presenter shows scores.
+      const slideId = ctx.deck.slides[s.position.slide]!.id;
+      const rows = (s.leaderboard ?? []).slice(0, 5);
+      board.hidden = !s.showScore || s.quizzes[slideId]?.status !== "revealed" || rows.length === 0;
+      if (!board.hidden) {
+        board.querySelector("ol")!.replaceChildren(
+          ...rows.map((r) => h("li", {}, h("span", { class: "lb-rank" }, String(r.rank)), h("span", { class: "lb-name" }, r.name), h("span", { class: "lb-score" }, `${r.correct}/${r.answered}`))),
+        );
+      }
       view.show(s.position);
       view.setEffect(s.effect);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { clockOffset: ctx.clockOffset });
@@ -427,6 +483,25 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   next.addEventListener("click", () => ctx.send({ t: "next" }));
   const actions = sessionActions(ctx);
   const rq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: false });
+  let rtool: EffectTool = "ripple";
+  const rtools = (
+    [
+      ["ripple", "Señalar"],
+      ["focus", "Enfocar"],
+      ["zoom", "Zoom"],
+    ] as const
+  ).map(([id, label]) => {
+    const b = h("button", { type: "button", class: "key", "data-tool": id, "aria-pressed": String(id === rtool) }, label);
+    b.addEventListener("click", () => {
+      const next = pressTool(rtool, id, ctx.state.effect?.kind ?? null);
+      if (next.clear) ctx.send({ t: "effect", effect: null });
+      rtool = next.tool;
+      for (const k of rtools) k.setAttribute("aria-pressed", String(k.dataset.tool === rtool));
+    });
+    return b;
+  });
+  const rclear = h("button", { type: "button", class: "key key-ghost" }, "Quitar");
+  rclear.addEventListener("click", () => ctx.send({ t: "effect", effect: null }));
 
   root.replaceChildren(
     h(
@@ -434,18 +509,16 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       { class: "remote" },
       h("header", { class: "aud-bar" }, lamp, slideNo, h("span", { class: "spacer" }), timer),
       host,
+      h("div", { class: "fx-tools remote-tools", role: "toolbar", "aria-label": "Efectos" }, ...rtools, rclear),
       h("div", { class: "remote-middle" }, rq.quizEl, notes),
       h("div", { class: "remote-transport" }, prev, next),
       h("div", { class: "remote-actions" }, actions.start, actions.restrict, actions.end),
     ),
   );
   const view = new StageView(host, ctx.deck, { assetBase: `/decks/${ctx.deckId}/`, joinUrl: ctx.joinUrl });
-  bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
-  // Tap on the preview pulses a ripple on every screen.
-  host.addEventListener("click", (e) => {
-    const p = view.toSlidePoint(e.clientX, e.clientY);
-    if (p && ctx.state.status === "live") ctx.send({ t: "ripple", x: p.x, y: p.y });
-  });
+  // Swipe changes slides with the pointer tool; taps place the selected effect.
+  bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) }, 40, () => false, () => rtool === "ripple");
+  bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effect);
   setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
 
   return {
@@ -457,6 +530,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
       view.show(s.position);
       view.setEffect(s.effect);
+      view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       rq.update(s, ctx.clockOffset);
       notes.textContent = ctx.deck.slides[s.position.slide]?.notes ?? "Sin notas.";
       prev.disabled = s.status !== "live";

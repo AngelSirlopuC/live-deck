@@ -163,7 +163,8 @@ describe("realtime session", () => {
     p.send({ t: "next" });
     p.send({ t: "next" });
     const st = await a.waitFor((m) => m.t === "state" && m.state.position.slide === 1 && m.state.position.step === 1);
-    expect(st).toMatchObject({ state: { status: "live", highWater: { slide: 1, step: 1 }, presenterOnline: true, audienceCount: 1 } });
+    expect(st).toMatchObject({ state: { status: "live", highWater: { slide: 1, step: 1 }, presenterOnline: true, audienceCount: null } });
+    expect(await p.waitFor((m) => m.t === "state" && m.state.audienceCount === 1)).toBeTruthy();
   });
 
   it("resumes the same identity after a reconnect", async () => {

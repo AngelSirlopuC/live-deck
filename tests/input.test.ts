@@ -63,3 +63,14 @@ describe("swipe", () => {
     expect(nav.prev).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("deck keys with switches", () => {
+  it("keeps navigating when a checkbox switch has focus", () => {
+    const nav = { next: vi.fn(), prev: vi.fn() };
+    const dispose = bindDeckKeys(window, nav);
+    const box = document.body.appendChild(Object.assign(document.createElement("input"), { type: "checkbox" }));
+    press(box, "ArrowRight");
+    expect(nav.next).toHaveBeenCalledTimes(1);
+    dispose();
+  });
+});

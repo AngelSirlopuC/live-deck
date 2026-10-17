@@ -2101,3 +2101,220 @@ select:focus-visible {
     overflow: hidden;
   }
 }
+
+/* First place in the phone panel and the presenter bars. */
+.vote.is-first:not(.is-correct) {
+  border-color: #c98a2a;
+  box-shadow: 0 0 0 2px rgb(255 181 71 / 0.35), 0 2px 0 #0a0806;
+}
+
+.vote.is-first .vote-share {
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.pq-bars li.is-first {
+  outline: 2px solid var(--amber);
+}
+
+.pq-bars li.is-first .pq-key,
+.pq-bars li.is-first .pq-count {
+  color: var(--amber);
+}
+
+/* Chat entry point */
+.chat-btn {
+  position: relative;
+}
+
+.chat-btn.is-live::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--signal);
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--amber);
+  color: var(--amber-ink);
+  font: 700 0.72rem/20px var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-sheet {
+  display: flex;
+  flex-direction: column;
+  height: min(78dvh, 640px);
+  padding-bottom: 0;
+}
+
+.chat-sheet:not([open]) {
+  display: none;
+}
+
+.chat-sheet .chat {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: auto auto 1fr auto auto;
+  margin: 0;
+}
+
+.chat-sheet .chat-list {
+  min-height: 0;
+  max-height: none;
+}
+
+.chat-sheet .chat-form {
+  position: static;
+  margin: 0 -20px;
+  padding: 10px 20px calc(12px + var(--safe-bottom));
+}
+
+.screen-board {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: min(360px, 30vw);
+  padding: 16px;
+  border-radius: 14px;
+  background: rgb(15 12 9 / 0.88);
+  border: 1px solid var(--seam);
+  display: grid;
+  gap: 10px;
+  font-size: clamp(0.9rem, 1.4vw, 1.2rem);
+}
+
+.screen-board .legend {
+  margin: 0;
+}
+
+.screen-board .leaderboard li:first-child {
+  border-color: #c98a2a;
+  background: color-mix(in srgb, var(--amber) 16%, var(--panel));
+}
+
+/* Presentation mode: slide fullscreen in the console tab, controls float on mouse move. */
+.present-nav,
+.monitor-head > .key {
+  display: none;
+}
+
+.console.is-presenting {
+  background: #000;
+}
+
+.console.is-presenting .console-bar,
+.console.is-presenting .console-transport,
+.console.is-presenting .console-side,
+.console.is-presenting .console-desk,
+.console.is-presenting .monitor-label {
+  display: none;
+}
+
+.console.is-presenting .console-body {
+  padding: 0;
+  grid-template-columns: 1fr;
+}
+
+.console.is-presenting .monitor-program .monitor-host {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.console.is-presenting .monitor-head {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 5;
+  transform: translate(-50%, 12px);
+  padding: 8px;
+  border-radius: 14px;
+  background: rgb(15 12 9 / 0.9);
+  border: 1px solid var(--seam);
+  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.9);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+
+.console.is-presenting.controls-visible .monitor-head {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.console.is-presenting .present-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.console.is-presenting .monitor-head > .key {
+  display: inline-flex;
+  min-height: 40px;
+}
+
+.console.is-presenting:not(.controls-visible),
+.console.is-presenting:not(.controls-visible) * {
+  cursor: none !important;
+}
+
+.remote-tools {
+  padding: 0 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.remote-tools .key {
+  padding: 0 6px;
+}
+
+.remote-tools .key[aria-pressed="true"] {
+  --key-bg: linear-gradient(180deg, #ffc76d, var(--amber));
+  --key-fg: var(--amber-ink);
+  border-color: #c98a2a;
+}
+
+.remote {
+  grid-template-rows: auto auto auto 1fr auto auto;
+}
+
+/* Projector ranking as a compact strip along the bottom edge. */
+.screen-board {
+  bottom: 12px;
+  right: 12px;
+  left: auto;
+  width: auto;
+  max-width: calc(100vw - 24px);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screen-board .leaderboard {
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.screen-board .leaderboard li {
+  grid-template-columns: auto auto auto;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
