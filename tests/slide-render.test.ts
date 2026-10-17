@@ -57,6 +57,7 @@ describe("renderSlide", () => {
     expect(q.textContent).toContain("x.test/s/ABC");
     const placeholder = renderSlide(deck, 0, { step: 0 }).querySelector('[data-element-id="q"]')!;
     expect(placeholder.querySelector("svg")).toBeNull();
+    expect(placeholder.textContent).toContain("El QR aparece al presentar");
   });
 
   it("lays out quiz slides with one option per choice and no answer leak", () => {

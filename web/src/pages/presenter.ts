@@ -56,6 +56,8 @@ interface PresenterContext {
   joinUrl: string;
   state: SessionSnapshot;
   send: (cmd: PresenterCommand) => void;
+  /** Origin phones can reach (LAN address when the console runs on localhost). */
+  baseUrl: string;
   /** serverNow - Date.now() at the last snapshot, for quiz timers. */
   clockOffset: number;
 }
@@ -83,7 +85,7 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
     onMessage: (msg) => {
       if (msg.t === "welcome-presenter") {
         if (!ctx) {
-          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
+          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, baseUrl: msg.baseUrl, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
           document.title = `${msg.deck.title} · ${surface === "screen" ? "pantalla" : surface === "remote" ? "control" : "consola"}`;
           ui = surface === "screen" ? screenUi(root, ctx) : surface === "remote" ? remoteUi(root, ctx, token) : consoleUi(root, ctx, token);
         }
@@ -205,7 +207,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const remoteBtn = trusted("button", { type: "button", class: "key" }, `${icon("phone")}<span>Control móvil</span>`);
   qrBtn.addEventListener("click", () => openShareSheet(ctx.joinUrl, ctx.deck.title));
   screenBtn.addEventListener("click", () => window.open(`/p/${token}/screen`, "live-deck-screen", "noopener"));
-  remoteBtn.addEventListener("click", () => openRemoteSheet(`${location.origin}/p/${token}/remote`));
+  remoteBtn.addEventListener("click", () => openRemoteSheet(`${ctx.baseUrl}/p/${token}/remote`));
 
   const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), qrBtn, screenBtn, remoteBtn);
 

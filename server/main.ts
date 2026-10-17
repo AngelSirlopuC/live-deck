@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { createApp } from "./app.ts";
+import { lanAddress } from "./base-url.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const env = process.env;
@@ -26,7 +27,12 @@ const app = createApp({
 
 const server = createServer(app.handle);
 app.attach(server);
-server.listen(port, host, () => console.log(`live-deck listening on http://${host}:${port}`));
+server.listen(port, host, () => {
+  console.log(`live-deck listening on http://${host}:${port}`);
+  const lan = lanAddress();
+  if (lan && !production) console.log(`On your phone (same Wi-Fi), open the Vite dev server: http://${lan}:5180`);
+  else if (lan) console.log(`On your network: http://${lan}:${port}`);
+});
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {

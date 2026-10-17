@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { publicDeck } from "../shared/deck.ts";
 import { PIN, SESSION_CODE, type CreateSessionResponse, type SessionInfo } from "../shared/protocol.ts";
+import { publicOrigin } from "./base-url.ts";
 import { Giphy } from "./giphy.ts";
 import { WsHub } from "./realtime/ws-hub.ts";
 import { DECK_ID, DeckStore, listDecks } from "./decks.ts";
@@ -25,6 +26,8 @@ export interface AppOptions {
   giphyKey?: string | null;
   /** Injected fetch for the GIPHY client (tests). */
   fetchImpl?: typeof fetch;
+  /** LAN address lookup used to replace localhost in shared links; injectable for tests. */
+  lan?: () => string | null;
 }
 
 export function json(res: ServerResponse, status: number, body: unknown) {
@@ -54,12 +57,9 @@ export function createApp(opts: AppOptions) {
   const decks = new DeckStore(opts.decksDir);
   const registry = new SessionRegistry();
 
-  const baseUrl = (req: IncomingMessage): string => {
-    if (opts.publicBaseUrl) return opts.publicBaseUrl.replace(/\/$/, "");
-    const fwdProto = opts.trustProxy ? String(req.headers["x-forwarded-proto"] ?? "").split(",")[0] : "";
-    const fwdHost = opts.trustProxy ? String(req.headers["x-forwarded-host"] ?? "").split(",")[0] : "";
-    return `${fwdProto || "http"}://${fwdHost || req.headers.host}`;
-  };
+  const baseUrl = (req: IncomingMessage): string =>
+    publicOrigin(req.headers, { publicBaseUrl: opts.publicBaseUrl, trustProxy: opts.trustProxy, ...(opts.lan ? { lan: opts.lan } : {}) });
+
 
   const giphy = opts.giphyKey ? new Giphy(opts.giphyKey, opts.fetchImpl) : null;
   const hub = new WsHub({ registry, now, baseUrl, allowedOrigins: opts.allowedOrigins, giphy, ...(opts.tickMs ? { tickMs: opts.tickMs } : {}) });

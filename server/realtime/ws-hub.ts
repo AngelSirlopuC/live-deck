@@ -180,6 +180,7 @@ export class WsHub {
       deckId: entry.session.deckId,
       code: entry.session.code,
       joinUrl: `${this.opts.baseUrl(req)}/s/${entry.session.code}`,
+      baseUrl: this.opts.baseUrl(req),
       state: entry.session.snapshot(roleOf(client), now),
       features: { stickers: !!this.opts.giphy },
     });

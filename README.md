@@ -28,8 +28,13 @@ npm run dev:web      # Vite on :5180 (proxies /api, /decks, /ws)
 ```
 
 Open `http://localhost:5180`, pick a deck, set a PIN and create a session.
-Open the audience link on your phone (same Wi-Fi: start Vite with your LAN IP)
-or in another browser window.
+The console opens with the join QR on the first slide.
+
+Phones on the same Wi-Fi work out of the box: when the console runs on
+`localhost`, join links and QR codes use this machine's LAN address (the server
+prints it on start, e.g. `http://192.168.1.34:5180`). To drive the slides from
+your phone, press **Control móvil** in the console, scan the code and enter
+your PIN. If your OS firewall asks, allow incoming connections for Node.
 
 Preview a deck without a session at `http://localhost:5180/preview/<deck-id>`.
 

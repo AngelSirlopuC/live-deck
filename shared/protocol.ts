@@ -67,7 +67,7 @@ export type CloseReason = "ended" | "restricted" | "not-found" | "replaced";
 
 export type ServerMessage =
   | { t: "welcome-audience"; you: Identity; deck: PublicDeck; deckId: string; joinUrl: string; state: SessionSnapshot; features: Features }
-  | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; state: SessionSnapshot; features: Features }
+  | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; baseUrl: string; state: SessionSnapshot; features: Features }
   | { t: "state"; state: SessionSnapshot }
   | { t: "ripple"; slide: number; x: number; y: number }
   | { t: "me"; me: PersonalState }

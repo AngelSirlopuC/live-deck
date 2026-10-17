@@ -33,6 +33,8 @@ export async function mountHome(root: HTMLElement) {
 
   const fillDecks = (list: DeckSummary[]) => {
     deckSelect.replaceChildren(...list.map((d) => h("option", { value: d.id }, `${d.title} · ${d.slides} diapositivas`)));
+    const wanted = new URLSearchParams(location.search).get("deck");
+    if (wanted && list.some((d) => d.id === wanted)) deckSelect.value = wanted;
     deckSelect.disabled = list.length === 0;
     if (!list.length) error.textContent = "No hay presentaciones en la carpeta decks/.";
   };

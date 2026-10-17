@@ -20,7 +20,9 @@ export async function mountPreview(root: HTMLElement, deckId: string) {
   const counter = document.createElement("div");
   counter.className = "preview-counter";
   counter.setAttribute("aria-live", "polite");
-  shell.append(host, counter);
+  const present = Object.assign(document.createElement("a"), { className: "key key-primary preview-present", href: `/?deck=${encodeURIComponent(deckId)}`, textContent: "Presentar" });
+  const note = Object.assign(document.createElement("p"), { className: "preview-note", textContent: "Vista previa sin sesión: el QR y la interacción aparecen al presentar." });
+  shell.append(host, counter, note, present);
   root.append(shell);
 
   const view = new StageView(host, deck, { assetBase: `/decks/${deckId}/` });

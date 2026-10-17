@@ -126,7 +126,7 @@ function renderElement(el: DeckElement, opts: RenderOptions): HTMLElement {
         caption.textContent = opts.joinUrl.replace(/^https?:\/\//, "");
       } else {
         code.classList.add("qr-placeholder");
-        caption.textContent = "QR de la sesión";
+        caption.textContent = "El QR aparece al presentar";
       }
       node.append(code, caption);
       break;

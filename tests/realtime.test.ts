@@ -13,7 +13,7 @@ let app: ReturnType<typeof createApp>;
 let base: string;
 
 beforeEach(async () => {
-  app = createApp({ decksDir, distDir: null, adminKey: "secret-admin", publicBaseUrl: null, trustProxy: false, allowedOrigins: [] });
+  app = createApp({ decksDir, distDir: null, adminKey: "secret-admin", publicBaseUrl: null, trustProxy: false, allowedOrigins: [], lan: () => null });
   server = createServer(app.handle);
   app.attach(server);
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
