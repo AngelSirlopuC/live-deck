@@ -171,10 +171,12 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       return me?.id;
     },
   });
-  const idle = h("p", { class: "aud-idle" }, "Cuando el ponente haga una pregunta, aparecerá aquí. Para conversar, usa el botón de chat.");
+  const IDLE_COPY = "Cuando el ponente haga una pregunta, aparecerá aquí.";
+  const idle = h("p", { class: "aud-idle" }, `${IDLE_COPY} Para conversar, usa el botón de chat.`);
   const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, who, banner, quizPanel.el, scorePanel.el, idle);
 
-  // Chat lives in its own sheet, always one tap away from the header.
+  // Chat: docked in the side column on wide screens, a sheet one tap away elsewhere.
+  const chatDock = h("aside", { class: "aud-chat", hidden: true });
   const chatClose = trusted("button", { type: "button", class: "key key-icon sheet-close", "aria-label": "Cerrar chat" }, icon("close"));
   const chatSheet = h("dialog", { class: "sheet chat-sheet", "aria-label": "Chat" }, chatClose, chat.el);
   document.body.append(chatSheet);
@@ -186,6 +188,26 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     badge.textContent = n > 9 ? "9+" : String(n);
     chatBtn.setAttribute("aria-label", n ? `Abrir chat, ${n} mensajes nuevos` : "Abrir chat");
   };
+  const wideQuery = matchMedia("(min-width: 900px) and (min-height: 561px)");
+  let docked = false;
+  const placeChat = () => {
+    const dock = wideQuery.matches && shell.dataset.status === "live";
+    if (dock === docked && chat.el.isConnected) return;
+    docked = dock;
+    if (dock) {
+      if (chatSheet.open) chatSheet.close();
+      chatDock.append(chat.el);
+      setUnread(0);
+    } else {
+      chatSheet.append(chat.el);
+    }
+    chatDock.hidden = !dock;
+    chatBtn.hidden = dock;
+    shell.classList.toggle("has-chat-dock", dock);
+    idle.textContent = dock ? IDLE_COPY : `${IDLE_COPY} Para conversar, usa el botón de chat.`;
+    chat.scrollToEnd();
+  };
+  wideQuery.addEventListener("change", placeChat);
   chatBtn.addEventListener("click", () => {
     chatSheet.showModal();
     setUnread(0);
@@ -197,7 +219,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   });
 
   const waiting = h("section", { class: "aud-waiting", hidden: true });
-  const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, waiting);
+  const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, chatDock, waiting);
   root.replaceChildren(shell);
 
   const theater = createTheater(shell, (on) => {
@@ -295,6 +317,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     liveKey.disabled = unlockedAll && !state.presenterOnline;
 
     waiting.hidden = !waitingNow;
+    placeChat();
     stageWrap.hidden = waitingNow;
     controls.hidden = waitingNow;
     // Chat works before the presentation starts too, so sync it before the waiting screen returns.
@@ -439,7 +462,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
         }
         case "chat":
           chat.add(msg.message);
-          if (!chatSheet.open && msg.message.from !== me?.id) setUnread(unread + 1);
+          if (!docked && !chatSheet.open && msg.message.from !== me?.id) setUnread(unread + 1);
           break;
         case "chat-delete":
           chat.remove(msg.id);

@@ -3190,3 +3190,75 @@ select:focus-visible {
 .console-side > .presenter-chat {
   min-height: 200px;
 }
+
+/* Wide audience layout, restated after the mobile pass so its single-column
+   rule cannot win: a narrow side column keeps the slide as large as possible,
+   and the chat docks at the bottom of that column. */
+@media (min-width: 900px) and (min-height: 561px) {
+  .aud {
+    --aud-side: clamp(280px, 22vw, 320px);
+    grid-template-columns: minmax(0, 1fr) var(--aud-side);
+    grid-template-rows: auto auto minmax(0, auto) minmax(0, 1fr);
+  }
+  .aud-stage {
+    grid-row: 2 / 5;
+  }
+  .aud-panel {
+    grid-row: 3 / 5;
+  }
+  .aud-controls {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .aud-controls .reaction-bar {
+    gap: 4px;
+  }
+  .aud.has-chat-dock .aud-panel {
+    grid-row: 3;
+    max-height: 46vh;
+    padding-bottom: 12px;
+  }
+  .aud.has-chat-dock .aud-panel:has(.aud-idle:not([hidden])):not(:has(.aud-banner:not([hidden]))) {
+    padding-bottom: 4px;
+  }
+  .aud-chat {
+    grid-column: 2;
+    grid-row: 4;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 4px 16px 0;
+    border-left: 1px solid var(--seam);
+    border-top: 1px solid var(--seam);
+    background: var(--desk);
+  }
+  .aud-chat[hidden] {
+    display: none;
+  }
+  .aud-chat .chat {
+    flex: 1;
+  }
+  .aud-chat .chat-head {
+    min-height: 40px;
+    padding-right: 0;
+  }
+  .aud-chat .chat .chat-title {
+    font-size: 1.1rem;
+    line-height: 40px;
+  }
+  .aud-chat .chat-form {
+    margin: 0 -16px;
+    padding: 10px 16px 12px;
+    background: var(--bg);
+  }
+  .aud-chat .chat-list {
+    margin: 0 -6px;
+  }
+  .aud-chat .chat-msg {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .aud-chat .chat-text {
+    font-size: 0.95rem;
+  }
+}
