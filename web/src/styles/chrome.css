@@ -3344,3 +3344,33 @@ select:focus-visible {
     flex-direction: column-reverse;
   }
 }
+
+/* Landscape phone, waiting: there is no slide to uncover, so the bar stays put
+   above the waiting screen instead of fading in under the arcade picker. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .aud[data-status="waiting"] {
+    display: flex;
+    flex-direction: column;
+  }
+  .aud[data-status="waiting"] .aud-bar {
+    position: relative;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    flex: 0 0 auto;
+  }
+  .aud[data-status="waiting"] .aud-waiting:not([hidden]) {
+    position: relative;
+    inset: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    /* Short phones: start at the top and scroll rather than clip the arcade picker. */
+    align-content: safe center;
+    align-items: safe center;
+    overflow-y: auto;
+  }
+  /* The bar now takes its own row: leave room for it, the picker and the record line. */
+  .aud[data-status="waiting"] .arcade-canvas {
+    height: max(150px, calc(100dvh - 190px));
+  }
+}
