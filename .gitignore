@@ -2,3 +2,6 @@ node_modules/
 dist/
 .env
 *.local
+
+# Local task logs (ODD); kept out of the public repo.
+odd/
