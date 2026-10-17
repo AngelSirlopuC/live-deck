@@ -278,6 +278,9 @@ export class WsHub {
         s.restrict(cmd.data.restricted);
         if (cmd.data.restricted) this.closeAudience(entry, "restricted");
         break;
+      case "time-limit":
+        s.setTimeLimit(cmd.data.minutes);
+        break;
       case "effect":
         if (cmd.data.effect) s.setEffect(cmd.data.effect);
         else s.clearEffects(cmd.data.kind);

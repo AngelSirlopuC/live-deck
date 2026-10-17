@@ -5,6 +5,8 @@ import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
+import { createPaceTimer } from "../ui/pace-timer.ts";
+import { TIME_LIMIT_MAX, TIME_LIMIT_MIN } from "../../../shared/pace.ts";
 import { bindEffectTools, canClearEffects, pressTool, toolStates, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
@@ -164,13 +166,46 @@ function lampFor(state: SessionSnapshot): { state: string; text: string } {
   return { state: "on", text: "Al aire" };
 }
 
-function elapsed(startedAt: number | null): string {
-  if (!startedAt) return "00:00";
-  const s = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-  const hh = Math.floor(s / 3600);
-  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-  const ss = String(s % 60).padStart(2, "0");
-  return hh ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+/** Sets, changes or removes the planned duration shown by the presenter's timer. */
+function timeLimitSheet(current: number | null): Promise<number | null | undefined> {
+  return new Promise((resolve) => {
+    const input = h("input", { id: "time-limit", type: "number", inputmode: "numeric", min: TIME_LIMIT_MIN, max: TIME_LIMIT_MAX, step: 1, value: current ?? "", placeholder: "30" });
+    const error = h("p", { class: "form-error", role: "alert" });
+    const save = h("button", { type: "submit", class: "key key-primary" }, "Guardar");
+    const clear = h("button", { type: "button", class: "key key-ghost" }, "Sin límite");
+    const cancel = h("button", { type: "button", class: "key key-ghost" }, "Cancelar");
+    clear.hidden = current === null;
+    const form = h(
+      "form",
+      { method: "dialog" },
+      h("h2", { id: "limit-title" }, "Límite de tiempo"),
+      h("p", {}, "El cronómetro se pone amarillo al acercarte al límite y rojo cuando te pasas. Solo tú lo ves."),
+      h("div", { class: "field" }, h("label", { for: "time-limit", class: "legend" }, "Duración en minutos"), input),
+      error,
+      h("div", { class: "sheet-actions" }, cancel, clear, save),
+    );
+    const sheet = h("dialog", { class: "sheet", "aria-labelledby": "limit-title" }, form);
+    const done = (v: number | null | undefined) => {
+      sheet.close();
+      sheet.remove();
+      resolve(v);
+    };
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const n = Number(input.value);
+      if (!Number.isInteger(n) || n < TIME_LIMIT_MIN || n > TIME_LIMIT_MAX) {
+        error.textContent = `Escribe minutos enteros, de ${TIME_LIMIT_MIN} a ${TIME_LIMIT_MAX}.`;
+        return;
+      }
+      done(n);
+    });
+    clear.addEventListener("click", () => done(null));
+    cancel.addEventListener("click", () => done(undefined));
+    sheet.addEventListener("cancel", () => done(undefined));
+    document.body.append(sheet);
+    sheet.showModal();
+    input.focus();
+  });
 }
 
 function confirmSheet(title: string, body: string, confirmLabel: string, danger: boolean): Promise<boolean> {
@@ -230,7 +265,13 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   const chatUi = createPresenterChat(ctx.send, ctx.stickers);
   const presentBtn = trusted("button", { type: "button", class: "key key-primary", "aria-label": "Presentar", title: "Presentar" }, `${icon("play")}<span>Presentar</span>`);
-  const timer = h("span", { class: "console-timer", "aria-label": "Tiempo transcurrido" }, "00:00");
+  const pace = createPaceTimer();
+  // The timer doubles as the key that sets the time limit.
+  const timer = h("button", { type: "button", class: "console-timer", title: "Límite de tiempo" }, pace.el);
+  timer.addEventListener("click", async () => {
+    const minutes = await timeLimitSheet(ctx.state.timeLimitMin);
+    if (minutes !== undefined) ctx.send({ t: "time-limit", minutes });
+  });
   const slideNo = h("span", { class: "console-slide-no" });
   const meters = h("div", { class: "console-meters", "aria-label": "Tiempo y diapositiva" }, timer, slideNo);
   const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), meters, presentBtn, qrBtn, remoteBtn);
@@ -514,7 +555,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   // Focus and zoom stay armed after placing, so another region can be drawn right away.
   const programTools = bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effects);
   setInterval(() => {
-    timer.textContent = elapsed(ctx.state.startedAt);
+    pace.update(ctx.state.startedAt, ctx.state.timeLimitMin);
     pq.update(ctx.state, ctx.clockOffset);
     const slide = ctx.deck.slides[ctx.state.position.slide]!;
     programView.setQuiz(ctx.state.quizzes[slide.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
@@ -565,7 +606,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       if (!atEnd) nextView.show(upcoming);
       nextMon.dataset.empty = String(atEnd);
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
-      timer.textContent = elapsed(s.startedAt);
+      pace.update(s.startedAt, s.timeLimitMin);
       prev.disabled = s.status !== "live";
       next.disabled = s.status !== "live";
       actions.update(s);
@@ -678,7 +719,8 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
 function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): PresenterUi {
   const lamp = h("span", { class: "lamp" });
   const slideNo = h("span", { class: "remote-slide-no" });
-  const timer = h("span", { class: "remote-timer" }, "00:00");
+  const pace = createPaceTimer();
+  const timer = h("span", { class: "remote-timer" }, pace.el);
   const host = h("div", { class: "remote-preview" });
   const notes = h("div", { class: "console-notes remote-notes" });
   const prev = trusted("button", { type: "button", class: "key key-transport", "aria-label": "Anterior" }, icon("prev"));
@@ -731,7 +773,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   // Swipe changes slides with the pointer tool; taps place the selected effect.
   bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) }, 40, () => false, () => rtool === "ripple");
   const remoteTools = bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effects);
-  setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
+  setInterval(() => pace.update(ctx.state.startedAt, ctx.state.timeLimitMin), 1000);
 
   return {
     ripple: (x, y) => view.ripple(x, y),
@@ -741,6 +783,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
+      pace.update(s.startedAt, s.timeLimitMin);
       view.show(s.position);
       view.setEffects(s.effects);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });

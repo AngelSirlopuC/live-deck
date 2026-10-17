@@ -79,11 +79,11 @@ class TestClient {
   }
 }
 
-async function createSession(pin = "2468"): Promise<CreateSessionResponse> {
+async function createSession(pin = "2468", extra: Record<string, unknown> = {}): Promise<CreateSessionResponse> {
   const res = await fetch(`${base}/api/sessions`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-admin-key": "secret-admin" },
-    body: JSON.stringify({ deckId: "demo", pin }),
+    body: JSON.stringify({ deckId: "demo", pin, ...extra }),
   });
   expect(res.status).toBe(201);
   return (await res.json()) as CreateSessionResponse;
@@ -443,5 +443,25 @@ describe("chat before the presentation starts", () => {
     await a.waitFor((m) => m.t === "state" && m.state.status === "waiting" && m.state.chat.mode === "text");
     a.send({ t: "chat", text: "¿Ya empieza?" });
     expect(await b.waitFor((m) => m.t === "chat")).toMatchObject({ message: { text: "¿Ya empieza?" } });
+  });
+});
+
+describe("time limit over the wire", () => {
+  it("takes the limit at creation and lets the presenter change it", async () => {
+    const s = await createSession("2468", { timeLimitMin: 20 });
+    const p = await presenter(s);
+    const w = await p.waitFor((m) => m.t === "welcome-presenter");
+    expect(w.state.timeLimitMin).toBe(20);
+    p.send({ t: "time-limit", minutes: 45 });
+    await p.waitFor((m) => m.t === "state" && m.state.timeLimitMin === 45);
+    p.send({ t: "time-limit", minutes: null });
+    await p.waitFor((m) => m.t === "state" && m.state.timeLimitMin === null);
+    p.send({ t: "time-limit", minutes: 0 });
+    expect(await p.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
+  });
+
+  it("rejects an invalid limit when creating the session", async () => {
+    const res = await fetch(`${base}/api/sessions`, { method: "POST", headers: { "content-type": "application/json", "x-admin-key": "secret-admin" }, body: JSON.stringify({ deckId: "demo", pin: "2468", timeLimitMin: 0 }) });
+    expect(res.status).toBe(400);
   });
 });

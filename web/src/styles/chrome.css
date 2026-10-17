@@ -3374,3 +3374,58 @@ select:focus-visible {
     height: max(150px, calc(100dvh - 190px));
   }
 }
+
+/* Presenter time limit: green on time, yellow near the limit, red past it. */
+.pace-timer {
+  font-variant-numeric: tabular-nums;
+  transition: color 200ms ease;
+}
+
+.pace-timer[data-pace="ok"] {
+  color: var(--signal);
+}
+
+.pace-timer[data-pace="near"] {
+  color: #ffd23f;
+}
+
+.pace-timer[data-pace="over"] {
+  color: #ff5a4e;
+}
+
+.console-bar .console-timer {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 10px;
+  margin: 0 -10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--amber);
+  cursor: pointer;
+}
+
+.console-bar .console-timer:hover,
+.console-bar .console-timer:focus-visible {
+  background: var(--panel-hi);
+}
+
+/* Past the limit the whole meter turns red, so it reads from across the room. */
+.console-bar .console-meters:has([data-pace="over"]) {
+  border-color: #ff5a4e;
+  box-shadow: 0 0 0 1px rgb(255 90 78 / 0.35);
+}
+
+.console-bar .console-meters:has([data-pace="near"]) {
+  border-color: #c9a227;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pace-timer {
+    transition: none;
+  }
+}

@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { publicDeck } from "../shared/deck.ts";
+import { timeLimit } from "../shared/protocol-schemas.ts";
 import { PIN, SESSION_CODE, type CreateSessionResponse, type SessionInfo } from "../shared/protocol.ts";
 import { publicOrigin } from "./base-url.ts";
 import { Giphy } from "./giphy.ts";
@@ -101,7 +102,7 @@ export function createApp(opts: AppOptions) {
 
     if (path === "/api/sessions" && req.method === "POST") {
       if (opts.adminKey && !sameSecret(String(req.headers["x-admin-key"] ?? ""), opts.adminKey)) return json(res, 401, { error: "admin key required" });
-      let body: { deckId?: unknown; pin?: unknown };
+      let body: { deckId?: unknown; pin?: unknown; timeLimitMin?: unknown };
       try {
         body = (await readJson(req)) as typeof body;
       } catch {
@@ -109,6 +110,8 @@ export function createApp(opts: AppOptions) {
       }
       if (typeof body.deckId !== "string" || !DECK_ID.test(body.deckId)) return json(res, 400, { error: "invalid deckId" });
       if (typeof body.pin !== "string" || !PIN.test(body.pin)) return json(res, 400, { error: "PIN must be 4 to 8 digits" });
+      const limit = body.timeLimitMin === undefined || body.timeLimitMin === null ? null : timeLimit.safeParse(body.timeLimitMin);
+      if (limit && !limit.success) return json(res, 400, { error: "timeLimitMin must be a whole number of minutes from 1 to 600" });
       let deck;
       try {
         deck = await decks.load(body.deckId);
@@ -116,6 +119,7 @@ export function createApp(opts: AppOptions) {
         return json(res, 422, { error: (err as Error).message });
       }
       const entry = registry.create(body.deckId, deck, body.pin, now());
+      if (limit?.success) entry.session.setTimeLimit(limit.data);
       const base = baseUrl(req);
       const response: CreateSessionResponse = {
         code: entry.session.code,

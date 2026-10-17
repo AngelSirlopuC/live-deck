@@ -1,6 +1,7 @@
 // zod validation for client -> server messages. Server-side only, so the
 // browser bundle stays free of the schema library.
 import { z } from "zod";
+import { TIME_LIMIT_MAX, TIME_LIMIT_MIN } from "./pace.ts";
 import { NAME_MAX, PIN, PRESENTER_TOKEN, SESSION_CODE } from "./protocol.ts";
 
 const position = z.object({ slide: z.number().int().min(0).max(999), step: z.number().int().min(0).max(20) });
@@ -30,6 +31,7 @@ export const PresenterHelloSchema = z
 export const HelloSchema = z.discriminatedUnion("role", [AudienceHelloSchema, PresenterHelloSchema]);
 
 const unit = z.number().min(0).max(1);
+export const timeLimit = z.number().int().min(TIME_LIMIT_MIN).max(TIME_LIMIT_MAX);
 const rect = z.object({ x: unit, y: unit, w: unit, h: unit }).strict();
 const target = z.union([z.object({ elementId: z.string().max(40) }).strict(), z.object({ rect }).strict()]);
 const effect = z.object({ kind: z.enum(["focus", "zoom"]), target }).strict();
@@ -44,6 +46,7 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   // effect places or replaces that kind; null clears every effect, or only `kind`.
   z.object({ t: z.literal("effect"), effect: effect.nullable(), kind: z.enum(["focus", "zoom"]).optional() }).strict(),
   z.object({ t: z.literal("ripple"), x: unit, y: unit }).strict(),
+  z.object({ t: z.literal("time-limit"), minutes: timeLimit.nullable() }).strict(),
   z.object({ t: z.literal("laser"), at: z.object({ x: unit, y: unit }).strict().nullable() }).strict(),
   z.object({ t: z.literal("quiz"), action: z.enum(["close", "reveal"]) }).strict(),
   z.object({ t: z.literal("settings"), showScore: z.boolean() }).strict(),

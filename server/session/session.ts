@@ -55,6 +55,7 @@ export class Session {
   private abandoned = false;
   private effects: PersistentEffect[] = [];
   private showScore = false;
+  private timeLimitMin: number | null = null;
   private readonly quizzes: QuizBook;
   readonly chat = new Chat();
   readonly reactions = new ReactionMeter();
@@ -106,6 +107,7 @@ export class Session {
       abandoned: this.abandoned,
       audienceCount: role === "presenter" ? this.audienceSockets.size : null,
       effects: this.effects,
+      timeLimitMin: role === "presenter" ? this.timeLimitMin : null,
       quizzes: this.quizzes.views(role),
       showScore: this.showScore,
       leaderboard: role === "presenter" || this.showScore ? this.quizzes.leaderboard(name, 10) : null,
@@ -145,6 +147,11 @@ export class Session {
     const id = this.deck.slides[this.position.slide]!.id;
     if (action === "close") this.quizzes.close(id);
     else this.quizzes.reveal(id);
+  }
+
+  /** Planned duration for the presenter's timer, in minutes; null removes it. */
+  setTimeLimit(minutes: number | null) {
+    this.timeLimitMin = minutes;
   }
 
   setShowScore(show: boolean) {

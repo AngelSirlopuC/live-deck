@@ -39,6 +39,8 @@ export interface SessionSnapshot {
   audienceCount: number | null;
   /** Focus and/or zoom the presenter is holding on the current slide (at most one of each). */
   effects: PersistentEffect[];
+  /** Planned duration in minutes for the presenter's timer; null for none and always null for the audience. */
+  timeLimitMin: number | null;
   /** Every quiz opened so far, keyed by slide id, as this viewer may see it. */
   quizzes: Record<string, QuizView>;
   /** Presenter choice: show scores and the leaderboard to the audience during the session. */
@@ -101,6 +103,8 @@ export type ErrorCode =
 export interface CreateSessionRequest {
   deckId: string;
   pin: string;
+  /** Optional planned duration in minutes (1–600). */
+  timeLimitMin?: number;
 }
 
 export interface CreateSessionResponse {

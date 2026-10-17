@@ -236,3 +236,15 @@ describe("session summary", () => {
     expect(JSON.stringify(sum)).not.toContain("secreto");
   });
 });
+
+describe("time limit", () => {
+  it("keeps the limit for the presenter only and lets it change or clear", () => {
+    const s = make();
+    expect(s.snapshot("presenter").timeLimitMin).toBeNull();
+    s.setTimeLimit(30);
+    expect(s.snapshot("presenter").timeLimitMin).toBe(30);
+    expect(s.snapshot("audience").timeLimitMin).toBeNull();
+    s.setTimeLimit(null);
+    expect(s.snapshot("presenter").timeLimitMin).toBeNull();
+  });
+});
