@@ -56,6 +56,8 @@ A hex string still works (`"background": "#0b0d12"`). The object form (all field
 
 Omit `background` on most slides: the preset already supplies one. Use the object for openers, section breaks and closings.
 
+Imported slides (`live-deck import`) use exactly this field: `"background": { "image": "assets/slide-01.png" }` with no new layout; elements such as the join `qr` may sit on top.
+
 ## Common element fields
 
 | Field | Type | Rules |
@@ -152,6 +154,15 @@ Built-in decorative SVG shape. It carries no content: never put meaning in decor
 | `display` | `"live"` \| `"secret"` | live: votes visible while voting. secret: hidden until the presenter reveals. |
 | `timerSec` | integer | Optional, 5–600. |
 | `results` | `"ranking"` \| `"grid"` | Optional. How visible results show: `"ranking"` (default) re-orders options by votes and highlights first place; `"grid"` keeps the fixed A–F layout. |
+| `zones` | `{ x, y, w, h }[]` | Optional. Zone quiz on a designed image: normalized boxes with the same rules as element boxes (0..1, `x + w <= 1`, `y + h <= 1`), exactly one per option in option order. `zones.length` must equal `options.length` (error path `quiz.zones`). |
+
+### Zone quizzes (`quiz.zones`)
+
+- Used on imported designed slides: the slide keeps `background: { "image": "assets/<file>" }` and `elements: []`, and the image already shows the question and options.
+- With `zones`, the player does not draw the native question/options grid. It draws one overlay per zone at its box: translucent vote fill (share of votes), percentage badge, rank badge (1º, 2º… when results are visible), correct/wrong marking after reveal, the viewer's own vote outline and the leader highlight. Tapping a zone also votes. Options never re-order in zone mode (`results: "ranking"` does not move zones). The status line (votes, timer) shows in a small pill at the bottom of the slide.
+- `question` and `options` stay required and must match the text on the image: phones, the presenter panel and the summary show them.
+- `/preview/<id>` draws dashed outlines with the option letter on every zone to check alignment; live sessions never show them.
+- Full method and examples: `zone-quizzes.md`.
 
 The answer and notes are stripped before the deck reaches the audience.
 

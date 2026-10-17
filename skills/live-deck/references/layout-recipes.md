@@ -163,3 +163,50 @@ Columns `w: 0.185` at x 0.07 / 0.295 / 0.52 / 0.745; icons `w: 0.08, h: 0.142` c
 ```
 
 Without a photo use `"background": { "color": "#0b0d12", "pattern": "grid" }` (pick a color from the preset world) and drop the `color` override on the text. `assets/section.jpg` must exist in `decks/<id>/assets/`.
+
+## Imported designed slides
+
+Slides imported with `live-deck import` are whole images designed in another tool. Do not place text over them; add only notes, the slide-1 `qr`, or turn a designed question into a zone quiz (`zone-quizzes.md`).
+
+### imported-slide
+
+```json
+{ "id": "s02", "notes": "Explica el diagrama de izquierda a derecha y pregunta quién lo ha usado.",
+  "background": { "image": "assets/slide-02.png" },
+  "elements": [] }
+```
+
+Slide 1 also carries the join QR on top of the image. The import places it bottom-right on a white tile; keep the box the CLI wrote and edit it only to move the QR off important content (example geometry):
+
+```json
+{ "id": "s01", "notes": "Da la bienvenida y pide que escaneen el QR.",
+  "background": { "image": "assets/slide-01.png" },
+  "elements": [
+    { "id": "qr", "type": "qr", "box": { "x": 0.81, "y": 0.66, "w": 0.16, "h": 0.3 }, "style": { "background": "#ffffff", "color": "#000000" } }
+  ] }
+```
+
+### zone-quiz (2x2 designed options)
+
+Fits a typical designed quiz: question across the top, four option cards in a 2x2 grid. Measure the real zones from the image before using it; these boxes are only a starting point.
+
+```json
+{ "id": "s05", "layout": "quiz", "notes": "Deja 30 s y revela. La correcta es la C: el sol.",
+  "background": { "image": "assets/slide-05.png" },
+  "elements": [],
+  "quiz": {
+    "question": "¿Cuál es la principal fuente de energía de la Tierra?",
+    "options": ["El viento", "El petróleo", "El sol", "El núcleo terrestre"],
+    "correctIndex": 2,
+    "display": "secret",
+    "timerSec": 30,
+    "zones": [
+      { "x": 0.06, "y": 0.34, "w": 0.43, "h": 0.25 },
+      { "x": 0.51, "y": 0.34, "w": 0.43, "h": 0.25 },
+      { "x": 0.06, "y": 0.62, "w": 0.43, "h": 0.25 },
+      { "x": 0.51, "y": 0.62, "w": 0.43, "h": 0.25 }
+    ]
+  } }
+```
+
+Zones follow option order (A top-left, B top-right, C bottom-left, D bottom-right here). Keep the bottom ~8% free: the votes/timer pill shows there.

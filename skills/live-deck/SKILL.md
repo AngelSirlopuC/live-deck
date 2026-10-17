@@ -1,6 +1,6 @@
 ---
 name: live-deck
-description: Author interactive presentations for Live Deck as deck.json files (format v1) and validate them with the repo CLI. Use when the user asks to "create a live deck", "make a presentation for Live Deck", "convert my outline/notes/pptx into a live deck", "add a quiz slide to my deck", or to fix a deck that fails validation.
+description: Author interactive presentations for Live Deck as deck.json files (format v1) and validate them with the repo CLI. Use when the user asks to "create a live deck", "make a presentation for Live Deck", "convert my outline/notes/pptx into a live deck", "add a quiz slide to my deck", "import my slides from PowerPoint/Keynote/Google Slides/Canva/Figma", or to fix a deck that fails validation.
 ---
 
 # Live Deck authoring
@@ -45,6 +45,19 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 
 `npm run deck -- <command>` is equivalent to `node bin/live-deck.ts <command>`. Requires Node >= 24.
 
+## Importing designed slides
+
+Use this when the user already designed slides in PowerPoint, Keynote, Google Slides, Canva, Figma or any other tool. Live Deck keeps their design as images and adds the live layer (join QR, quizzes, chat, reactions, effects).
+
+1. Ask the user to export one PNG or JPG per slide at 1920x1080 (16:9) into one folder, named so they sort in order (`slide1.png`, `slide2.png`, … sort naturally).
+2. Run `node bin/live-deck.ts import <folder> --id <id> --title "<title>"`. It copies the images to `decks/<id>/assets/slide-01.<ext>`…, writes one slide per image (`s01`…, `background.image`, empty `elements` and `notes`) and validates. It refuses an existing id, an invalid id, a missing folder or a folder without `.png`/`.jpg`/`.jpeg`/`.webp` files. Report every non-16:9 warning to the user and suggest re-exporting at 1920x1080.
+3. Look at every imported image (open each file in `decks/<id>/assets/`) and write speaker `notes` for every slide from what it shows.
+4. Decide where a native quiz slide helps (recipe `quiz`, after a key idea, 1 every 4–8 slides) and insert it between the image slides with a new unique id.
+5. A slide visibly designed as a question with options becomes a zone quiz: follow `references/zone-quizzes.md` (question, options and correct answer read from the image, one zone per option measured on the 16:9 canvas). Never guess the correct answer silently.
+6. Validate and fix until it prints `OK`, as in the main workflow.
+7. Ask the user to open `/preview/<id>` and check that the dashed zone outlines (with the option letter) sit on their designed options; adjust the boxes if not. The outlines appear only in the preview, never in a live session.
+8. Tell the user the join QR is already overlaid on slide 1 (bottom-right, white tile); to move or resize it, edit the `qr` element's `box` on slide 1, keeping it at least 0.25 wide and roughly square on screen.
+
 ## Hard rules
 
 - `version` is `1`. `title` 1–200 chars. 1–200 slides.
@@ -52,7 +65,7 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 - Slide ids are unique in the deck. Element ids are unique per slide and match `[A-Za-z0-9_-]{1,40}`.
 - Every box is normalized: `x, y, w, h` in 0..1 and `x + w <= 1`, `y + h <= 1`.
 - Font sizes are logical px on a 1920x1080 stage. Body text >= 32, headings 64–110. Never below 24.
-- Quiz slides: `"layout": "quiz"`, `elements: []`, and a `quiz` with 2–6 options (each 1–120 chars), exactly one `correctIndex` (0-based, < options length), `display` `"live"` (bars move while voting) or `"secret"` (hidden until reveal), optional integer `timerSec` 5–600. A `quiz` without `layout: "quiz"` (or vice versa) is invalid.
+- Quiz slides: `"layout": "quiz"`, `elements: []`, and a `quiz` with 2–6 options (each 1–120 chars), exactly one `correctIndex` (0-based, < options length), `display` `"live"` (bars move while voting) or `"secret"` (hidden until reveal), optional integer `timerSec` 5–600, optional `zones` (one box per option, only on imported designed slides; see `references/zone-quizzes.md`). A `quiz` without `layout: "quiz"` (or vice versa) is invalid.
 - Images: `src` is `https://…` or `assets/<file>`; put local files in `decks/<id>/assets/`. Never use `..`. Always set `alt`.
 - Every slide has speaker `notes` (what to say, what to do: reveal, focus, zoom).
 - Set `theme` once at deck level, normally just `{ "preset": "<name>" }`. Without a preset, `background`, `foreground` and `accent` are required. Colors are hex (`#rrggbb`).
@@ -109,7 +122,8 @@ Then: `node bin/live-deck.ts validate contrasenas` → `OK Contraseñas seguras 
 ## References
 
 - `references/deck-format.md`: every field, allowed values and limits.
-- `references/layout-recipes.md`: proven boxes for common slide types, including rich recipes (hero-gradient, icon-row, big-number-card, chart-bar, chart-donut, quote-mark, section-break).
+- `references/layout-recipes.md`: proven boxes for common slide types, including rich recipes (hero-gradient, icon-row, big-number-card, chart-bar, chart-donut, quote-mark, section-break, imported-slide, zone-quiz).
+- `references/zone-quizzes.md`: zone quizzes on imported designed slides (JSON, rules, measuring zones).
 - `references/themes.md`: the six presets, when to use each, and composition tips.
 - `references/mcp.md`: why there is no MCP server and when one would be justified.
 - Full example using every element type: `decks/demo/deck.json`. Schema source of truth: `shared/deck.ts`.
