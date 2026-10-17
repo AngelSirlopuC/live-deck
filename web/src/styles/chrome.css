@@ -2389,3 +2389,18 @@ select:focus-visible {
     display: inline;
   }
 }
+
+/* Sticker picker: three columns that never overflow the sheet. */
+.sticker-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sticker-pick {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* The sender's name sits above the message, sticker or text. */
+.chat-name {
+  flex-basis: 100%;
+}
