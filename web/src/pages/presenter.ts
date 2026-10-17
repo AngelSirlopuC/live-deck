@@ -727,7 +727,8 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   const slideNo = h("span", { class: "remote-slide-no" });
   const pace = createPaceTimer();
   // Same as the console: the timer opens the time limit.
-  const timer = h("button", { type: "button", class: "remote-timer", title: "Límite de tiempo" }, pace.el);
+  const timer = trusted("button", { type: "button", class: "remote-timer", title: "Límite de tiempo" }, icon("timer"));
+  timer.append(pace.el);
   timer.addEventListener("click", async () => {
     const minutes = await timeLimitSheet(ctx.state.timeLimitMin);
     if (minutes !== undefined) ctx.send({ t: "time-limit", minutes });

@@ -3599,3 +3599,73 @@ select:focus-visible {
   overflow-y: auto;
   padding: 0 12px;
 }
+
+/* Clock icon: quiet on time; rings like a small bell for a few seconds when the
+   pace turns yellow or red (and briefly each extra minute), then rests. */
+.remote-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.remote-timer .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+:is(.console-clock, .remote-timer) > .icon {
+  transform-origin: 50% 12%;
+}
+
+:is(.console-clock, .remote-timer):has(.pace-timer[data-pace="near"]) > .icon {
+  color: #ffd23f;
+}
+
+:is(.console-clock, .remote-timer):has(.pace-timer[data-pace="over"]) > .icon {
+  color: #ff5a4e;
+}
+
+:is(.console-clock, .remote-timer):has(.pace-timer[data-ring="near"]) > .icon {
+  animation: bell-soft 800ms ease-in-out 3;
+}
+
+:is(.console-clock, .remote-timer):has(.pace-timer[data-ring="over"]) > .icon {
+  animation: bell-strong 400ms ease-in-out 8;
+}
+
+:is(.console-clock, .remote-timer):has(.pace-timer[data-ring="remind"]) > .icon {
+  animation: bell-strong 350ms ease-in-out 4;
+}
+
+@keyframes bell-soft {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(14deg);
+  }
+  75% {
+    transform: rotate(-14deg);
+  }
+}
+
+@keyframes bell-strong {
+  0%,
+  100% {
+    transform: rotate(0) scale(1.08);
+  }
+  25% {
+    transform: rotate(22deg) scale(1.15);
+  }
+  75% {
+    transform: rotate(-22deg) scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.console-clock, .remote-timer) > .icon {
+    animation: none !important;
+  }
+}
