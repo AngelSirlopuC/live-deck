@@ -7,6 +7,12 @@ description: Author interactive presentations for Live Deck as deck.json files (
 
 Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, validate it, fix every error, and hand the user a preview URL.
 
+## Choose the path
+
+- The user has an idea, outline, notes or pasted text: **write the deck** (Art direction, Workflow below).
+- The user already has designed slides (PowerPoint, Keynote, Google Slides, Canva, Figma) and wants to keep that look: **import them** (Importing designed slides below). Do not rebuild a designed deck element by element.
+- Mixed: import the designed slides, then add native slides (quizzes, a QR cover, section breaks) between them.
+
 ## Before writing
 
 1. Work from the Live Deck repository root (it contains `bin/live-deck.ts` and `decks/`).
@@ -77,6 +83,7 @@ Use this when the user already designed slides in PowerPoint, Keynote, Google Sl
 
 - Outline or notes: each top-level bullet becomes a slide; sub-bullets become fragments or notes.
 - Pasted .pptx text: keep slide order and titles, shorten body text to the essential claim, move the rest to `notes`. Images from the pptx need files in `assets/`; if the user cannot provide them, omit them and say so.
+- A .pptx/.key/Canva file whose design the user wants to keep: do not transcribe it; ask for one exported image per slide and follow "Importing designed slides".
 - Questions in the material ("¿Sabías que…?", "Quiz:") become quiz slides. Ask for the correct answer only if it cannot be inferred.
 
 ## Worked example

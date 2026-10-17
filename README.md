@@ -14,6 +14,9 @@ anything.
 - **Reactions and chat.** TikTok-style floating reactions among the audience;
   text and/or GIPHY sticker chat with moderation. The presenter opts in to see
   either.
+- **Design freely.** Write decks with Claude using six theme presets, icons,
+  charts and decor, or import slides designed in any tool and keep your design,
+  including quizzes drawn over your own question slides.
 - **Ephemeral by design.** Sessions live in memory. When the presenter ends a
   session they can download a summary; the data is then deleted.
 
@@ -59,29 +62,87 @@ cp .env.example .env    # then set GIPHY_API_KEY=...
 
 Without a key, chat works in text mode and the console disables sticker modes.
 
-## Writing decks
+## Creating presentations
 
-A deck is a JSON file at `decks/<id>/deck.json` with optional images in
-`decks/<id>/assets/`. The format (v1) is defined in `shared/deck.ts`:
-normalized geometry on a 16:9 canvas, fragments for step-by-step reveals, quiz
-slides, speaker notes and a `qr` element that shows the join code.
+There are two ways in. Both end in the same live session.
 
-The easiest way to write one is with Claude and the bundled skill:
+| | 1. Write a deck with Claude | 2. Import slides you designed |
+| --- | --- | --- |
+| Best for | Starting from an idea, outline or notes | Slides already made in PowerPoint, Keynote, Google Slides, Canva, Figma… |
+| Design | Six theme presets, icons, charts, decor, backgrounds | Exactly your design (each slide is an image) |
+| Step-by-step reveals, focus/zoom on one element | Yes | No (focus/zoom on an area still works) |
+| Quizzes | Native quiz slides | Native quiz slides, or **zone quizzes** drawn over your designed question |
 
-```sh
-npx skills add AngelSirlopuC/live-deck   # installs skills/live-deck
-```
-
-Then ask: "create a live deck about …". The skill writes the deck, validates it
-with the CLI and fixes any issue.
-
-The CLI also works on its own:
+### Install the skill (both paths)
 
 ```sh
-npm run deck -- new my-talk --title "My talk"   # scaffold a deck
-npm run deck -- validate my-talk                # check it
-npm run deck -- list                            # list decks
+npx skills add AngelSirlopuC/live-deck   # Claude Code, Cursor, Codex, Gemini CLI and more
 ```
+
+### Path 1: write a deck with Claude
+
+Ask: "create a live deck about …". The skill picks a theme preset for the topic,
+audience and room, plans varied layouts, writes `decks/<id>/deck.json`, validates
+it with the CLI and fixes every issue, then gives you the preview link.
+
+What a deck can use (format v1, defined in `shared/deck.ts`):
+
+- **Theme presets**: `estudio`, `editorial`, `neon`, `papel`, `brutalista`,
+  `corporativo`. Each brings its own fonts, colours, background art and card
+  style; colours can be overridden for a brand.
+- **Elements**: text (with `card`, `uppercase`, `tracking`, `mark`), images,
+  shapes, curated Lucide icons, bar and donut charts, decorative shapes, and the
+  join `qr`.
+- **Slide backgrounds**: colour, gradient, image (with dimming) or pattern.
+- **Fragments** for step-by-step reveals, **speaker notes**, and **quiz slides**
+  (live or secret results, shown as a ranking by default, optional timer).
+
+Decks are data, never HTML: nothing in a deck can run code on attendees' phones.
+
+### Path 2: import slides you designed
+
+1. Export one image per slide (PNG or JPG, 1920×1080, 16:9) into a folder.
+2. Import it:
+
+   ```sh
+   npm run deck -- import ./my-slides --id my-talk --title "My talk"
+   ```
+
+   Images are taken in natural order (`slide2` before `slide10`), copied to
+   `decks/my-talk/assets/`, and the join QR is placed on slide 1 (bottom right;
+   move it by editing its box). Images that are not 16:9 get a warning.
+3. Ask Claude (with the skill) to "add notes and quizzes to my-talk". It looks
+   at every image, writes speaker notes, inserts native quiz slides where they
+   help, and turns slides designed as a question into **zone quizzes**.
+4. Open the preview and check the zone outlines sit on your options.
+
+**Zone quizzes.** Design the question slide yourself (question plus option
+boxes). In the deck, the quiz lists the question, options and correct answer as
+data, plus `zones`: one box per option on the 16:9 canvas. During the session
+Live Deck draws over your image the vote fill, percentage, rank badge (1º, 2º…),
+the correct answer after reveal, and each person's own vote. Attendees vote from
+the panel on their phone, with keys A–F, or by tapping the option on the slide.
+Options keep their designed position. See
+`skills/live-deck/references/zone-quizzes.md`.
+
+### The deck CLI
+
+```sh
+npm run deck -- new my-talk --title "My talk"     # scaffold a deck
+npm run deck -- import ./my-slides --id my-talk   # build a deck from slide images
+npm run deck -- validate my-talk                  # schema, assets (incl. backgrounds), QR on slide 1
+npm run deck -- list                              # list decks and flag invalid ones
+```
+
+### Example decks
+
+| Deck | Shows |
+| --- | --- |
+| `decks/demo` | Every basic element and both quiz modes |
+| `decks/como-crear-una-presentacion` | Path 1: the `brutalista` preset, icons, charts with real data, decor, credits |
+| `decks/importadas-demo` | Path 2: imported designed images, a zone quiz and an interleaved native quiz |
+
+Open any of them at `/preview/<deck-id>`.
 
 ## Self-hosting
 
