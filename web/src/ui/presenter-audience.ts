@@ -37,15 +37,22 @@ export function createPresenterAudience(send: (cmd: PresenterCommand) => void) {
 }
 
 /** Header chat button + drawer: open/close the chat, pick its mode, moderate. */
-export function createPresenterChat(send: (cmd: PresenterCommand) => void) {
-  const button = trusted("button", { type: "button", class: "key chat-btn" }, `${icon("chat")}<span>Chat</span><span class="badge" hidden></span>`);
+export function createPresenterChat(send: (cmd: PresenterCommand) => void, stickers: boolean) {
+  const button = trusted("button", { type: "button", class: "key chat-btn", "aria-label": "Chat", title: "Chat" }, `${icon("chat")}<span>Chat</span><span class="badge" hidden></span>`);
   const badge = button.querySelector<HTMLElement>(".badge")!;
   const paused = toggle("chat-paused", "Pausar chat", (on) => send({ t: "chat-pause", paused: on }));
   const modeKeys = MODES.map(([mode, label]) => {
     const b = h("button", { type: "button", class: "key", "data-mode": mode, "aria-pressed": "false" }, label);
     b.addEventListener("click", () => send({ t: "chat-mode", mode }));
+    // Sticker modes need a GIPHY key on the server.
+    if (!stickers && (mode === "sticker" || mode === "mixed")) b.disabled = true;
     return b;
   });
+  const note = h(
+    "p",
+    { class: "pa-note", hidden: stickers },
+    "Stickers desactivados: el servidor no tiene GIPHY_API_KEY. Agrégala al archivo .env y reinicia el servidor.",
+  );
   const panel = createChatPanel({
     moderate: {
       remove: (id) => send({ t: "chat-delete", id }),
@@ -59,6 +66,7 @@ export function createPresenterChat(send: (cmd: PresenterCommand) => void) {
     close,
     h("h2", {}, "Chat del público"),
     h("div", { class: "pa-modes", role: "group", "aria-label": "Modo del chat" }, ...modeKeys),
+    note,
     paused.el,
     panel.el,
   );

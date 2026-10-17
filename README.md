@@ -38,6 +38,15 @@ your PIN. If your OS firewall asks, allow incoming connections for Node.
 
 Preview a deck without a session at `http://localhost:5180/preview/<deck-id>`.
 
+Chat stickers need a free GIPHY API key (developers.giphy.com → Create an API
+key). Put it in `.env` (git-ignored), which `npm run dev:server` loads:
+
+```sh
+cp .env.example .env    # then set GIPHY_API_KEY=...
+```
+
+Without a key, chat works in text mode and the console disables sticker modes.
+
 ## Writing decks
 
 A deck is a JSON file at `decks/<id>/deck.json` with optional images in

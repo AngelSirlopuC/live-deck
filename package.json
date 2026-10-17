@@ -12,7 +12,7 @@
   "scripts": {
     "deck": "node bin/live-deck.ts",
     "dev:web": "vite --config vite.config.ts",
-    "dev:server": "node --watch server/main.ts",
+    "dev:server": "node --env-file-if-exists=.env --watch server/main.ts",
     "build": "tsc --noEmit && vite build --config vite.config.ts",
     "start": "NODE_ENV=production node server/main.ts",
     "typecheck": "tsc --noEmit",

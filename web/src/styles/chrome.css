@@ -2318,3 +2318,74 @@ select:focus-visible {
   padding: 4px 10px;
   white-space: nowrap;
 }
+
+/* Chat sheet: messages fill the sheet, the composer sits at the bottom. */
+.chat-sheet .chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-sheet .chat-list {
+  flex: 1 1 auto;
+}
+
+.chat-sheet .chat-form {
+  margin-top: auto;
+}
+
+.chat-sheet .chat-form[hidden] {
+  display: none;
+}
+
+.chat-sheet .chat-error:empty {
+  display: none;
+}
+
+.chat-sticker-btn[hidden] {
+  display: none;
+}
+
+/* With only one control besides the input, keep the grid tight. */
+.chat-form:has(.chat-sticker-btn[hidden]) {
+  grid-template-columns: 1fr auto;
+}
+
+.chat-form:has(.chat-input[hidden]) {
+  grid-template-columns: 1fr;
+}
+
+.pa-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.chat-drawer .chat > .legend {
+  display: none;
+}
+
+/* Keep the console header on one line on laptop widths. */
+.console-bar .key {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1500px) {
+  .console-bar .key span:not(.badge) {
+    display: none;
+  }
+  .console-bar .key {
+    width: 44px;
+    padding: 0;
+  }
+  .console-bar .key-primary {
+    width: auto;
+    padding: 0 12px;
+  }
+  .console-bar .key-primary span {
+    display: inline;
+  }
+}

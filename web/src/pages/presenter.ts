@@ -56,6 +56,8 @@ interface PresenterContext {
   joinUrl: string;
   state: SessionSnapshot;
   send: (cmd: PresenterCommand) => void;
+  /** GIPHY stickers are configured on the server. */
+  stickers: boolean;
   /** Origin phones can reach (LAN address when the console runs on localhost). */
   baseUrl: string;
   /** serverNow - Date.now() at the last snapshot, for quiz timers. */
@@ -85,7 +87,7 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
     onMessage: (msg) => {
       if (msg.t === "welcome-presenter") {
         if (!ctx) {
-          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, baseUrl: msg.baseUrl, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
+          ctx = { deck: msg.deck, deckId: msg.deckId, code: msg.code, joinUrl: msg.joinUrl, baseUrl: msg.baseUrl, stickers: msg.features.stickers, state: msg.state, send: (cmd) => conn.send(cmd), clockOffset: 0 };
           document.title = `${msg.deck.title} · ${surface === "screen" ? "pantalla" : surface === "remote" ? "control" : "consola"}`;
           ui = surface === "screen" ? screenUi(root, ctx) : surface === "remote" ? remoteUi(root, ctx, token) : consoleUi(root, ctx, token);
         }
@@ -202,15 +204,15 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const count = h("span", { class: "console-stat" });
   const codeTag = h("span", { class: "console-stat" }, "Código ", h("span", { class: "num" }, ctx.code));
   const conn = h("span", { class: "console-conn", role: "status", "aria-live": "polite" });
-  const qrBtn = trusted("button", { type: "button", class: "key" }, `${icon("qr")}<span>Enlace del público</span>`);
-  const screenBtn = trusted("button", { type: "button", class: "key" }, `${icon("screen")}<span>Abrir pantalla</span>`);
-  const remoteBtn = trusted("button", { type: "button", class: "key" }, `${icon("phone")}<span>Control móvil</span>`);
+  const qrBtn = trusted("button", { type: "button", class: "key", "aria-label": "Enlace del público", title: "Enlace del público" }, `${icon("qr")}<span>Enlace del público</span>`);
+  const screenBtn = trusted("button", { type: "button", class: "key", "aria-label": "Abrir pantalla del proyector", title: "Abrir pantalla del proyector" }, `${icon("screen")}<span>Abrir pantalla</span>`);
+  const remoteBtn = trusted("button", { type: "button", class: "key", "aria-label": "Control móvil", title: "Control móvil" }, `${icon("phone")}<span>Control móvil</span>`);
   qrBtn.addEventListener("click", () => openShareSheet(ctx.joinUrl, ctx.deck.title));
   screenBtn.addEventListener("click", () => window.open(`/p/${token}/screen`, "live-deck-screen", "noopener"));
   remoteBtn.addEventListener("click", () => openRemoteSheet(`${ctx.baseUrl}/p/${token}/remote`));
 
-  const chatUi = createPresenterChat(ctx.send);
-  const presentBtn = trusted("button", { type: "button", class: "key key-primary" }, `${icon("expand")}<span>Modo presentación</span>`);
+  const chatUi = createPresenterChat(ctx.send, ctx.stickers);
+  const presentBtn = trusted("button", { type: "button", class: "key key-primary", "aria-label": "Modo presentación", title: "Modo presentación" }, `${icon("expand")}<span>Modo presentación</span>`);
   const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), presentBtn, chatUi.button, qrBtn, screenBtn, remoteBtn);
 
   const programHost = h("div", { class: "monitor-host" });
