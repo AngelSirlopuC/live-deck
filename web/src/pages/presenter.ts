@@ -307,8 +307,56 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     return document.documentElement.requestFullscreen?.(opts).catch(() => {}) ?? Promise.resolve();
   };
   let usedFullscreen = false;
+  // The projection tab and the presenter window talk over a same-origin channel:
+  // the presenter view can stop the projection, and learns whether one is running.
+  const channel = typeof BroadcastChannel === "function" ? new BroadcastChannel(`live-deck-present:${token}`) : null;
+  let presenterWin: Window | null = null;
+  let remoteProjection = false;
+  const syncPresentButton = () => {
+    const stop = remoteProjection && !presenting;
+    presentBtn.innerHTML = stop ? `${icon("power")}<span>Dejar de presentar</span>` : `${icon("play")}<span>Presentar</span>`;
+    presentBtn.setAttribute("aria-label", stop ? "Dejar de presentar" : "Presentar");
+    presentBtn.title = stop ? "Dejar de presentar" : "Presentar";
+  };
+  channel?.addEventListener("message", (e: MessageEvent<{ t: string; on?: boolean }>) => {
+    if (e.data.t === "stop" && presenting) setPresenting(false);
+    else if (e.data.t === "hello" && presenting) channel.postMessage({ t: "projecting", on: true });
+    else if (e.data.t === "projecting") {
+      remoteProjection = !!e.data.on;
+      syncPresentButton();
+    }
+  });
+  channel?.postMessage({ t: "hello" });
+
+  // Recovery when the presenter window is closed: the projection alone has no controls.
+  const reopen = trusted("button", { type: "button", class: "key key-primary" }, `${icon("screen")}<span>Abrir vista de presentador</span>`);
+  const stopHere = trusted("button", { type: "button", class: "key" }, `${icon("power")}<span>Dejar de presentar</span>`);
+  const recover = h("div", { class: "present-recover", role: "alertdialog", "aria-label": "Se cerró la vista de presentador", hidden: true }, h("p", {}, "Se cerró la vista de presentador."), h("div", { class: "present-recover-actions" }, reopen, stopHere));
+  const corner = trusted("button", { type: "button", class: "key present-corner", "aria-label": "Dejar de presentar" }, `${icon("shrink")}<span>Salir</span>`);
+  programHost.append(recover, corner);
+  stopHere.addEventListener("click", () => setPresenting(false));
+  corner.addEventListener("click", () => setPresenting(false));
+  let lastPresenterRect: Rect | null = null;
+  reopen.addEventListener("click", () => {
+    presenterWin = window.open(`/p/${token}`, "live-deck-presenter", lastPresenterRect ? features(lastPresenterRect) : "popup,width=1280,height=800");
+    if (!presenterWin) notifyBlocked();
+    else recover.hidden = true;
+  });
+  window.setInterval(() => {
+    if (presenting && presenterWin && presenterWin.closed) {
+      presenterWin = null;
+      recover.hidden = false;
+      consoleEl.classList.add("controls-visible");
+    }
+  }, 1000);
+
   const setPresenting = (on: boolean, plan?: PresentPlan) => {
     presenting = on;
+    channel?.postMessage({ t: "projecting", on });
+    if (!on) {
+      recover.hidden = true;
+      presenterWin = null;
+    }
     consoleEl.classList.toggle("is-presenting", on);
     // With a separate presenter view the projection shows only the slide.
     consoleEl.classList.toggle("projection-only", on && !!plan && !plan.floatingControls);
@@ -322,6 +370,13 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     programView.refit();
   };
   presentBtn.addEventListener("click", async () => {
+    // From a presenter window while another tab projects, the button stops it.
+    if (remoteProjection && !presenting) {
+      channel?.postMessage({ t: "stop" });
+      remoteProjection = false;
+      syncPresentButton();
+      return;
+    }
     const req = await openPresentDialog();
     if (!req) return;
     const plan = planPresentation(req, req.screens, req.currentId);
@@ -341,8 +396,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     if (plan.fullscreen) await goFullscreen(plan.fullscreenScreen);
     syncFsPrompt();
     if (plan.presenterWindow) {
-      const w = window.open(`/p/${token}`, "live-deck-presenter", features(plan.presenterWindow));
-      if (!w) notifyBlocked();
+      lastPresenterRect = plan.presenterWindow;
+      presenterWin = window.open(`/p/${token}`, "live-deck-presenter", features(plan.presenterWindow));
+      if (!presenterWin) notifyBlocked();
     }
   });
   const notifyBlocked = () =>
@@ -403,6 +459,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       else chatUi.history(arg as ChatMessage[]);
     },
     update(s) {
+      if (s.status === "ended" && presenting) setPresenting(false);
       if (s.status === "ended" && !endPanel) {
         endPanel = createEndPanel(async () => {
           const ok = await confirmSheet("¿Borrar los datos ahora?", "Se eliminan votos, ranking y reacciones del servidor. Descarga el resumen antes.", "Borrar datos", true);

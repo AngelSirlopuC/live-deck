@@ -2578,3 +2578,51 @@ select:focus-visible {
 .console:not(.is-presenting) .fs-prompt {
   display: none;
 }
+
+/* Projection recovery and exit ------------------------------------------------ */
+.present-recover,
+.present-corner {
+  display: none;
+}
+
+.console.is-presenting .present-recover:not([hidden]) {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  z-index: 7;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgb(15 12 9 / 0.94);
+  border: 1px solid var(--seam);
+  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.9);
+  cursor: default !important;
+}
+
+.present-recover p {
+  margin: 0;
+  color: var(--text);
+}
+
+.present-recover-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.console.is-presenting .present-recover *,
+.console.is-presenting .present-corner {
+  cursor: pointer !important;
+}
+
+/* Projection-only: a discreet exit appears in the corner while the mouse moves. */
+.console.is-presenting.projection-only.controls-visible .present-corner {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 7;
+  display: inline-flex;
+  min-height: 40px;
+  opacity: 0.85;
+}

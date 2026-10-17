@@ -74,3 +74,21 @@ describe("deck keys with switches", () => {
     dispose();
   });
 });
+
+describe("effect tools and overlay buttons", () => {
+  it("leave clicks on buttons over the slide alone", async () => {
+    const { bindEffectTools } = await import("../web/src/ui/effect-tools.ts");
+    const host = document.body.appendChild(document.createElement("div"));
+    const button = host.appendChild(document.createElement("button"));
+    const captured: number[] = [];
+    host.setPointerCapture = (id: number) => void captured.push(id);
+    const view = { host, toSlidePoint: () => ({ x: 0.5, y: 0.5 }) } as any;
+    const sent: unknown[] = [];
+    bindEffectTools(view, () => "ripple", (c) => void sent.push(c), () => null);
+    const ev = (type: string) => Object.assign(new MouseEvent(type, { bubbles: true, button: 0, clientX: 10, clientY: 10 }), { pointerId: 1 });
+    button.dispatchEvent(ev("pointerdown"));
+    button.dispatchEvent(ev("pointerup"));
+    expect(captured).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+});

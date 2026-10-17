@@ -82,6 +82,12 @@ completa** button appears over the slide. Leaving fullscreen (Esc) ends the
 projection and brings the console back. Allow pop-ups for the site so the
 presenter view can open.
 
+While projecting, the presenter view's main button becomes **Dejar de
+presentar**; once stopped it is **Presentar** again, so you can pick another
+mode. If the presenter view is closed, the projection shows **Abrir vista de
+presentador** and **Dejar de presentar**, and moving the mouse over it reveals a
+**Salir** button in the corner. Ending the session also ends the projection.
+
 The phone remote (**Control móvil**) works alongside any of these.
 
 ## Creating presentations

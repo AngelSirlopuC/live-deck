@@ -26,6 +26,8 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
 
   host.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
+    // Buttons layered over the slide (exit, fullscreen, recovery) keep their own clicks.
+    if ((e.target as HTMLElement | null)?.closest?.("button, a, input")) return;
     const p = view.toSlidePoint(e.clientX, e.clientY);
     if (!p) return;
     start = { ...p, cx: e.clientX, cy: e.clientY };
