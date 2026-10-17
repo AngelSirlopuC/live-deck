@@ -70,6 +70,13 @@ export class StageView {
     if (this.stage) applyQuizView(this.stage, view, opts);
   }
 
+  /** Re-measures the host now; for layout changes a ResizeObserver may report late (e.g. a backgrounded tab). */
+  refit() {
+    if (!this.stage) return;
+    this.disposeFit?.();
+    this.disposeFit = fitStage(this.host, this.stage);
+  }
+
   /** Shows (or clears) the presenter's persistent effect on the current slide. */
   setEffect(effect: PersistentEffect | null) {
     if (JSON.stringify(effect) === JSON.stringify(this.effect)) return;

@@ -62,6 +62,28 @@ cp .env.example .env    # then set GIPHY_API_KEY=...
 
 Without a key, chat works in text mode and the console disables sticker modes.
 
+### Presenting on a projector
+
+Press **Presentar** in the console. As in Google Slides you choose:
+
+- **Vista de presentador**: the console (current and next slide, notes, timer,
+  quiz, chat, controls) opens in its own window, and this tab shows only the
+  slide. Project the slide, keep the controls on your laptop.
+- **Mostrar desde el principio** and **Pantalla completa**.
+- **Pantalla de presentación**: this screen, another connected screen, or a
+  separate window you drag to the projector.
+
+To list other screens, press **Permitir** to grant the browser's window
+management permission (Chrome and Edge). The slide then goes fullscreen on the
+screen you picked and the presenter view opens on the other one, from a single
+click. Without the permission (or in other browsers), the presenter view still
+opens; if the browser needs another click for fullscreen, a **Pantalla
+completa** button appears over the slide. Leaving fullscreen (Esc) ends the
+projection and brings the console back. Allow pop-ups for the site so the
+presenter view can open.
+
+The phone remote (**Control móvil**) works alongside any of these.
+
 ## Creating presentations
 
 There are two ways in. Both end in the same live session.

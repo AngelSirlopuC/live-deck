@@ -287,3 +287,23 @@ describe("zone quizzes", () => {
     expect(native.querySelector(".quiz-zone-key")).toBeNull();
   });
 });
+
+describe("stage view refit", () => {
+  it("re-measures the host on demand", async () => {
+    const { StageView } = await import("../web/src/render/stage-view.ts");
+    const host = document.body.appendChild(document.createElement("div"));
+    let width = 960;
+    let height = 540;
+    Object.defineProperty(host, "clientWidth", { get: () => width });
+    Object.defineProperty(host, "clientHeight", { get: () => height });
+    (globalThis as any).ResizeObserver ??= class { observe() {} disconnect() {} };
+    const deck: Deck = { version: 1, title: "T", slides: [{ id: "s", elements: [] }] };
+    const view = new StageView(host, deck);
+    view.show({ slide: 0, step: 0 });
+    expect(view.current!.style.transform).toContain("scale(0.5)");
+    width = 1920;
+    height = 1080;
+    view.refit();
+    expect(view.current!.style.transform).toContain("scale(1)");
+  });
+});

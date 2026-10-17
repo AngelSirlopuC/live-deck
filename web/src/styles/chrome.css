@@ -2417,3 +2417,164 @@ select:focus-visible {
   position: absolute;
   z-index: 2;
 }
+
+/* Presentation options dialog ------------------------------------------------ */
+.present-dialog {
+  width: min(620px, calc(100vw - 24px));
+}
+
+.po-form {
+  display: grid;
+  gap: 10px;
+}
+
+.po-form h2 {
+  margin-bottom: 6px;
+}
+
+.po-form h3 {
+  margin: 12px 0 2px;
+}
+
+.po-option,
+.po-screen {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--seam);
+  background: #0f0c09;
+  cursor: pointer;
+}
+
+.po-option input,
+.po-screen input {
+  width: 22px;
+  min-height: 0;
+  height: 22px;
+  accent-color: var(--amber);
+  box-shadow: none;
+}
+
+.po-text {
+  display: grid;
+  gap: 2px;
+}
+
+.po-text span {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* Small diagrams like the reference: a projector screen and what goes on it. */
+.po-art {
+  position: relative;
+  width: 72px;
+  height: 46px;
+  border-radius: 6px;
+  border: 1px solid var(--seam);
+  background: var(--panel);
+}
+
+.po-art::before,
+.po-art::after {
+  content: "";
+  position: absolute;
+  border-radius: 3px;
+}
+
+.po-art-presenter::before {
+  inset: 6px 6px 14px 26px;
+  background: var(--text-muted);
+}
+
+.po-art-presenter::after {
+  left: 6px;
+  bottom: 6px;
+  width: 26px;
+  height: 16px;
+  border: 2px solid var(--amber);
+  background: var(--desk);
+}
+
+.po-art-start::before {
+  inset: 12px 18px 6px 6px;
+  border: 1px solid var(--text-muted);
+}
+
+.po-art-start::after {
+  inset: 6px 6px 12px 18px;
+  border: 2px solid var(--amber);
+  background: var(--panel-hi);
+}
+
+.po-art-full::before {
+  inset: 5px;
+  border: 2px solid var(--amber);
+  background: color-mix(in srgb, var(--amber) 20%, transparent);
+}
+
+.po-screens {
+  display: grid;
+  gap: 6px;
+}
+
+.po-screen-icon {
+  color: var(--text-muted);
+}
+
+.po-permission:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #c98a2a;
+}
+
+.po-permission p {
+  margin: 0;
+  color: var(--text);
+}
+
+.po-actions {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.po-actions .key {
+  flex: 0 0 auto;
+}
+
+/* Projection only: the presenter view lives in its own window. */
+.console.is-presenting.projection-only .monitor-head {
+  display: none;
+}
+
+.console.is-presenting.projection-only,
+.console.is-presenting.projection-only * {
+  cursor: none !important;
+}
+
+.console.is-presenting .fs-prompt {
+  cursor: pointer !important;
+}
+
+.fs-prompt {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 6;
+  transform: translate(-50%, -50%);
+}
+
+.fs-prompt[hidden] {
+  display: none;
+}
+
+.console:not(.is-presenting) .fs-prompt {
+  display: none;
+}

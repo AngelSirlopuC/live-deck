@@ -14,6 +14,9 @@ import { createReactionCounter, floatReactions } from "../ui/reactions.ts";
 import type { ChatMessage, SessionSummary } from "../../../shared/protocol.ts";
 import { openShareSheet } from "../ui/share.ts";
 import { createEndPanel } from "../ui/summary.ts";
+import { openPresentDialog } from "../ui/present-dialog.ts";
+import { planPresentation, type PresentPlan, type Rect } from "../ui/present-plan.ts";
+import { nativeScreen } from "../ui/screens.ts";
 
 const session = storage("session");
 const pinKey = (token: string) => `ld:pin:${token}`;
@@ -205,15 +208,13 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const codeTag = h("span", { class: "console-stat" }, "Código ", h("span", { class: "num" }, ctx.code));
   const conn = h("span", { class: "console-conn", role: "status", "aria-live": "polite" });
   const qrBtn = trusted("button", { type: "button", class: "key", "aria-label": "Enlace del público", title: "Enlace del público" }, `${icon("qr")}<span>Enlace del público</span>`);
-  const screenBtn = trusted("button", { type: "button", class: "key", "aria-label": "Abrir pantalla del proyector", title: "Abrir pantalla del proyector" }, `${icon("screen")}<span>Abrir pantalla</span>`);
   const remoteBtn = trusted("button", { type: "button", class: "key", "aria-label": "Control móvil", title: "Control móvil" }, `${icon("phone")}<span>Control móvil</span>`);
   qrBtn.addEventListener("click", () => openShareSheet(ctx.joinUrl, ctx.deck.title));
-  screenBtn.addEventListener("click", () => window.open(`/p/${token}/screen`, "live-deck-screen", "noopener"));
   remoteBtn.addEventListener("click", () => openRemoteSheet(`${ctx.baseUrl}/p/${token}/remote`));
 
   const chatUi = createPresenterChat(ctx.send, ctx.stickers);
-  const presentBtn = trusted("button", { type: "button", class: "key key-primary", "aria-label": "Modo presentación", title: "Modo presentación" }, `${icon("expand")}<span>Modo presentación</span>`);
-  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), presentBtn, chatUi.button, qrBtn, screenBtn, remoteBtn);
+  const presentBtn = trusted("button", { type: "button", class: "key key-primary", "aria-label": "Presentar", title: "Presentar" }, `${icon("play")}<span>Presentar</span>`);
+  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), presentBtn, chatUi.button, qrBtn, remoteBtn);
 
   const programHost = h("div", { class: "monitor-host" });
   const nextHost = h("div", { class: "monitor-host" });
@@ -299,22 +300,74 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     clearTimeout(idleTimer);
     idleTimer = window.setTimeout(() => consoleEl.classList.remove("controls-visible"), 2500);
   };
-  const setPresenting = (on: boolean) => {
+  const features = (r: Rect) => `popup,left=${Math.round(r.left)},top=${Math.round(r.top)},width=${Math.round(r.width)},height=${Math.round(r.height)}`;
+  const goFullscreen = (screenId: string | null) => {
+    const screen = screenId ? nativeScreen(screenId) : null;
+    const opts = { navigationUI: "hide", ...(screen ? { screen } : {}) } as FullscreenOptions;
+    return document.documentElement.requestFullscreen?.(opts).catch(() => {}) ?? Promise.resolve();
+  };
+  let usedFullscreen = false;
+  const setPresenting = (on: boolean, plan?: PresentPlan) => {
     presenting = on;
     consoleEl.classList.toggle("is-presenting", on);
+    // With a separate presenter view the projection shows only the slide.
+    consoleEl.classList.toggle("projection-only", on && !!plan && !plan.floatingControls);
     if (on) {
-      void document.documentElement.requestFullscreen?.().catch(() => {});
       wake();
     } else {
-      consoleEl.classList.remove("controls-visible");
+      consoleEl.classList.remove("controls-visible", "projection-only");
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     }
-    window.dispatchEvent(new Event("resize"));
+    syncFsPrompt();
+    programView.refit();
   };
-  presentBtn.addEventListener("click", () => setPresenting(true));
+  presentBtn.addEventListener("click", async () => {
+    const req = await openPresentDialog();
+    if (!req) return;
+    const plan = planPresentation(req, req.screens, req.currentId);
+    if (ctx.state.status === "waiting") ctx.send({ t: "start" });
+    else if (req.fromStart) ctx.send({ t: "goto", pos: { slide: 0, step: 0 } });
+
+    if (plan.projectorWindow) {
+      const w = window.open(`/p/${token}/screen`, "live-deck-screen", features(plan.projectorWindow));
+      if (!w) notifyBlocked();
+      return;
+    }
+    setPresenting(true, plan);
+    // Fullscreen first: with window-management permission Chrome still lets the
+    // same click open the presenter window afterwards (fullscreen companion window).
+    usedFullscreen = plan.fullscreen;
+    pendingScreen = plan.fullscreenScreen;
+    if (plan.fullscreen) await goFullscreen(plan.fullscreenScreen);
+    syncFsPrompt();
+    if (plan.presenterWindow) {
+      const w = window.open(`/p/${token}`, "live-deck-presenter", features(plan.presenterWindow));
+      if (!w) notifyBlocked();
+    }
+  });
+  const notifyBlocked = () =>
+    void confirmSheet("El navegador bloqueó la ventana", "Permite ventanas emergentes para este sitio y vuelve a pulsar Presentar.", "Entendido", false);
   presentExit.addEventListener("click", () => setPresenting(false));
+  let wasFullscreen = false;
   document.addEventListener("fullscreenchange", () => {
-    if (presenting && !document.fullscreenElement) setPresenting(false);
+    // Leaving fullscreen (Esc) ends the presentation, as in other slide tools.
+    if (presenting && wasFullscreen && !document.fullscreenElement) setPresenting(false);
+    wasFullscreen = !!document.fullscreenElement;
+  });
+  // When the dialog click was spent on the presenter window, one more click
+  // here completes fullscreen (browsers require a fresh gesture).
+  const fsPrompt = trusted("button", { type: "button", class: "key key-primary fs-prompt", hidden: true }, `${icon("expand")}<span>Pantalla completa</span>`);
+  fsPrompt.addEventListener("click", () => void goFullscreen(pendingScreen));
+  programHost.append(fsPrompt);
+  let pendingScreen: string | null = null;
+  const syncFsPrompt = () => (fsPrompt.hidden = !(presenting && usedFullscreen && !document.fullscreenElement));
+  document.addEventListener("fullscreenchange", () => {
+    syncFsPrompt();
+    programView.refit();
+  });
+  document.addEventListener("visibilitychange", () => programView.refit());
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && presenting && !document.fullscreenElement && !document.querySelector("dialog[open]")) setPresenting(false);
   });
   window.addEventListener("pointermove", wake);
   let endPanel: ReturnType<typeof createEndPanel> | null = null;
@@ -357,7 +410,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
         });
         body.replaceChildren(endPanel.el);
         transport.hidden = true;
-        for (const b of [qrBtn, screenBtn, remoteBtn]) b.hidden = true;
+        for (const b of [qrBtn, remoteBtn, presentBtn]) b.hidden = true;
         ctx.send({ t: "summary" });
       }
       pa.update(s);
