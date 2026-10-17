@@ -41,7 +41,8 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("goto"), pos: position }).strict(),
   z.object({ t: z.literal("restrict"), restricted: z.boolean() }).strict(),
   z.object({ t: z.literal("end") }).strict(),
-  z.object({ t: z.literal("effect"), effect: effect.nullable() }).strict(),
+  // effect places or replaces that kind; null clears every effect, or only `kind`.
+  z.object({ t: z.literal("effect"), effect: effect.nullable(), kind: z.enum(["focus", "zoom"]).optional() }).strict(),
   z.object({ t: z.literal("ripple"), x: unit, y: unit }).strict(),
   z.object({ t: z.literal("quiz"), action: z.enum(["close", "reveal"]) }).strict(),
   z.object({ t: z.literal("settings"), showScore: z.boolean() }).strict(),

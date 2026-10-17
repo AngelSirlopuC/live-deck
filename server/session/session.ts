@@ -53,7 +53,7 @@ export class Session {
   private presenterSockets = 0;
   private presenterLastSeen: number;
   private abandoned = false;
-  private effect: PersistentEffect | null = null;
+  private effects: PersistentEffect[] = [];
   private showScore = false;
   private readonly quizzes: QuizBook;
   readonly chat = new Chat();
@@ -105,7 +105,7 @@ export class Session {
       presenterOnline: this.presenterSockets > 0,
       abandoned: this.abandoned,
       audienceCount: role === "presenter" ? this.audienceSockets.size : null,
-      effect: this.effect,
+      effects: this.effects,
       quizzes: this.quizzes.views(role),
       showScore: this.showScore,
       leaderboard: role === "presenter" || this.showScore ? this.quizzes.leaderboard(name, 10) : null,
@@ -203,11 +203,17 @@ export class Session {
     this.abandoned = false;
   }
 
-  /** Focus or zoom on the current slide; null clears it. Invalid targets are ignored. */
-  setEffect(effect: PersistentEffect | null) {
+  /** Places a focus or zoom on the current slide, replacing one of the same kind. Invalid targets are ignored. */
+  setEffect(effect: PersistentEffect) {
     if (this.status !== "live") return;
-    if (effect && !effectRect(this.deck.slides[this.position.slide]!, effect.target)) return;
-    this.effect = effect;
+    if (!effectRect(this.deck.slides[this.position.slide]!, effect.target)) return;
+    // Zoom first so the order is stable for every client.
+    this.effects = [...this.effects.filter((e) => e.kind !== effect.kind), effect].sort((a, b) => (a.kind === "zoom" ? -1 : 0) - (b.kind === "zoom" ? -1 : 0));
+  }
+
+  /** Removes every effect, or only the one of `kind`. */
+  clearEffects(kind?: PersistentEffect["kind"]) {
+    this.effects = kind ? this.effects.filter((e) => e.kind !== kind) : [];
   }
 
   /** One-shot "here" pulse; returns the event to broadcast, or null when not live. */
@@ -218,7 +224,7 @@ export class Session {
 
   private moveTo(pos: Position, now: number) {
     if (this.status !== "live") return;
-    if (pos.slide !== this.position.slide) this.effect = null;
+    if (pos.slide !== this.position.slide) this.effects = [];
     this.position = pos;
     this.quizzes.arrive(this.deck.slides[pos.slide]!.id, now);
     if (isAfter(pos, this.highWater)) this.highWater = { ...pos };

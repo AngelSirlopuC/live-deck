@@ -21,7 +21,7 @@ export class StageView {
   private last: Position | null = null;
   private deck: RenderableDeck;
   private extra: Omit<RenderOptions, "step" | "enterStep">;
-  private effect: PersistentEffect | null = null;
+  private effects: PersistentEffect[] = [];
   private zoom: Zoom = NO_ZOOM;
   private quizState: { view: QuizView | null; opts: QuizOverlayOptions } = { view: null, opts: {} };
 
@@ -59,7 +59,7 @@ export class StageView {
     this.stage = next;
     this.disposeFit = fitStage(this.host, next);
     this.last = pos;
-    if (!sameSlide) this.effect = null;
+    if (!sameSlide) this.effects = [];
     this.applyEffect(false);
     applyQuizView(next, this.quizState.view, this.quizState.opts);
   }
@@ -77,10 +77,10 @@ export class StageView {
     this.disposeFit = fitStage(this.host, this.stage);
   }
 
-  /** Shows (or clears) the presenter's persistent effect on the current slide. */
-  setEffect(effect: PersistentEffect | null) {
-    if (JSON.stringify(effect) === JSON.stringify(this.effect)) return;
-    this.effect = effect;
+  /** Shows the presenter's persistent effects (focus and/or zoom) on the current slide. */
+  setEffects(effects: readonly PersistentEffect[]) {
+    if (JSON.stringify(effects) === JSON.stringify(this.effects)) return;
+    this.effects = [...effects];
     this.applyEffect(true);
   }
 
@@ -120,11 +120,16 @@ export class StageView {
     stage.classList.toggle("fx-animate", animate);
 
     const slide = this.deck.slides[pos.slide]!;
-    const rect = this.effect ? effectRect(slide, this.effect.target) : null;
+    const rectOf = (kind: PersistentEffect["kind"]) => {
+      const e = this.effects.find((x) => x.kind === kind);
+      return e ? effectRect(slide, e.target) : null;
+    };
+    const zoomRect = rectOf("zoom");
+    const rect = rectOf("focus");
 
     // Zoom: scale the content so the rect fills the stage, without exposing edges.
-    if (this.effect?.kind === "zoom" && rect) {
-      const z = zoomTransform(rect);
+    if (zoomRect) {
+      const z = zoomTransform(zoomRect);
       const tx = Math.min(0, Math.max(STAGE_WIDTH - STAGE_WIDTH * z.scale, STAGE_WIDTH / 2 - z.cx * STAGE_WIDTH * z.scale));
       const ty = Math.min(0, Math.max(STAGE_HEIGHT - STAGE_HEIGHT * z.scale, STAGE_HEIGHT / 2 - z.cy * STAGE_HEIGHT * z.scale));
       this.zoom = { scale: z.scale, tx, ty };
@@ -132,21 +137,22 @@ export class StageView {
       this.zoom = NO_ZOOM;
     }
     layer.style.transform = this.zoom === NO_ZOOM ? "" : `translate(${this.zoom.tx}px, ${this.zoom.ty}px) scale(${this.zoom.scale})`;
-    stage.dataset.effect = this.effect?.kind ?? "";
+    stage.dataset.effect = this.effects.map((e) => e.kind).join(" ");
 
-    // Focus: darken everything except the rect.
+    // Focus: darken everything except the rect, mapped through the zoom.
     let mask = fx.querySelector<HTMLElement>(".fx-focus");
-    if (this.effect?.kind === "focus" && rect) {
+    if (rect) {
       if (!mask) {
         mask = document.createElement("div");
         mask.className = "fx-focus";
         if (animate) mask.classList.add("fx-focus-enter");
         fx.prepend(mask);
       }
-      mask.style.left = `${rect.x * STAGE_WIDTH}px`;
-      mask.style.top = `${rect.y * STAGE_HEIGHT}px`;
-      mask.style.width = `${rect.w * STAGE_WIDTH}px`;
-      mask.style.height = `${rect.h * STAGE_HEIGHT}px`;
+      const { scale, tx, ty } = this.zoom;
+      mask.style.left = `${rect.x * STAGE_WIDTH * scale + tx}px`;
+      mask.style.top = `${rect.y * STAGE_HEIGHT * scale + ty}px`;
+      mask.style.width = `${rect.w * STAGE_WIDTH * scale}px`;
+      mask.style.height = `${rect.h * STAGE_HEIGHT * scale}px`;
     } else {
       mask?.remove();
     }

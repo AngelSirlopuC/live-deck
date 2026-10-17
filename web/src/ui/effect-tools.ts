@@ -4,35 +4,36 @@ import type { StageView } from "../render/stage-view.ts";
 
 export type EffectTool = "ripple" | "focus" | "zoom";
 
+type EffectKind = PersistentEffect["kind"];
+
 /**
- * Pressing a tool's key or button. The pointer (ripple) works alongside a
- * focus or zoom on screen; focus and zoom exclude each other. Pressing the tool
- * of the effect on screen removes it; pressing the excluded one does nothing.
+ * Pressing a tool's key or button. Focus and zoom combine: arming one never
+ * touches the other. Pressing the armed tool again disarms it (back to the
+ * pointer) and removes its effect from the screen.
  */
-export function pressTool(current: EffectTool, pressed: EffectTool, active: PersistentEffect["kind"] | null): { tool: EffectTool; clear: boolean } {
-  if (pressed === "ripple") return { tool: "ripple", clear: false };
-  if (active === pressed) return { tool: "ripple", clear: true };
-  if (active && active !== pressed) return { tool: current, clear: false };
-  if (current === pressed) return { tool: "ripple", clear: false };
-  return { tool: pressed, clear: false };
+export function pressTool(current: EffectTool, pressed: EffectTool, active: readonly EffectKind[]): { tool: EffectTool; clear: EffectKind | null } {
+  if (pressed === "ripple" || pressed !== current) return { tool: pressed, clear: null };
+  const kind = pressed as EffectKind;
+  return { tool: "ripple", clear: active.includes(kind) ? kind : null };
 }
 
 export interface ToolState {
-  /** Selected for the next click on the slide. */
+  /** Armed for the next click or drag on the slide. */
   pressed: boolean;
   /** Its effect is on screen. */
   active: boolean;
-  /** Excluded while the other persistent effect is selected or on screen. */
+  /** Effects only reach the audience while the session is live. */
   disabled: boolean;
 }
 
-export function toolStates(tool: EffectTool, active: PersistentEffect["kind"] | null): Record<EffectTool, ToolState> {
-  const busy = (k: "focus" | "zoom") => active === k || tool === k;
-  return {
-    ripple: { pressed: tool === "ripple", active: false, disabled: false },
-    focus: { pressed: tool === "focus", active: active === "focus", disabled: busy("zoom") },
-    zoom: { pressed: tool === "zoom", active: active === "zoom", disabled: busy("focus") },
-  };
+export function toolStates(tool: EffectTool, active: readonly EffectKind[], live: boolean): Record<EffectTool, ToolState> {
+  const st = (t: EffectTool): ToolState => ({ pressed: tool === t, active: t !== "ripple" && active.includes(t), disabled: !live });
+  return { ripple: st("ripple"), focus: st("focus"), zoom: st("zoom") };
+}
+
+/** "Quitar efecto" clears the screen and disarms the tool, so it works whenever there is either. */
+export function canClearEffects(tool: EffectTool, active: readonly EffectKind[], live: boolean): boolean {
+  return live && (active.length > 0 || tool !== "ripple");
 }
 
 const DRAG_MIN_PX = 8;
@@ -41,7 +42,7 @@ const DRAG_MIN_PX = 8;
  * Presenter pointer tools on a monitor: click pulses a ripple; with focus or
  * zoom, clicking an element targets it and dragging targets a rectangle.
  */
-export function bindEffectTools(view: StageView, getTool: () => EffectTool, send: (cmd: PresenterCommand) => void, current: () => PersistentEffect | null) {
+export function bindEffectTools(view: StageView, getTool: () => EffectTool, send: (cmd: PresenterCommand) => void, current: () => readonly PersistentEffect[]) {
   const host = view.host;
   let start: { x: number; y: number; cx: number; cy: number } | null = null;
   let box: HTMLElement | null = null;
@@ -95,9 +96,9 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
     }
     const hit = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest<HTMLElement>("[data-element-id]");
     const id = hit && host.contains(hit) ? hit.dataset.elementId : undefined;
-    const active = current();
-    if (id && active?.kind === tool && "elementId" in active.target && active.target.elementId === id) {
-      send({ t: "effect", effect: null });
+    const active = current().find((e) => e.kind === tool);
+    if (id && active && "elementId" in active.target && active.target.elementId === id) {
+      send({ t: "effect", effect: null, kind: tool });
     } else if (id) {
       send({ t: "effect", effect: { kind: tool, target: { elementId: id } } });
     } else if (p) {

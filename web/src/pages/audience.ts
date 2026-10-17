@@ -380,7 +380,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     const following = mode === "live" && !unlockedAll;
     const pos = following ? state.position : explorePos;
     view!.show(pos);
-    view!.setEffect(following ? state.effect : null);
+    view!.setEffects(following ? state.effects : []);
 
     const shown = deck.slides[pos.slide]!;
     const quizView = state.quizzes[shown.id] ?? null;

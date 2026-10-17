@@ -5,7 +5,7 @@ import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
-import { bindEffectTools, pressTool, toolStates, type EffectTool } from "../ui/effect-tools.ts";
+import { bindEffectTools, canClearEffects, pressTool, toolStates, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
 import { createPresenterAudience, createPresenterChat } from "../ui/presenter-audience.ts";
@@ -247,27 +247,36 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     return b;
   });
   const clearFx = h("button", { type: "button", class: "key key-ghost", "aria-keyshortcuts": "Escape" }, "Quitar efecto ", h("kbd", {}, "Esc"));
-  clearFx.addEventListener("click", () => ctx.send({ t: "effect", effect: null }));
-  // Pointer works alongside focus/zoom; focus and zoom exclude each other.
+  const kinds = () => ctx.state.effects.map((e) => e.kind);
+  // Clears the screen and puts the pointer back in hand.
+  const clearAll = () => {
+    if (ctx.state.effects.length) ctx.send({ t: "effect", effect: null });
+    setTool("ripple");
+  };
+  clearFx.addEventListener("click", clearAll);
+  // Focus and zoom combine; every tool waits for the session to go live.
   const syncTools = () => {
     const live = ctx.state.status === "live";
-    const states = toolStates(tool, ctx.state.effect?.kind ?? null);
+    const states = toolStates(tool, kinds(), live);
     for (const b of toolKeys) {
       const st = states[b.dataset.tool as EffectTool];
       b.setAttribute("aria-pressed", String(st.pressed));
       b.classList.toggle("is-active", st.active);
-      b.disabled = !live || st.disabled;
+      b.disabled = st.disabled;
+      b.title = live ? "" : "Inicia la presentación para usar los efectos";
     }
-    clearFx.disabled = !live || !ctx.state.effect;
+    clearFx.disabled = !canClearEffects(tool, kinds(), live);
+    clearFx.title = live ? "" : "Inicia la presentación para usar los efectos";
   };
   const setTool = (t: EffectTool) => {
     tool = t;
     syncTools();
   };
-  // Pressing the selected tool again turns it off and removes its effect.
+  // Pressing the armed tool again disarms it and removes its effect.
   const press = (t: EffectTool) => {
-    const next = pressTool(tool, t, ctx.state.effect?.kind ?? null);
-    if (next.clear) ctx.send({ t: "effect", effect: null });
+    if (ctx.state.status !== "live") return;
+    const next = pressTool(tool, t, kinds());
+    if (next.clear) ctx.send({ t: "effect", effect: null, kind: next.clear });
     setTool(next.tool);
   };
   window.addEventListener("keydown", (e) => {
@@ -278,7 +287,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     if (k === "r") press("ripple");
     else if (k === "f") press("focus");
     else if (k === "z") press("zoom");
-    else if (e.key === "Escape" && !document.querySelector("dialog[open]")) ctx.send({ t: "effect", effect: null });
+    else if (e.key === "Escape" && !document.querySelector("dialog[open]")) clearAll();
   });
   // Shown only in presentation mode: the slide fills the screen and this bar
   // floats over it while the mouse moves.
@@ -496,16 +505,8 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     nextView.setOptions({ qrSvg: svg });
   });
   bindDeckKeys(window, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
-  bindEffectTools(
-    programView,
-    () => tool,
-    (cmd) => {
-      ctx.send(cmd);
-      // Once a focus or zoom is placed, the pointer is ready again to point over it.
-      if (cmd.t === "effect" && cmd.effect) setTool("ripple");
-    },
-    () => ctx.state.effect,
-  );
+  // Focus and zoom stay armed after placing, so another region can be drawn right away.
+  bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effects);
   setInterval(() => {
     timer.textContent = elapsed(ctx.state.startedAt);
     pq.update(ctx.state, ctx.clockOffset);
@@ -547,7 +548,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       syncTools();
       count.textContent = `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       programView.show(s.position);
-      programView.setEffect(s.effect);
+      programView.setEffects(s.effects);
       const current = ctx.deck.slides[s.position.slide]!;
       programView.setQuiz(s.quizzes[current.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       pq.update(s, ctx.clockOffset);
@@ -657,7 +658,7 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
         );
       }
       view.show(s.position);
-      view.setEffect(s.effect);
+      view.setEffects(s.effects);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { clockOffset: ctx.clockOffset });
     },
     connection() {},
@@ -688,15 +689,21 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   ).map(([id, label]) => {
     const b = h("button", { type: "button", class: "key", "data-tool": id, "aria-pressed": String(id === rtool) }, label);
     b.addEventListener("click", () => {
-      const next = pressTool(rtool, id, ctx.state.effect?.kind ?? null);
-      if (next.clear) ctx.send({ t: "effect", effect: null });
-      rtool = next.tool;
-      for (const k of rtools) k.setAttribute("aria-pressed", String(k.dataset.tool === rtool));
+      const next = pressTool(rtool, id, ctx.state.effects.map((e) => e.kind));
+      if (next.clear) ctx.send({ t: "effect", effect: null, kind: next.clear });
+      setRtool(next.tool);
     });
     return b;
   });
+  const setRtool = (t: EffectTool) => {
+    rtool = t;
+    for (const k of rtools) k.setAttribute("aria-pressed", String(k.dataset.tool === rtool));
+  };
   const rclear = h("button", { type: "button", class: "key key-ghost" }, "Quitar");
-  rclear.addEventListener("click", () => ctx.send({ t: "effect", effect: null }));
+  rclear.addEventListener("click", () => {
+    if (ctx.state.effects.length) ctx.send({ t: "effect", effect: null });
+    setRtool("ripple");
+  });
 
   root.replaceChildren(
     h(
@@ -713,7 +720,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   const view = new StageView(host, ctx.deck, { assetBase: `/decks/${ctx.deckId}/`, joinUrl: ctx.joinUrl });
   // Swipe changes slides with the pointer tool; taps place the selected effect.
   bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) }, 40, () => false, () => rtool === "ripple");
-  bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effect);
+  bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effects);
   setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
 
   return {
@@ -724,7 +731,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       lamp.textContent = l.text;
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
       view.show(s.position);
-      view.setEffect(s.effect);
+      view.setEffects(s.effects);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       rq.update(s, ctx.clockOffset);
       notes.textContent = ctx.deck.slides[s.position.slide]?.notes ?? "Sin notas.";

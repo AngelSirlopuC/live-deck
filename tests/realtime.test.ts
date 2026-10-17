@@ -219,7 +219,13 @@ describe("live effects", () => {
     p.send({ t: "ripple", x: 0.4, y: 0.6 });
     expect(await a.waitFor((m) => m.t === "ripple")).toEqual({ t: "ripple", slide: 0, x: 0.4, y: 0.6 });
     p.send({ t: "effect", effect: { kind: "focus", target: { elementId: "qr" } } });
-    await a.waitFor((m) => m.t === "state" && m.state.effect?.kind === "focus");
+    await a.waitFor((m) => m.t === "state" && m.state.effects.some((e) => e.kind === "focus"));
+    p.send({ t: "effect", effect: { kind: "zoom", target: { rect: { x: 0, y: 0, w: 0.5, h: 0.5 } } } });
+    await a.waitFor((m) => m.t === "state" && m.state.effects.length === 2);
+    p.send({ t: "effect", effect: null, kind: "focus" });
+    await a.waitFor((m) => m.t === "state" && m.state.effects.length === 1 && m.state.effects[0]!.kind === "zoom");
+    p.send({ t: "effect", effect: null });
+    await a.waitFor((m) => m.t === "state" && m.state.effects.length === 0);
   });
 
   it("rejects malformed effect coordinates", async () => {

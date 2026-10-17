@@ -275,7 +275,8 @@ export class WsHub {
         if (cmd.data.restricted) this.closeAudience(entry, "restricted");
         break;
       case "effect":
-        s.setEffect(cmd.data.effect);
+        if (cmd.data.effect) s.setEffect(cmd.data.effect);
+        else s.clearEffects(cmd.data.kind);
         break;
       case "ripple": {
         const ev = s.ripple(cmd.data.x, cmd.data.y);

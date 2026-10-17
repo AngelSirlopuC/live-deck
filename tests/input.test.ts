@@ -84,7 +84,7 @@ describe("effect tools and overlay buttons", () => {
     host.setPointerCapture = (id: number) => void captured.push(id);
     const view = { host, toSlidePoint: () => ({ x: 0.5, y: 0.5 }) } as any;
     const sent: unknown[] = [];
-    bindEffectTools(view, () => "ripple", (c) => void sent.push(c), () => null);
+    bindEffectTools(view, () => "ripple", (c) => void sent.push(c), () => []);
     const ev = (type: string) => Object.assign(new MouseEvent(type, { bubbles: true, button: 0, clientX: 10, clientY: 10 }), { pointerId: 1 });
     button.dispatchEvent(ev("pointerdown"));
     button.dispatchEvent(ev("pointerup"));

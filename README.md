@@ -10,7 +10,7 @@ anything.
   browses back through the slides already shown.
 - **Quizzes.** Live results or secret until reveal, an optional leaderboard,
   votes by tap or keyboard (A–F, 1–6). Anonymous attendees get a creative alias.
-- **Pointer effects.** Ripple, focus and zoom, mirrored on every screen.
+- **Pointer effects.** Ripple, focus and zoom (focus and zoom combine), mirrored on every screen. Focus and zoom stay armed so you can redraw the region; `Esc` clears everything.
 - **Reactions and chat.** TikTok-style floating reactions among the audience;
   text and/or GIPHY sticker chat with moderation. The presenter opts in to see
   either.

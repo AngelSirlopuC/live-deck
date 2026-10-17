@@ -163,22 +163,40 @@ describe("presenter effects", () => {
     s.start();
     s.next(); // agenda slide
     s.setEffect({ kind: "focus", target: { elementId: "p2" } });
-    expect(s.snapshot().effect).toEqual({ kind: "focus", target: { elementId: "p2" } });
+    expect(s.snapshot().effects).toEqual([{ kind: "focus", target: { elementId: "p2" } }]);
     s.next(); // fragment step on the same slide keeps it
-    expect(s.snapshot().effect).not.toBeNull();
+    expect(s.snapshot().effects).toHaveLength(1);
     s.goto({ slide: 2, step: 0 });
-    expect(s.snapshot().effect).toBeNull();
+    expect(s.snapshot().effects).toEqual([]);
   });
 
   it("rejects targets that are not on the current slide", () => {
     const s = make();
     s.start();
     s.setEffect({ kind: "zoom", target: { elementId: "servidor" } });
-    expect(s.snapshot().effect).toBeNull();
+    expect(s.snapshot().effects).toEqual([]);
     s.setEffect({ kind: "zoom", target: { rect: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } } });
-    expect(s.snapshot().effect?.kind).toBe("zoom");
-    s.setEffect(null);
-    expect(s.snapshot().effect).toBeNull();
+    expect(s.snapshot().effects.map((e) => e.kind)).toEqual(["zoom"]);
+    s.clearEffects();
+    expect(s.snapshot().effects).toEqual([]);
+  });
+
+  it("holds a focus and a zoom together, one of each, and clears either one alone", () => {
+    const s = make();
+    s.start();
+    const zoom = { kind: "zoom", target: { rect: { x: 0, y: 0, w: 0.5, h: 0.5 } } } as const;
+    s.setEffect(zoom);
+    s.setEffect({ kind: "focus", target: { rect: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } } });
+    s.setEffect({ kind: "focus", target: { rect: { x: 0.2, y: 0.2, w: 0.2, h: 0.2 } } });
+    expect(s.snapshot().effects).toEqual([zoom, { kind: "focus", target: { rect: { x: 0.2, y: 0.2, w: 0.2, h: 0.2 } } }]);
+    s.clearEffects("focus");
+    expect(s.snapshot().effects).toEqual([zoom]);
+  });
+
+  it("ignores effects before the session is live", () => {
+    const s = make();
+    s.setEffect({ kind: "zoom", target: { rect: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } } });
+    expect(s.snapshot().effects).toEqual([]);
   });
 
   it("emits ripples only while live, tagged with the current slide", () => {

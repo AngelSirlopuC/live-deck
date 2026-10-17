@@ -37,8 +37,8 @@ export interface SessionSnapshot {
   abandoned: boolean;
   /** Connected audience members; null for the audience (presenter-only information). */
   audienceCount: number | null;
-  /** Focus or zoom the presenter is holding on the current slide. */
-  effect: PersistentEffect | null;
+  /** Focus and/or zoom the presenter is holding on the current slide (at most one of each). */
+  effects: PersistentEffect[];
   /** Every quiz opened so far, keyed by slide id, as this viewer may see it. */
   quizzes: Record<string, QuizView>;
   /** Presenter choice: show scores and the leaderboard to the audience during the session. */
