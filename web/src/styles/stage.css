@@ -699,14 +699,14 @@
 }
 
 .quiz-zone-key {
+  /* Sits on the zone's top-left corner so it never covers the designed option text. */
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  left: -18px;
+  top: -18px;
   display: grid;
   place-items: center;
-  width: 84px;
-  height: 84px;
+  width: 56px;
+  height: 56px;
   border-radius: 20px;
   background: rgb(12 12 14 / 0.86);
   color: #fff;
@@ -720,4 +720,9 @@
   .quiz-zone .quiz-bar {
     transition: none;
   }
+}
+
+/* Preview guides: let the corner letter sit outside the zone edge. */
+.quiz-zone.has-guide {
+  overflow: visible;
 }
