@@ -5,12 +5,34 @@ import type { StageView } from "../render/stage-view.ts";
 export type EffectTool = "ripple" | "focus" | "zoom";
 
 /**
- * Pressing a tool's key or button: selects it; pressed again it toggles off,
- * removing its effect when that effect is on screen.
+ * Pressing a tool's key or button. The pointer (ripple) works alongside a
+ * focus or zoom on screen; focus and zoom exclude each other. Pressing the tool
+ * of the effect on screen removes it; pressing the excluded one does nothing.
  */
 export function pressTool(current: EffectTool, pressed: EffectTool, active: PersistentEffect["kind"] | null): { tool: EffectTool; clear: boolean } {
-  if (pressed !== current || pressed === "ripple") return { tool: pressed, clear: false };
-  return { tool: "ripple", clear: active === pressed };
+  if (pressed === "ripple") return { tool: "ripple", clear: false };
+  if (active === pressed) return { tool: "ripple", clear: true };
+  if (active && active !== pressed) return { tool: current, clear: false };
+  if (current === pressed) return { tool: "ripple", clear: false };
+  return { tool: pressed, clear: false };
+}
+
+export interface ToolState {
+  /** Selected for the next click on the slide. */
+  pressed: boolean;
+  /** Its effect is on screen. */
+  active: boolean;
+  /** Excluded while the other persistent effect is selected or on screen. */
+  disabled: boolean;
+}
+
+export function toolStates(tool: EffectTool, active: PersistentEffect["kind"] | null): Record<EffectTool, ToolState> {
+  const busy = (k: "focus" | "zoom") => active === k || tool === k;
+  return {
+    ripple: { pressed: tool === "ripple", active: false, disabled: false },
+    focus: { pressed: tool === "focus", active: active === "focus", disabled: busy("zoom") },
+    zoom: { pressed: tool === "zoom", active: active === "zoom", disabled: busy("focus") },
+  };
 }
 
 const DRAG_MIN_PX = 8;

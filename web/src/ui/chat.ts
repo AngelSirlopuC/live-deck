@@ -44,11 +44,18 @@ export function createChatPanel(opts: ChatPanelOptions) {
     if (m.text) li.append(h("span", { class: "chat-text" }, m.text));
     if (m.sticker) li.append(h("img", { class: "chat-sticker", src: m.sticker.url, alt: m.sticker.title || "Sticker", width: m.sticker.width, height: m.sticker.height, loading: "lazy", referrerpolicy: "no-referrer" }));
     if (opts.moderate) {
+      // Moderation stays out of sight: shown on hover/focus, or with "⋯" on touch.
+      const more = h("button", { type: "button", class: "chat-more", "aria-label": `Acciones para el mensaje de ${m.name}`, "aria-expanded": "false" }, "⋯");
       const del = h("button", { type: "button", class: "chat-mod" }, "Borrar");
       const mute = h("button", { type: "button", class: "chat-mod" }, "Silenciar");
+      more.addEventListener("click", () => {
+        const open = li.classList.toggle("is-open");
+        more.setAttribute("aria-expanded", String(open));
+      });
       del.addEventListener("click", () => opts.moderate!.remove(m.id));
       mute.addEventListener("click", () => opts.moderate!.mute(m.from, m.name));
-      li.append(h("span", { class: "chat-mods" }, del, mute));
+      li.classList.add("is-moderated");
+      li.append(more, h("span", { class: "chat-mods" }, del, mute));
     }
     return li;
   }

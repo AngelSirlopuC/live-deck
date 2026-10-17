@@ -36,10 +36,14 @@ export function createPresenterAudience(send: (cmd: PresenterCommand) => void) {
   };
 }
 
-/** Header chat button + drawer: open/close the chat, pick its mode, moderate. */
+const MODE_LABEL: Record<ChatMode, string> = { off: "Cerrado", text: "Texto", sticker: "Stickers", mixed: "Mixto" };
+
+/**
+ * Chat panel for the console side column. Messages are always visible;
+ * settings (mode, pause) sit behind a gear button and per-message moderation
+ * shows on hover or with the "⋯" button.
+ */
 export function createPresenterChat(send: (cmd: PresenterCommand) => void, stickers: boolean) {
-  const button = trusted("button", { type: "button", class: "key chat-btn", "aria-label": "Chat", title: "Chat" }, `${icon("chat")}<span>Chat</span><span class="badge" hidden></span>`);
-  const badge = button.querySelector<HTMLElement>(".badge")!;
   const paused = toggle("chat-paused", "Pausar chat", (on) => send({ t: "chat-pause", paused: on }));
   const modeKeys = MODES.map(([mode, label]) => {
     const b = h("button", { type: "button", class: "key", "data-mode": mode, "aria-pressed": "false" }, label);
@@ -48,58 +52,39 @@ export function createPresenterChat(send: (cmd: PresenterCommand) => void, stick
     if (!stickers && (mode === "sticker" || mode === "mixed")) b.disabled = true;
     return b;
   });
-  const note = h(
-    "p",
-    { class: "pa-note", hidden: stickers },
-    "Stickers desactivados: el servidor no tiene GIPHY_API_KEY. Agrégala al archivo .env y reinicia el servidor.",
-  );
+  const note = h("p", { class: "pa-note", hidden: stickers }, "Stickers desactivados: el servidor no tiene GIPHY_API_KEY.");
+  const settings = h("div", { class: "pc-settings", id: "pc-settings", hidden: true }, h("div", { class: "pa-modes", role: "group", "aria-label": "Modo del chat" }, ...modeKeys), note, paused.el);
+  const gear = trusted("button", { type: "button", class: "pc-gear", "aria-label": "Configurar chat", "aria-expanded": "false", "aria-controls": "pc-settings", title: "Configurar chat" }, icon("settings"));
+  gear.addEventListener("click", () => {
+    settings.hidden = !settings.hidden;
+    gear.setAttribute("aria-expanded", String(!settings.hidden));
+  });
+  const modeBadge = h("span", { class: "pc-mode" });
   const panel = createChatPanel({
     moderate: {
       remove: (id) => send({ t: "chat-delete", id }),
       mute: (participantId) => send({ t: "chat-mute", participantId }),
     },
   });
-  const close = trusted("button", { type: "button", class: "key key-icon sheet-close", "aria-label": "Cerrar" }, icon("close"));
-  const drawer = h(
-    "dialog",
-    { class: "sheet chat-sheet chat-drawer", "aria-label": "Chat del público" },
-    close,
-    h("h2", {}, "Chat del público"),
-    h("div", { class: "pa-modes", role: "group", "aria-label": "Modo del chat" }, ...modeKeys),
-    note,
-    paused.el,
+  const el = h(
+    "section",
+    { class: "presenter-chat", "aria-label": "Chat del público" },
+    h("div", { class: "pc-head" }, h("h2", { class: "legend" }, "Chat"), modeBadge, h("span", { class: "spacer" }), gear),
+    settings,
     panel.el,
   );
-  document.body.append(drawer);
-  let unread = 0;
-  const setUnread = (n: number) => {
-    unread = n;
-    badge.hidden = n === 0;
-    badge.textContent = n > 9 ? "9+" : String(n);
-  };
-  button.addEventListener("click", () => {
-    drawer.showModal();
-    setUnread(0);
-    panel.scrollToEnd();
-  });
-  close.addEventListener("click", () => drawer.close());
-  drawer.addEventListener("click", (e) => {
-    if (e.target === drawer) drawer.close();
-  });
 
   return {
-    button,
+    el,
     update(s: SessionSnapshot) {
       for (const b of modeKeys) b.setAttribute("aria-pressed", String(b.dataset.mode === s.chat.mode));
       paused.input.checked = s.chat.paused;
       paused.input.disabled = s.chat.mode === "off";
+      modeBadge.textContent = s.chat.mode === "off" ? "Cerrado" : s.chat.paused ? "Pausado" : MODE_LABEL[s.chat.mode];
+      modeBadge.dataset.state = s.chat.mode === "off" ? "off" : s.chat.paused ? "paused" : "on";
       panel.setState(s.chat);
-      button.classList.toggle("is-live", s.chat.mode !== "off" && !s.chat.paused);
     },
-    add(m: ChatMessage) {
-      panel.add(m);
-      if (!drawer.open) setUnread(unread + 1);
-    },
+    add: (m: ChatMessage) => panel.add(m),
     remove: (id: string) => panel.remove(id),
     history: (m: ChatMessage[]) => panel.setHistory(m),
   };

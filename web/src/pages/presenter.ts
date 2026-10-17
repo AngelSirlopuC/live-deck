@@ -5,7 +5,7 @@ import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
-import { bindEffectTools, pressTool, type EffectTool } from "../ui/effect-tools.ts";
+import { bindEffectTools, pressTool, toolStates, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
 import { createPresenterAudience, createPresenterChat } from "../ui/presenter-audience.ts";
@@ -227,7 +227,10 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   const chatUi = createPresenterChat(ctx.send, ctx.stickers);
   const presentBtn = trusted("button", { type: "button", class: "key key-primary", "aria-label": "Presentar", title: "Presentar" }, `${icon("play")}<span>Presentar</span>`);
-  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), presentBtn, chatUi.button, qrBtn, remoteBtn);
+  const timer = h("span", { class: "console-timer", "aria-label": "Tiempo transcurrido" }, "00:00");
+  const slideNo = h("span", { class: "console-slide-no" });
+  const meters = h("div", { class: "console-meters", "aria-label": "Tiempo y diapositiva" }, timer, slideNo);
+  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), meters, presentBtn, qrBtn, remoteBtn);
 
   const programHost = h("div", { class: "monitor-host" });
   const nextHost = h("div", { class: "monitor-host" });
@@ -245,9 +248,21 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   });
   const clearFx = h("button", { type: "button", class: "key key-ghost", "aria-keyshortcuts": "Escape" }, "Quitar efecto ", h("kbd", {}, "Esc"));
   clearFx.addEventListener("click", () => ctx.send({ t: "effect", effect: null }));
+  // Pointer works alongside focus/zoom; focus and zoom exclude each other.
+  const syncTools = () => {
+    const live = ctx.state.status === "live";
+    const states = toolStates(tool, ctx.state.effect?.kind ?? null);
+    for (const b of toolKeys) {
+      const st = states[b.dataset.tool as EffectTool];
+      b.setAttribute("aria-pressed", String(st.pressed));
+      b.classList.toggle("is-active", st.active);
+      b.disabled = !live || st.disabled;
+    }
+    clearFx.disabled = !live || !ctx.state.effect;
+  };
   const setTool = (t: EffectTool) => {
     tool = t;
-    for (const b of toolKeys) b.setAttribute("aria-pressed", String(b.dataset.tool === t));
+    syncTools();
   };
   // Pressing the selected tool again turns it off and removes its effect.
   const press = (t: EffectTool) => {
@@ -280,12 +295,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     programHost,
   );
   const nextMon = h("section", { class: "monitor monitor-next", "aria-label": "Siguiente" }, h("span", { class: "monitor-label" }, "Siguiente"), nextHost);
-  const timer = h("div", { class: "console-timer", "aria-label": "Tiempo transcurrido" }, "00:00");
-  const slideNo = h("div", { class: "console-slide-no" });
-  const notes = h("div", { class: "console-notes", tabindex: 0, "aria-label": "Notas del ponente" });
   const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
   const pa = createPresenterAudience(ctx.send);
-  const side = h("aside", { class: "console-side" }, nextMon, h("div", { class: "console-meters" }, timer, slideNo), h("h2", { class: "legend" }, "Notas"), notes);
+  const side = h("aside", { class: "console-side" }, nextMon, chatUi.el);
   // Audience-facing controls live on the desk under the program monitor so the
   // next-slide monitor and timer never scroll out of view.
   const desk = h("div", { class: "console-desk" }, pq.quizEl, pq.boardEl, pa.el);
@@ -479,7 +491,16 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     nextView.setOptions({ qrSvg: svg });
   });
   bindDeckKeys(window, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
-  bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effect);
+  bindEffectTools(
+    programView,
+    () => tool,
+    (cmd) => {
+      ctx.send(cmd);
+      // Once a focus or zoom is placed, the pointer is ready again to point over it.
+      if (cmd.t === "effect" && cmd.effect) setTool("ripple");
+    },
+    () => ctx.state.effect,
+  );
   setInterval(() => {
     timer.textContent = elapsed(ctx.state.startedAt);
     pq.update(ctx.state, ctx.clockOffset);
@@ -518,8 +539,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       const l = lampFor(s);
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
-      for (const b of [...toolKeys, clearFx]) b.disabled = s.status !== "live";
-      clearFx.disabled = s.status !== "live" || !s.effect;
+      syncTools();
       count.textContent = `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       programView.show(s.position);
       programView.setEffect(s.effect);
@@ -532,7 +552,6 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       if (!atEnd) nextView.show(upcoming);
       nextMon.dataset.empty = String(atEnd);
       slideNo.textContent = `${s.position.slide + 1} / ${ctx.deck.slides.length}`;
-      notes.textContent = ctx.deck.slides[s.position.slide]?.notes ?? "Sin notas para esta diapositiva.";
       timer.textContent = elapsed(s.startedAt);
       prev.disabled = s.status !== "live";
       next.disabled = s.status !== "live";

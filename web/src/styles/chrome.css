@@ -2706,3 +2706,217 @@ select:focus-visible {
   outline: 2px solid var(--amber);
   outline-offset: 2px;
 }
+
+/* ======================================================================= */
+/* Console layout v2: wide program, next + chat column, timer in the header */
+/* ======================================================================= */
+
+.console-body {
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 400px);
+}
+
+/* The program monitor fills its column: no empty band before "Siguiente". */
+.console-main .monitor-program .monitor-host {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.console-main {
+  overflow: auto;
+}
+
+.console-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.console-side > .monitor-next {
+  flex: none;
+}
+
+/* Timer and slide counter next to Presentar. */
+.console-bar .console-meters {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--seam);
+  background: #0f0c09;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 40px;
+}
+
+.console-bar .console-timer {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.console-bar .console-slide-no {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Effect tools: the on-screen effect shows a lit LED; the excluded one dims. */
+.fx-tools .key.is-active::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--onair);
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--onair) 70%, transparent);
+}
+
+.fx-tools .key.is-active {
+  border-color: color-mix(in srgb, var(--onair) 60%, var(--seam));
+}
+
+.fx-tools .key:disabled {
+  opacity: 0.32;
+}
+
+/* Presenter chat panel in the side column. */
+.presenter-chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--seam);
+}
+
+.pc-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-head .legend {
+  margin: 0;
+}
+
+.pc-mode {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-family: var(--font-legend);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--seam);
+  color: var(--text-muted);
+}
+
+.pc-mode[data-state="on"] {
+  color: var(--signal);
+  border-color: color-mix(in srgb, var(--signal) 50%, var(--seam));
+}
+
+.pc-mode[data-state="paused"] {
+  color: var(--amber);
+  border-color: #c98a2a;
+}
+
+.pc-gear {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--seam);
+  background: #0f0c09;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pc-gear[aria-expanded="true"] {
+  color: var(--amber);
+  border-color: #c98a2a;
+}
+
+.pc-gear .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.pc-settings:not([hidden]) {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0f0c09;
+  border: 1px solid var(--seam);
+}
+
+.presenter-chat .chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.presenter-chat .chat > .legend {
+  display: none;
+}
+
+.presenter-chat .chat-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+/* Moderation hidden until hover, keyboard focus, or the "⋯" button. */
+.chat-msg.is-moderated {
+  position: relative;
+  padding-right: 34px;
+}
+
+.chat-more {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.chat-msg.is-moderated .chat-mods {
+  display: none;
+}
+
+.chat-msg.is-moderated:hover .chat-more,
+.chat-msg.is-moderated:focus-within .chat-more,
+.chat-msg.is-moderated.is-open .chat-more {
+  opacity: 1;
+}
+
+.chat-msg.is-moderated:hover .chat-mods,
+.chat-msg.is-moderated:focus-within .chat-mods,
+.chat-msg.is-moderated.is-open .chat-mods {
+  display: flex;
+}
+
+@media (hover: none) {
+  .chat-more {
+    opacity: 1;
+  }
+}
