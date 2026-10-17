@@ -43,6 +43,8 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   stage.style.setProperty("--theme-bg", ground);
   stage.style.setProperty("--theme-fg", theme.colors.foreground);
   stage.style.setProperty("--theme-accent", theme.colors.accent);
+  // Text drawn in the accent (quiz leader rank and share) needs 3:1 on the ground.
+  stage.style.setProperty("--theme-accent-ink", contrastRatio(theme.colors.accent, ground) >= 3 ? "var(--theme-accent)" : "var(--theme-fg)");
   stage.style.setProperty("--theme-muted", theme.colors.muted);
   if (theme.colors.surface) stage.style.setProperty("--theme-surface", theme.colors.surface);
   if (theme.preset) applyPreset(stage, theme.preset, theme);
