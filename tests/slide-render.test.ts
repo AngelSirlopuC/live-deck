@@ -84,8 +84,9 @@ describe("renderSlide with rich decks", () => {
   beforeEach(() => document.head.replaceChildren());
 
   it("renders legacy decks without preset layers, font overrides or font links", () => {
-    for (const name of ["demo", "como-crear-una-presentacion"]) {
-      const legacy = JSON.parse(readFileSync(`${process.cwd()}/decks/${name}/deck.json`, "utf8")) as Deck;
+    // decks/demo plus a frozen copy of the pre-preset guide deck keep legacy rendering covered.
+    for (const file of ["decks/demo/deck.json", "tests/fixtures/legacy-guide.json"]) {
+      const legacy = JSON.parse(readFileSync(`${process.cwd()}/${file}`, "utf8")) as Deck;
       legacy.slides.forEach((slide, i) => {
         const stage = renderSlide(legacy, i, { step: 99 });
         expect(stage.dataset.preset).toBeUndefined();
@@ -193,5 +194,30 @@ describe("renderSlide with rich decks", () => {
       expect(node.style.opacity).toBe("0.5");
       expect(node.getAttribute("aria-hidden")).toBe("true");
     }
+  });
+});
+
+describe("icon rendering regressions", () => {
+  const iconDeck = (preset: "brutalista" | "neon", style: Record<string, unknown>): Deck =>
+    ({
+      version: 1,
+      title: "T",
+      theme: { preset },
+      slides: [{ id: "s", elements: [{ id: "i", type: "icon", name: "rocket", box: { x: 0.1, y: 0.1, w: 0.08, h: 0.142 }, style }] }],
+    }) as Deck;
+
+  it("pads a background icon relative to its own box, not the stage", () => {
+    const el = renderSlide(iconDeck("brutalista", { background: "#ffd400" }), 0, { step: 0 }).querySelector<HTMLElement>('[data-element-id="i"]')!;
+    const pad = parseFloat(el.style.padding);
+    expect(pad).toBeGreaterThan(0);
+    expect(pad).toBeLessThan(0.08 * 1920 * 0.3);
+    expect(el.querySelector("svg")).not.toBeNull();
+  });
+
+  it("uses the text colour for icons when the accent is too faint on the ground", () => {
+    const light = renderSlide(iconDeck("brutalista", {}), 0, { step: 0 }).querySelector<HTMLElement>('[data-element-id="i"]')!;
+    expect(light.style.color).toBe("var(--theme-fg)");
+    const dark = renderSlide(iconDeck("neon", {}), 0, { step: 0 }).querySelector<HTMLElement>('[data-element-id="i"]')!;
+    expect(dark.style.color).toBe("var(--theme-accent)");
   });
 });

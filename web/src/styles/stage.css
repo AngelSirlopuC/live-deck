@@ -106,11 +106,6 @@
 .el-icon {
   align-items: center;
   justify-content: center;
-  color: var(--theme-accent);
-}
-
-.el-icon.has-background {
-  padding: 18%;
 }
 
 .el-icon svg {

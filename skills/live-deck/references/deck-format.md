@@ -109,6 +109,7 @@ A curated Lucide icon. The authoritative list is `ICON_NAMES` in `shared/icons.t
 
 - `name`: an `ICON_NAMES` entry, e.g. `"rocket"`.
 - `style` (optional): `color` hex, `background` hex (a filled tile behind the icon), `strokeWidth` 1–3, `radius` px (rounds the background tile).
+- Default color: the preset accent, or the text color when the accent is too faint on its ground (under 3:1, e.g. yellow on light paper in `brutalista`). Set `color` only to force a specific hue.
 - Keep the box roughly square on screen: `h ≈ w × 16/9` (e.g. `w: 0.08, h: 0.142`).
 
 Representative names (verify against `ICON_NAMES`):

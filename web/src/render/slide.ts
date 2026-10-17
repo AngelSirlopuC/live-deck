@@ -1,7 +1,7 @@
 import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
 import type { DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
-import { THEME_PRESETS, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
+import { THEME_PRESETS, contrastRatio, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
 import { renderChart } from "./charts.ts";
 import { renderDecor } from "./decor.ts";
 import { ensurePresetFonts } from "./fonts.ts";
@@ -236,10 +236,16 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedThem
     }
     case "icon": {
       const s = el.style ?? {};
-      if (s.color) node.style.color = s.color;
+      // Graphics need 3:1 against their ground; a faint accent (yellow on paper) falls back to the text colour.
+      const ground = s.background ?? theme.colors.background;
+      node.style.color = s.color ?? (contrastRatio(theme.colors.accent, ground) >= 3 ? "var(--theme-accent)" : "var(--theme-fg)");
       if (s.background) node.style.background = s.background;
       if (s.radius !== undefined) node.style.borderRadius = px(s.radius);
-      if (s.background) node.classList.add("has-background");
+      if (s.background) {
+        node.classList.add("has-background");
+        // Percent padding would resolve against the 1920 px stage, not the icon box.
+        node.style.padding = px(Math.min(el.box.w * STAGE_WIDTH, el.box.h * STAGE_HEIGHT) * 0.18);
+      }
       const svg = renderIcon(el.name, s.strokeWidth ?? 2);
       if (svg) node.append(svg);
       break;
