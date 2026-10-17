@@ -585,7 +585,7 @@
 
 .quiz-option.is-first .quiz-rank,
 .quiz-option.is-first .quiz-count {
-  color: var(--theme-accent);
+  color: var(--theme-accent-ink, var(--theme-accent));
 }
 
 .quiz-option.is-first .quiz-bar {
