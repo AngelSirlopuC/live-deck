@@ -273,8 +273,12 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     if (minutes !== undefined) ctx.send({ t: "time-limit", minutes });
   });
   const slideNo = h("span", { class: "console-slide-no" });
-  const meters = h("div", { class: "console-meters", "aria-label": "Tiempo y diapositiva" }, timer, slideNo);
-  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), meters, presentBtn, qrBtn, remoteBtn);
+  // Two separate readouts so the clock and the slide count never read as one number.
+  const clockMeter = trusted("div", { class: "console-meters console-clock", role: "group", "aria-label": "Cronómetro" }, icon("timer"));
+  clockMeter.append(timer);
+  const slideMeter = trusted("div", { class: "console-meters console-slides", role: "group", "aria-label": "Diapositiva" }, icon("slides"));
+  slideMeter.append(slideNo);
+  const header = h("header", { class: "console-bar" }, lamp, h("strong", { class: "console-title" }, ctx.deck.title), codeTag, count, conn, h("span", { class: "spacer" }), clockMeter, slideMeter, presentBtn, qrBtn, remoteBtn);
 
   const programHost = h("div", { class: "monitor-host" });
   const nextHost = h("div", { class: "monitor-host" });

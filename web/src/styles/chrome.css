@@ -3381,6 +3381,11 @@ select:focus-visible {
   transition: color 200ms ease;
 }
 
+/* Without a limit the clock stays neutral: yellow must only ever mean "almost out of time". */
+.pace-timer[data-pace=""] {
+  color: var(--text);
+}
+
 .pace-timer[data-pace="ok"] {
   color: var(--signal);
 }
@@ -3428,4 +3433,26 @@ select:focus-visible {
   .pace-timer {
     transition: none;
   }
+}
+
+/* Header readouts: clock and slide count are two separate pills. */
+.console-bar .console-meters {
+  align-items: center;
+  gap: 8px;
+}
+
+.console-bar .console-meters .icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.console-bar .console-slides {
+  padding-right: 14px;
+}
+
+.console-bar .console-slides .console-slide-no {
+  font-size: 0.95rem;
+  color: var(--text);
 }

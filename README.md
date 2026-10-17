@@ -13,7 +13,7 @@ anything.
 - **Pointer effects.** Ripple, focus and zoom (focus and zoom combine), mirrored on every screen. Focus and zoom stay armed so you can redraw the region; `Esc` clears everything. The laser (`L`) shows the presenter's cursor live on every screen.
 - **Time limit.** Optional planned duration, set when creating the session or
   by clicking the console timer: green on time, yellow in the last 20% (1 to 5
-  minutes), red with the overrun once passed. Only presenters see it.
+  minutes), red once passed; the counter alone is shown. Only presenters see it.
 - **Reactions and chat.** TikTok-style floating reactions among the audience;
   text and/or GIPHY sticker chat with moderation. The presenter opts in to see
   either.
