@@ -84,3 +84,57 @@ describe("ranking view", () => {
     expect(g.querySelector<HTMLElement>(".quiz")!.dataset.view).toBe("grid");
   });
 });
+
+describe("zone quiz overlay", () => {
+  const zoneDeck: Deck = {
+    version: 1,
+    title: "T",
+    slides: [
+      {
+        id: "q",
+        layout: "quiz",
+        background: { image: "assets/slide-01.png" },
+        elements: [],
+        quiz: {
+          question: "Q?",
+          options: ["A", "B", "C"],
+          correctIndex: 2,
+          display: "live",
+          zones: [
+            { x: 0, y: 0, w: 0.3, h: 0.3 },
+            { x: 0.35, y: 0, w: 0.3, h: 0.3 },
+            { x: 0.7, y: 0, w: 0.3, h: 0.3 },
+          ],
+        },
+      },
+    ],
+  };
+
+  it("paints shares and rank badges without re-ordering zones", () => {
+    const stage = renderSlide(zoneDeck, 0, { step: 0 });
+    applyQuizView(stage, { slideId: "q", status: "open", counts: [1, 4, 2], total: 7, correctIndex: null, endsAt: null }, { myVote: 0 });
+    const quiz = stage.querySelector<HTMLElement>(".quiz")!;
+    expect(quiz.dataset.view).toBe("grid");
+    const zones = [...stage.querySelectorAll<HTMLElement>("[data-option-index]")];
+    expect(zones.map((z) => z.style.order)).toEqual(["", "", ""]);
+    expect(zones.map((z) => z.querySelector(".quiz-rank")!.textContent)).toEqual(["3º", "1º", "2º"]);
+    expect(zones[1]!.querySelector(".quiz-count")!.textContent).toBe("57%");
+    expect(zones[1]!.style.getPropertyValue("--share")).toBe(String(4 / 7));
+    expect(zones[1]!.classList.contains("is-first")).toBe(true);
+    expect(zones[1]!.classList.contains("is-leading")).toBe(true);
+    expect(zones[0]!.classList.contains("is-mine")).toBe(true);
+    expect(quiz.querySelector(".quiz-status")!.textContent).toBe("Votación abierta · 7 votos");
+  });
+
+  it("marks correct and wrong zones after reveal and hides badges while counts are hidden", () => {
+    const stage = renderSlide(zoneDeck, 0, { step: 0 });
+    applyQuizView(stage, { slideId: "q", status: "open", counts: null, total: 2, correctIndex: null, endsAt: null });
+    const zones = [...stage.querySelectorAll<HTMLElement>("[data-option-index]")];
+    expect(zones.map((z) => z.querySelector(".quiz-rank")!.textContent)).toEqual(["", "", ""]);
+    expect(zones.map((z) => z.querySelector(".quiz-count")!.textContent)).toEqual(["", "", ""]);
+    applyQuizView(stage, { slideId: "q", status: "revealed", counts: [1, 0, 2], total: 3, correctIndex: 2, endsAt: null });
+    expect(zones[2]!.classList.contains("is-correct")).toBe(true);
+    expect(zones[0]!.classList.contains("is-wrong")).toBe(true);
+    expect(zones.map((z) => z.style.order)).toEqual(["", "", ""]);
+  });
+});

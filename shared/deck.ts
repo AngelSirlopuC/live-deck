@@ -9,9 +9,10 @@ import { PRESET_NAMES } from "./themes.ts";
 const unit = z.number().min(0).max(1);
 const hex = z.string().regex(/^#[0-9a-fA-F]{3,8}$/, "expected a hex color like #1a2b3c");
 
-export const BoxSchema = z
-  .object({ x: unit, y: unit, w: unit, h: unit })
-  .refine((b) => b.x + b.w <= 1.0001 && b.y + b.h <= 1.0001, "box must stay inside the canvas");
+const insideCanvas = (b: { x: number; y: number; w: number; h: number }) => b.x + b.w <= 1.0001 && b.y + b.h <= 1.0001;
+export const BoxSchema = z.object({ x: unit, y: unit, w: unit, h: unit }).refine(insideCanvas, "box must stay inside the canvas");
+// Quiz zones are geometry only, so unknown keys are rejected rather than stripped.
+const ZoneSchema = z.object({ x: unit, y: unit, w: unit, h: unit }).strict().refine(insideCanvas, "box must stay inside the canvas");
 
 export const TextStyleSchema = z
   .object({
@@ -126,9 +127,17 @@ export const QuizSchema = z
     timerSec: z.number().int().min(5).max(600).optional(),
     // How visible results are shown: options re-ordered by votes (default) or the fixed A-F grid.
     results: z.enum(["ranking", "grid"]).optional(),
+    // Zone quiz: one box per option over a designed background image. The
+    // renderer then paints votes on these zones instead of drawing the question.
+    zones: z.array(ZoneSchema).max(6).optional(),
   })
   .strict()
-  .refine((q) => q.correctIndex < q.options.length, { message: "correctIndex must point to an option", path: ["correctIndex"] });
+  .superRefine((q, ctx) => {
+    if (q.correctIndex >= q.options.length) ctx.addIssue({ code: "custom", message: "correctIndex must point to an option", path: ["correctIndex"] });
+    if (q.zones && q.zones.length !== q.options.length) {
+      ctx.addIssue({ code: "custom", message: `zones must have one box per option (${q.options.length})`, path: ["zones"] });
+    }
+  });
 
 // Layers paint bottom to top: color, gradient, image, pattern, then the dim overlay.
 export const SlideBackgroundSchema = z

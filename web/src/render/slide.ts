@@ -1,5 +1,5 @@
 import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
-import type { DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
+import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
 import { THEME_PRESETS, contrastRatio, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
 import { renderChart } from "./charts.ts";
@@ -22,6 +22,8 @@ export interface RenderOptions {
   assetBase?: string;
   /** Fragment step that was just revealed; its elements get an enter animation. */
   enterStep?: number;
+  /** Authoring aid for the preview page: dashed outlines with the option letter on quiz zones. */
+  showZones?: boolean;
 }
 
 const px = (n: number) => `${Math.round(n * 100) / 100}px`;
@@ -54,7 +56,7 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   const layer = document.createElement("div");
   layer.className = "stage-layer";
   for (const el of slide.elements) layer.append(renderElement(el, opts, theme));
-  if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide));
+  if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide, opts));
   const fx = document.createElement("div");
   fx.className = "stage-fx";
   stage.append(layer, fx);
@@ -291,13 +293,14 @@ function renderIcon(name: string, strokeWidth: number): SVGSVGElement | null {
   return svg;
 }
 
-function renderQuiz(slide: PublicSlide): HTMLElement {
+function renderQuiz(slide: PublicSlide, opts: RenderOptions): HTMLElement {
   const quiz = slide.quiz!;
   const wrap = document.createElement("div");
   wrap.className = "quiz";
   wrap.dataset.optionCount = String(quiz.options.length);
   wrap.dataset.results = quiz.results ?? "ranking";
   wrap.dataset.view = "grid";
+  if (quiz.zones) return renderZoneQuiz(wrap, quiz.zones, quiz.options, opts);
 
   const question = document.createElement("h2");
   question.className = "quiz-question";
@@ -325,10 +328,51 @@ function renderQuiz(slide: PublicSlide): HTMLElement {
     list.append(item);
   });
 
+  wrap.append(question, list, renderQuizStatus());
+  return wrap;
+}
+
+function renderQuizStatus(): HTMLElement {
   const status = document.createElement("p");
   status.className = "quiz-status";
   status.setAttribute("aria-live", "polite");
-  wrap.append(question, list, status);
+  return status;
+}
+
+/**
+ * Zone quiz: the question and options are part of the background image, so only
+ * the live layer is drawn — one overlay per zone with the same hooks the quiz
+ * overlay paints (bar, percentage, rank), plus the status pill.
+ */
+function renderZoneQuiz(wrap: HTMLElement, zones: Box[], options: string[], opts: RenderOptions): HTMLElement {
+  wrap.dataset.layout = "zones";
+  zones.forEach((zone, i) => {
+    const letter = String.fromCharCode(65 + i);
+    const item = document.createElement("div");
+    item.className = "quiz-zone";
+    item.dataset.optionIndex = String(i);
+    item.setAttribute("aria-label", `${letter}: ${options[i] ?? ""}`);
+    item.style.left = px(zone.x * STAGE_WIDTH);
+    item.style.top = px(zone.y * STAGE_HEIGHT);
+    item.style.width = px(zone.w * STAGE_WIDTH);
+    item.style.height = px(zone.h * STAGE_HEIGHT);
+    const bar = document.createElement("span");
+    bar.className = "quiz-bar";
+    const rank = document.createElement("span");
+    rank.className = "quiz-rank";
+    const count = document.createElement("span");
+    count.className = "quiz-count";
+    item.append(bar, rank, count);
+    if (opts.showZones) {
+      item.classList.add("has-guide");
+      const key = document.createElement("span");
+      key.className = "quiz-zone-key";
+      key.textContent = letter;
+      item.append(key);
+    }
+    wrap.append(item);
+  });
+  wrap.append(renderQuizStatus());
   return wrap;
 }
 

@@ -25,7 +25,8 @@ export async function mountPreview(root: HTMLElement, deckId: string) {
   shell.append(host, counter, note, present);
   root.append(shell);
 
-  const view = new StageView(host, deck, { assetBase: `/decks/${deckId}/` });
+  // Zone outlines help authors align quiz zones with the image; live views never pass this.
+  const view = new StageView(host, deck, { assetBase: `/decks/${deckId}/`, showZones: true });
   let pos: Position = { slide: 0, step: 0 };
   const go = (p: Position) => {
     pos = p;

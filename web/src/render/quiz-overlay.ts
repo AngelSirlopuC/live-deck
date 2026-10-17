@@ -30,7 +30,10 @@ export function applyQuizView(stage: HTMLElement, view: QuizView | null, opts: Q
   quiz.dataset.status = view?.status ?? "idle";
   const items = [...quiz.querySelectorAll<HTMLElement>("[data-option-index]")];
   const counts = view?.counts ?? null;
-  const ranking = !!counts && quiz.dataset.results !== "grid";
+  // Zones are fixed regions of a designed image: they show rank badges but never move.
+  const zones = quiz.dataset.layout === "zones";
+  const ranking = !!counts && !zones && quiz.dataset.results !== "grid";
+  const showRanks = ranking || (!!counts && zones);
   const ranks = counts ? rankOptions(counts) : [];
   const anyVotes = !!counts && counts.some((c) => c > 0);
 
@@ -47,7 +50,7 @@ export function applyQuizView(stage: HTMLElement, view: QuizView | null, opts: Q
     item.style.setProperty("--share", String(share));
     item.style.order = ranking ? String(position + 1) : "";
     item.querySelector(".quiz-count")!.textContent = count !== undefined ? `${Math.round(share * 100)}%` : "";
-    item.querySelector(".quiz-rank")!.textContent = ranking && rank ? `${rank}º` : "";
+    item.querySelector(".quiz-rank")!.textContent = showRanks && rank ? `${rank}º` : "";
     const revealed = view?.status === "revealed";
     item.classList.toggle("is-correct", revealed && view?.correctIndex === i);
     item.classList.toggle("is-wrong", revealed && view?.correctIndex !== i);

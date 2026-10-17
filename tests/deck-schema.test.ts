@@ -203,3 +203,54 @@ describe("publicDeck", () => {
     expect(pub.slides.find((s) => s.quiz)?.quiz?.options.length).toBeGreaterThan(1);
   });
 });
+
+describe("zone quizzes", () => {
+  const zones = [
+    { x: 0.05, y: 0.5, w: 0.4, h: 0.2 },
+    { x: 0.55, y: 0.5, w: 0.4, h: 0.2 },
+  ];
+  function zoneDeck(quiz: Record<string, unknown>): any {
+    const deck = minimal();
+    deck.slides[0].layout = "quiz";
+    deck.slides[0].background = { image: "assets/slide-01.png" };
+    deck.slides[0].elements = [];
+    deck.slides[0].quiz = { question: "Q?", options: ["a", "b"], correctIndex: 1, display: "live", ...quiz };
+    return deck;
+  }
+
+  it("accepts one zone per option on an image slide", () => {
+    const result = parseDeck(zoneDeck({ zones }));
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.deck.slides[0]!.quiz!.zones).toEqual(zones);
+  });
+
+  it("keeps quizzes without zones valid", () => {
+    expect(parseDeck(zoneDeck({})).ok).toBe(true);
+  });
+
+  it("rejects a zone count that differs from the option count", () => {
+    const result = parseDeck(zoneDeck({ zones: [zones[0]] }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("quiz.zones");
+    const three = parseDeck(zoneDeck({ zones: [...zones, zones[0]] }));
+    expect(three.ok).toBe(false);
+    if (!three.ok) expect(three.error).toContain("quiz.zones");
+  });
+
+  it("rejects zones outside the canvas or out of range", () => {
+    const outside = parseDeck(zoneDeck({ zones: [zones[0], { x: 0.7, y: 0.5, w: 0.4, h: 0.2 }] }));
+    expect(outside.ok).toBe(false);
+    if (!outside.ok) expect(outside.error).toContain("inside the canvas");
+    expect(parseDeck(zoneDeck({ zones: [zones[0], { x: -0.1, y: 0.5, w: 0.4, h: 0.2 }] })).ok).toBe(false);
+    expect(parseDeck(zoneDeck({ zones: [zones[0], { x: 0.1, y: 0.5, w: 0.4 }] })).ok).toBe(false);
+    expect(parseDeck(zoneDeck({ zones: [zones[0], { ...zones[1], html: "<b>" }] })).ok).toBe(false);
+  });
+
+  it("publicDeck keeps zones and drops correctIndex", () => {
+    const parsed = parseDeck(zoneDeck({ zones }));
+    if (!parsed.ok) throw new Error(parsed.error);
+    const quiz = publicDeck(parsed.deck).slides[0]!.quiz!;
+    expect(quiz.zones).toEqual(zones);
+    expect(JSON.stringify(quiz)).not.toContain("correctIndex");
+  });
+});

@@ -221,3 +221,69 @@ describe("icon rendering regressions", () => {
     expect(dark.style.color).toBe("var(--theme-accent)");
   });
 });
+
+describe("zone quizzes", () => {
+  const zoneDeck: Deck = {
+    version: 1,
+    title: "T",
+    slides: [
+      {
+        id: "z",
+        layout: "quiz",
+        background: { image: "assets/slide-01.png" },
+        elements: [],
+        quiz: {
+          question: "Designed question?",
+          options: ["Alpha", "Beta", "Gamma"],
+          correctIndex: 1,
+          display: "live",
+          zones: [
+            { x: 0.05, y: 0.5, w: 0.25, h: 0.2 },
+            { x: 0.375, y: 0.5, w: 0.25, h: 0.2 },
+            { x: 0.7, y: 0.5, w: 0.25, h: 0.2 },
+          ],
+        },
+      },
+    ],
+  };
+
+  it("draws one positioned overlay per zone instead of the native question and options", () => {
+    const stage = renderSlide(zoneDeck, 0, { step: 0 });
+    const quiz = stage.querySelector<HTMLElement>(".quiz")!;
+    expect(quiz.dataset.layout).toBe("zones");
+    const zones = [...stage.querySelectorAll<HTMLElement>("[data-option-index]")];
+    expect(zones).toHaveLength(3);
+    expect(zones.map((z) => z.dataset.optionIndex)).toEqual(["0", "1", "2"]);
+    expect([zones[1]!.style.left, zones[1]!.style.top, zones[1]!.style.width, zones[1]!.style.height]).toEqual(["720px", "540px", "480px", "216px"]);
+    for (const z of zones) {
+      expect(z.classList.contains("quiz-zone")).toBe(true);
+      expect(z.querySelector(".quiz-bar")).not.toBeNull();
+      expect(z.querySelector(".quiz-count")).not.toBeNull();
+      expect(z.querySelector(".quiz-rank")).not.toBeNull();
+    }
+    expect(stage.querySelector(".quiz-question")).toBeNull();
+    expect(stage.querySelector(".quiz-options")).toBeNull();
+    expect(stage.querySelector(".quiz-label")).toBeNull();
+    expect(stage.textContent).not.toContain("Designed question?");
+    expect(stage.textContent).not.toContain("Alpha");
+    expect(quiz.querySelector(".quiz-status")).not.toBeNull();
+    expect(stage.innerHTML).not.toContain("correct");
+  });
+
+  it("draws dashed zone guides with the option letter only when showZones is set", () => {
+    const live = renderSlide(zoneDeck, 0, { step: 0 });
+    expect(live.querySelector(".quiz-zone-key")).toBeNull();
+    expect(live.querySelector(".quiz-zone.has-guide")).toBeNull();
+    const preview = renderSlide(zoneDeck, 0, { step: 0, showZones: true });
+    const guides = [...preview.querySelectorAll<HTMLElement>(".quiz-zone.has-guide")];
+    expect(guides).toHaveLength(3);
+    expect(guides.map((g) => g.querySelector(".quiz-zone-key")!.textContent)).toEqual(["A", "B", "C"]);
+  });
+
+  it("keeps rendering native quizzes the same with or without showZones", () => {
+    const native = renderSlide(deck, 1, { step: 0, showZones: true });
+    expect(native.querySelector<HTMLElement>(".quiz")!.dataset.layout).toBeUndefined();
+    expect(native.querySelector(".quiz-question")).not.toBeNull();
+    expect(native.querySelector(".quiz-zone-key")).toBeNull();
+  });
+});
