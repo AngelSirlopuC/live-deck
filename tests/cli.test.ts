@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -82,6 +82,18 @@ describe("live-deck validate", () => {
     expect(cli("validate", file).code).toBe(0);
   });
 
+  it("fails when a slide background image is missing on disk", () => {
+    const slide = { id: "s1", background: { image: "assets/slide-01.png" }, elements: [{ id: "q", type: "qr", box: { x: 0.6, y: 0.1, w: 0.3, h: 0.6 } }] };
+    const file = writeDeck("bg", { version: 1, title: "Bg", theme: { preset: "estudio" }, slides: [slide] });
+    const r = cli("validate", file);
+    expect(r.code).toBe(1);
+    expect(r.all).toMatch(/^slides\.0\.background\.image: asset not found: assets\/slide-01\.png$/m);
+
+    mkdirSync(join(root, "bg", "assets"));
+    writeFileSync(join(root, "bg", "assets", "slide-01.png"), "x");
+    expect(cli("validate", file).code).toBe(0);
+  });
+
   it("warns but passes when slide 1 has no qr element", () => {
     const file = writeDeck("noqr", { version: 1, title: "No QR", slides: [textSlide("s1")] });
     const r = cli("validate", file);
@@ -153,5 +165,131 @@ describe("live-deck usage", () => {
     const r = cli("frobnicate");
     expect(r.code).toBe(2);
     expect(r.all).toMatch(/Usage: live-deck/);
+  });
+});
+
+describe("live-deck import", () => {
+  // Minimal PNG: signature + IHDR is all the importer reads.
+  function png(w: number, h: number): Buffer {
+    const b = Buffer.alloc(33);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(b, 0);
+    b.writeUInt32BE(13, 8);
+    b.write("IHDR", 12, "ascii");
+    b.writeUInt32BE(w, 16);
+    b.writeUInt32BE(h, 20);
+    return b;
+  }
+
+  function folder(files: Record<string, Buffer | string>): string {
+    const dir = join(root, "..", `${root.split("/").pop()}-src`);
+    mkdirSync(dir, { recursive: true });
+    for (const [name, data] of Object.entries(files)) writeFileSync(join(dir, name), data);
+    return dir;
+  }
+
+  let src: string | undefined;
+  afterEach(() => {
+    if (src) rmSync(src, { recursive: true, force: true });
+    src = undefined;
+  });
+
+  it("copies images in natural order and writes a deck that validates", () => {
+    src = folder({
+      "Slide10.PNG": png(1920, 1080),
+      "Slide2.png": png(1920, 1080),
+      "Slide1.jpg": png(1920, 1080),
+      ".hidden.png": png(1920, 1080),
+      "notes.txt": "ignore me",
+    });
+    const r = cli("import", src, "--id", "charla", "--title", "Mi charla");
+    expect(r.code).toBe(0);
+    const deckDir = join(root, "charla");
+    expect(readdirSync(join(deckDir, "assets")).sort()).toEqual(["slide-01.jpg", "slide-02.png", "slide-03.png"]);
+    expect(readFileSync(join(deckDir, "assets", "slide-03.png"))).toEqual(png(1920, 1080));
+    const deck = JSON.parse(readFileSync(join(deckDir, "deck.json"), "utf8"));
+    expect(deck).toEqual({
+      version: 1,
+      title: "Mi charla",
+      theme: { preset: "estudio" },
+      slides: [
+        {
+          id: "s01",
+          background: { image: "assets/slide-01.jpg" },
+          elements: [{ id: "qr", type: "qr", box: { x: 0.81, y: 0.66, w: 0.16, h: 0.3 }, style: { background: "#ffffff", color: "#0a0a0a" } }],
+          notes: "",
+        },
+        { id: "s02", background: { image: "assets/slide-02.png" }, elements: [], notes: "" },
+        { id: "s03", background: { image: "assets/slide-03.png" }, elements: [], notes: "" },
+      ],
+    });
+    expect(r.out).toContain(join(deckDir, "deck.json"));
+    expect(r.out).toMatch(/3 slides/);
+    expect(r.out).toContain("/preview/charla");
+    expect(r.out).toMatch(/add speaker notes and quizzes with the live-deck skill/);
+    expect(r.all).not.toMatch(/warning/);
+    const v = cli("validate", "charla");
+    expect(v.code).toBe(0);
+    expect(v.all).not.toMatch(/warning/);
+  });
+
+  it("defaults the title to the folder name", () => {
+    src = folder({ "a.png": png(1920, 1080) });
+    expect(cli("import", src, "--id", "t").code).toBe(0);
+    const deck = JSON.parse(readFileSync(join(root, "t", "deck.json"), "utf8"));
+    expect(deck.title).toBe(src.split("/").pop());
+  });
+
+  it("warns about images that are not 16:9 or have unreadable headers, and still succeeds", () => {
+    src = folder({ "1.png": png(1920, 1080), "2.png": png(1024, 768), "3.webp": "garbage" });
+    const r = cli("import", src, "--id", "mixed");
+    expect(r.code).toBe(0);
+    expect(r.all).toMatch(/^warning: 2\.png is 1024x768, not 16:9; it will be letterboxed$/m);
+    expect(r.all).toMatch(/^warning: 3\.webp: .*/m);
+    expect(r.all).not.toMatch(/1\.png/);
+    expect(existsSync(join(root, "mixed", "assets", "slide-03.webp"))).toBe(true);
+  });
+
+  it("pads slide numbers to three digits beyond 99 images", () => {
+    const files: Record<string, Buffer> = {};
+    for (let i = 1; i <= 100; i++) files[`s${i}.png`] = png(1920, 1080);
+    src = folder(files);
+    expect(cli("import", src, "--id", "big").code).toBe(0);
+    const deck = JSON.parse(readFileSync(join(root, "big", "deck.json"), "utf8"));
+    expect(deck.slides[0].background.image).toBe("assets/slide-001.png");
+    expect(deck.slides[99].id).toBe("s100");
+    expect(deck.slides[99].background.image).toBe("assets/slide-100.png");
+  });
+
+  const refusals: [string, () => string[], RegExp][] = [
+    ["an existing deck id", () => { writeDeck("taken", { keep: true }); src = folder({ "a.png": png(1920, 1080) }); return [src, "--id", "taken"]; }, /already exists/],
+    ["an invalid deck id", () => { src = folder({ "a.png": png(1920, 1080) }); return [src, "--id", "Bad_ID"]; }, /invalid deck id/],
+    ["a missing folder", () => [join(root, "nope"), "--id", "x"], /folder not found/],
+    ["a folder with no supported images", () => { src = folder({ "a.gif": "x", "b.txt": "y" }); return [src, "--id", "x"]; }, /no supported images/],
+    ["more than 200 images", () => {
+      const files: Record<string, Buffer> = {};
+      for (let i = 1; i <= 201; i++) files[`s${i}.png`] = png(1920, 1080);
+      src = folder(files);
+      return [src, "--id", "x"];
+    }, /201 images.*at most 200/],
+  ];
+  for (const [name, setup, message] of refusals) {
+    it(`refuses ${name} with exit 1 and writes nothing`, () => {
+      const args = setup();
+      const before = readdirSync(root).sort();
+      const r = cli("import", ...args);
+      expect(r.code).toBe(1);
+      expect(r.err).toMatch(message);
+      expect(readdirSync(root).sort()).toEqual(before);
+      if (existsSync(join(root, "taken"))) expect(JSON.parse(readFileSync(join(root, "taken", "deck.json"), "utf8"))).toEqual({ keep: true });
+    });
+  }
+
+  it("exits 2 when the folder or --id is missing", () => {
+    expect(cli("import").code).toBe(2);
+    expect(cli("import", root).code).toBe(2);
+  });
+
+  it("lists import in the usage text", () => {
+    expect(cli("help").out).toMatch(/import <folder> --id <id> \[--title "\.\.\."\]/);
   });
 });

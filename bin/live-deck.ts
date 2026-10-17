@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // Live Deck authoring CLI. Zero dependencies beyond the project itself; runs on
 // Node >= 24 with native TypeScript: `node bin/live-deck.ts <command>`.
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DeckSchema, parseDeck, type Deck } from "../shared/deck.ts";
 import { DECK_ID } from "../server/decks.ts";
+import { imageSize, isSixteenByNine } from "./image-size.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
 const DECKS_DIR = resolve(process.env.DECKS_DIR || join(REPO, "decks"));
@@ -15,12 +16,18 @@ const USAGE = `Usage: live-deck <command> [args]
 Commands:
   validate <deck.json | deck-dir | deck-id>   Check a deck against format v1 and its assets
   new <id> [--title "..."]                     Scaffold decks/<id>/deck.json from a template
+  import <folder> --id <id> [--title "..."]    Build decks/<id> from slide images exported by any tool
   list                                         List decks with title and slide count
   help                                         Show this help
 
 Deck ids: lowercase letters, digits and dashes (${DECK_ID.source}).
 Decks root: ${DECKS_DIR} (override with DECKS_DIR).
 Preview a deck in the browser at /preview/<id>.
+
+Import: takes .png, .jpg, .jpeg and .webp files (up to 200) in natural order
+(slide2 before slide10), copies them to decks/<id>/assets/slide-01.<ext>... as
+full-slide backgrounds and puts the join QR on slide 1. The title defaults to
+the folder name. Images that are not 16:9 are letterboxed (a warning names them).
 `;
 
 interface Report {
@@ -62,6 +69,10 @@ function check(file: string): Report {
   report.deck = deck;
   const deckDir = dirname(file);
   deck.slides.forEach((slide, s) => {
+    const bg = typeof slide.background === "object" ? slide.background.image : undefined;
+    if (bg?.startsWith("assets/") && !existsSync(join(deckDir, bg))) {
+      report.errors.push(`slides.${s}.background.image: asset not found: ${bg}`);
+    }
     slide.elements.forEach((el, e) => {
       if (el.type === "image" && el.src.startsWith("assets/") && !existsSync(join(deckDir, el.src))) {
         report.errors.push(`slides.${s}.elements.${e}.src: asset not found: ${el.src}`);
@@ -168,6 +179,90 @@ function scaffold(args: string[]): number {
   return 0;
 }
 
+const IMPORT_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+const MAX_SLIDES = 200;
+
+function importDeck(args: string[]): number {
+  const flag = (name: string): string | undefined | null => {
+    const i = args.indexOf(name);
+    if (i < 0) return undefined;
+    const value = args[i + 1];
+    return value && !value.startsWith("--") ? value : null;
+  };
+  const id = flag("--id");
+  const titleArg = flag("--title");
+  const folderArg = args.find((a, i) => !a.startsWith("--") && !["--id", "--title"].includes(args[i - 1] ?? ""));
+  if (!folderArg || !id || titleArg === null) {
+    process.stderr.write(`import needs a folder and --id <id>${titleArg === null ? "; --title needs a value" : ""}\n\n${USAGE}`);
+    return 2;
+  }
+  const fail = (message: string): number => {
+    process.stderr.write(`${message}\n`);
+    return 1;
+  };
+  if (!DECK_ID.test(id)) return fail(`invalid deck id "${id}": use lowercase letters, digits and dashes (${DECK_ID.source})`);
+  const dir = join(DECKS_DIR, id);
+  if (existsSync(dir)) return fail(`deck "${id}" already exists at ${dir}; refusing to overwrite`);
+  const folder = resolve(folderArg);
+  if (!existsSync(folder) || !statSync(folder).isDirectory()) return fail(`folder not found: ${folder}`);
+
+  const images = readdirSync(folder, { withFileTypes: true })
+    .filter((d) => d.isFile() && !d.name.startsWith(".") && IMPORT_EXTS.has(extname(d.name).toLowerCase()))
+    .map((d) => d.name)
+    .sort((a, b) => a.localeCompare(b, "en", { numeric: true, sensitivity: "base" }));
+  if (!images.length) return fail(`no supported images in ${folder} (expected .png, .jpg, .jpeg or .webp)`);
+  if (images.length > MAX_SLIDES) return fail(`${images.length} images in ${folder}; a deck takes at most ${MAX_SLIDES} slides`);
+
+  const pad = images.length > 99 ? 3 : 2;
+  const plan = images.map((name, i) => {
+    const n = String(i + 1).padStart(pad, "0");
+    return { name, slideId: `s${n}`, asset: `assets/slide-${n}${extname(name).toLowerCase()}` };
+  });
+  const deck: Deck = {
+    version: 1,
+    title: titleArg ?? basename(folder),
+    theme: { preset: "estudio" },
+    slides: plan.map((p, i) => ({
+      id: p.slideId,
+      background: { image: p.asset },
+      elements: i === 0 ? [{ id: "qr", type: "qr", box: { x: 0.81, y: 0.66, w: 0.16, h: 0.3 }, style: { background: "#ffffff", color: "#0a0a0a" } }] : [],
+      notes: "",
+    })),
+  };
+  const parsed = parseDeck(deck);
+  if (!parsed.ok) return fail(`imported deck would be invalid: ${parsed.error}`);
+
+  for (const p of plan) {
+    const size = imageSize(readFileSync(join(folder, p.name)));
+    if (!size) process.stderr.write(`warning: ${p.name}: could not read image dimensions from the file header\n`);
+    else if (!isSixteenByNine(size.width, size.height)) {
+      process.stderr.write(`warning: ${p.name} is ${size.width}x${size.height}, not 16:9; it will be letterboxed\n`);
+    }
+  }
+
+  const file = join(dir, "deck.json");
+  try {
+    mkdirSync(join(dir, "assets"), { recursive: true });
+    for (const p of plan) copyFileSync(join(folder, p.name), join(dir, p.asset));
+    writeFileSync(file, `${JSON.stringify(deck, null, 2)}\n`, { flag: "wx" });
+  } catch (err) {
+    rmSync(dir, { recursive: true, force: true });
+    return fail(`import failed: ${(err as Error).message}`);
+  }
+
+  const report = check(file);
+  for (const w of report.warnings) process.stderr.write(`warning: ${w}\n`);
+  if (report.errors.length || !report.deck) {
+    for (const e of report.errors) process.stdout.write(`${e}\n`);
+    return 1;
+  }
+  process.stdout.write(
+    `Imported ${file}\n${report.deck.slides.length} slides from ${folder}\nPreview:  /preview/${id}\n` +
+      `Next: add speaker notes and quizzes with the live-deck skill, then run: node bin/live-deck.ts validate ${id}\n`,
+  );
+  return 0;
+}
+
 function list(): number {
   if (!existsSync(DECKS_DIR)) {
     process.stderr.write(`decks root not found: ${DECKS_DIR}\n`);
@@ -204,6 +299,8 @@ function main(argv: string[]): number {
       return validate(args);
     case "new":
       return scaffold(args);
+    case "import":
+      return importDeck(args);
     case "list":
       return list();
     default:
