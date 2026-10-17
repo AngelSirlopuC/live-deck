@@ -560,7 +560,8 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   // Focus and zoom stay armed after placing, so another region can be drawn right away.
   const programTools = bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effects);
   setInterval(() => {
-    pace.update(ctx.state.startedAt, ctx.state.timeLimitMin);
+    // The clock stops when the session ends.
+    if (ctx.state.status !== "ended") pace.update(ctx.state.startedAt, ctx.state.timeLimitMin);
     pq.update(ctx.state, ctx.clockOffset);
     const slide = ctx.deck.slides[ctx.state.position.slide]!;
     programView.setQuiz(ctx.state.quizzes[slide.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
@@ -782,11 +783,13 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
     { id: "settings", label: "Ajustes", panel: settingsPanel },
   ]);
 
+  const remoteHeader = h("header", { class: "aud-bar" }, lamp, slideNo, h("span", { class: "spacer" }), count, timer);
+  let endPanel: ReturnType<typeof createEndPanel> | null = null;
   root.replaceChildren(
     h(
       "main",
       { class: "remote" },
-      h("header", { class: "aud-bar" }, lamp, slideNo, h("span", { class: "spacer" }), count, timer),
+      remoteHeader,
       host,
       tabs.list,
       h("div", { class: "remote-panels" }, controlPanel, chatPanel, settingsPanel),
@@ -798,11 +801,16 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   // Swipe changes slides with the pointer tool; taps place the selected effect.
   bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) }, 40, () => false, () => rtool === "ripple");
   const remoteTools = bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effects);
-  setInterval(() => pace.update(ctx.state.startedAt, ctx.state.timeLimitMin), 1000);
+  setInterval(() => {
+    if (ctx.state.status !== "ended") pace.update(ctx.state.startedAt, ctx.state.timeLimitMin);
+  }, 1000);
 
   return {
     ripple: (x, y) => view.ripple(x, y),
     laser: (at) => view.laser(at),
+    summary(s) {
+      endPanel?.setSummary(s);
+    },
     reactions(_counts, totals) {
       if (ctx.state.presenterView.showReactionCounter) pa.counter.update(totals);
     },
@@ -814,6 +822,16 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       else chatUi.history(arg as ChatMessage[]);
     },
     update(s) {
+      // Same closing screen as the console: download the summary, then erase the data.
+      if (s.status === "ended" && !endPanel) {
+        endPanel = createEndPanel(async () => {
+          const ok = await confirmSheet("¿Borrar los datos ahora?", "Se eliminan votos, ranking y reacciones del servidor. Descarga el resumen antes.", "Borrar datos", true);
+          if (ok) ctx.send({ t: "purge" });
+        });
+        timer.disabled = true;
+        root.firstElementChild!.replaceChildren(remoteHeader, h("div", { class: "remote-end" }, endPanel.el));
+        ctx.send({ t: "summary" });
+      }
       pa.update(s);
       chatUi.update(s);
       limitBtn.textContent = s.timeLimitMin === null ? "Poner límite de tiempo" : `Límite: ${s.timeLimitMin} min · cambiar`;
