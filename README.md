@@ -36,7 +36,19 @@ prints it on start, e.g. `http://192.168.1.34:5180`). To drive the slides from
 your phone, press **Control móvil** in the console, scan the code and enter
 your PIN. If your OS firewall asks, allow incoming connections for Node.
 
-Preview a deck without a session at `http://localhost:5180/preview/<deck-id>`.
+### Preview vs. presenting
+
+| | Preview | Live session |
+| --- | --- | --- |
+| URL | `/preview/<deck-id>` | `/p/<token>` (console), `/s/<code>` (audience) |
+| Who sees it | Only you, in that tab | Everyone who joins |
+| Join QR | Placeholder ("El QR aparece al presentar") | Real code to join |
+| Quizzes, chat, reactions, effects | Inactive | Active |
+| Navigation | Arrows, click or swipe | Driven by the presenter |
+
+Use the preview to rehearse a deck before a talk. When it looks right, press
+**Presentar** (top right): it opens the home page with that deck preselected;
+set a 4–8 digit PIN and open the console to start the live session.
 
 Chat stickers need a free GIPHY API key (developers.giphy.com → Create an API
 key). Put it in `.env` (git-ignored), which `npm run dev:server` loads:
