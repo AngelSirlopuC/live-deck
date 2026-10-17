@@ -18,7 +18,7 @@ interface GiphyItem {
 }
 
 function toSticker(item: GiphyItem): Sticker | null {
-  const img = item.images?.fixed_width_small ?? item.images?.fixed_width;
+  const img = item.images?.fixed_width ?? item.images?.fixed_width_small;
   const url = img?.webp || img?.url;
   if (!item.id || !ID.test(item.id) || !url) return null;
   let host: string;

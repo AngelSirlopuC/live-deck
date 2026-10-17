@@ -1629,9 +1629,10 @@ select:focus-visible {
 .chat-sticker {
   display: block;
   width: auto;
-  max-width: 140px;
+  max-width: min(160px, 100%);
   height: auto;
-  max-height: 120px;
+  max-height: 140px;
+  object-fit: contain;
   margin-top: 2px;
   border-radius: 6px;
 }
@@ -1867,40 +1868,104 @@ select:focus-visible {
   margin-top: 10px;
 }
 
-.sticker-sheet input {
-  margin-bottom: 12px;
+/* Sticker tray: GIPHY search docked in the chat, right above the composer. */
+.sticker-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin: 0 -20px -10px;
+  padding: 12px 20px 10px;
+  background: var(--desk);
+  border-top: 1px solid var(--seam);
+}
+
+.sticker-tray[hidden] {
+  display: none;
+}
+
+.sticker-search {
+  min-height: 44px;
 }
 
 .sticker-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-auto-rows: max-content;
   gap: 6px;
-  max-height: 50vh;
+  height: clamp(132px, 30dvh, 268px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--seam) transparent;
 }
 
 .sticker-pick {
-  display: grid;
-  place-items: center;
+  position: relative;
+  min-width: 0;
   aspect-ratio: 1;
-  padding: 4px;
+  padding: 6px;
   border-radius: 10px;
   border: 1px solid var(--seam);
   background: #0f0c09;
   cursor: pointer;
+  overflow: hidden;
+  transition: border-color 120ms ease, transform 120ms ease;
 }
 
 .sticker-pick img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sticker-pick:hover,
+.sticker-pick:focus-visible {
+  border-color: var(--amber);
+}
+
+.sticker-pick:active {
+  transform: scale(0.96);
+}
+
+.sticker-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .sticker-note,
 .giphy-credit {
-  margin: 8px 0 0 !important;
-  font-size: 0.8rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.giphy-credit {
+  margin-left: auto;
+}
+
+/* With the tray open, the composer sits flush under it and the empty note steps aside. */
+.chat.has-tray .chat-form {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.chat.has-tray .chat-empty {
+  display: none;
+}
+
+.chat.has-tray .chat-sticker-btn {
+  background: var(--amber);
+  color: var(--amber-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker-pick {
+    transition: none;
+  }
 }
 
 /* Presenter audience section */
@@ -2585,16 +2650,6 @@ select:focus-visible {
   .console-bar .key-primary span {
     display: inline;
   }
-}
-
-/* Sticker picker: three columns that never overflow the sheet. */
-.sticker-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.sticker-pick {
-  min-width: 0;
-  overflow: hidden;
 }
 
 /* Preview page overlay: .key sets position: relative, so pin these explicitly. */

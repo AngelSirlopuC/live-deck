@@ -35,11 +35,15 @@ export function createChatPanel(opts: ChatPanelOptions) {
   const scroller = h("div", { class: "chat-scroll" }, list, empty, jump);
   const input = h("input", { class: "chat-input", type: "text", maxlength: CHAT_TEXT_MAX, placeholder: "Escribe un mensaje", enterkeyhint: "send", autocomplete: "off", "aria-label": "Mensaje" });
   const send = trusted("button", { type: "submit", class: "key key-icon key-primary chat-send", "aria-label": "Enviar" }, icon("send"));
-  const stickerBtn = h("button", { type: "button", class: "key chat-sticker-btn", "aria-label": "Enviar un sticker" }, "GIF");
+  const stickerBtn = h("button", { type: "button", class: "key chat-sticker-btn", "aria-label": "Stickers", "aria-expanded": "false", "aria-controls": "chat-sticker-tray" }, "GIF");
   const form = h("form", { class: "chat-form" }, stickerBtn, input, send);
   const error = h("p", { class: "chat-error", role: "status", "aria-live": "polite" });
   const head = h("header", { class: "chat-head" }, h("h2", { class: "chat-title" }, "Chat"), modeLine);
-  const el = h("section", { class: "chat", "aria-label": "Chat" }, head, status, scroller, form, error);
+  const tray = createStickerTray(opts.searchStickers, (s) => {
+    opts.onSend?.({ stickerId: s.id });
+    closeTray();
+  }, () => closeTray(true));
+  const el = h("section", { class: "chat", "aria-label": "Chat" }, head, status, scroller, tray.el, form, error);
   let state: ChatState = { mode: "off", paused: false };
 
   form.addEventListener("submit", (e) => {
@@ -49,7 +53,20 @@ export function createChatPanel(opts: ChatPanelOptions) {
     opts.onSend?.({ text });
     input.value = "";
   });
-  stickerBtn.addEventListener("click", () => openStickerPicker(opts.searchStickers!, (s) => opts.onSend?.({ stickerId: s.id })));
+  function closeTray(refocus = false) {
+    if (tray.el.hidden) return;
+    tray.el.hidden = true;
+    stickerBtn.setAttribute("aria-expanded", "false");
+    el.classList.remove("has-tray");
+    if (refocus) stickerBtn.focus();
+  }
+  stickerBtn.addEventListener("click", () => {
+    if (!tray.el.hidden) return closeTray();
+    tray.el.hidden = false;
+    stickerBtn.setAttribute("aria-expanded", "true");
+    el.classList.add("has-tray");
+    tray.open();
+  });
 
   const nearBottom = () => list.scrollHeight - list.scrollTop - list.clientHeight < 40;
   const toEnd = () => {
@@ -130,6 +147,7 @@ export function createChatPanel(opts: ChatPanelOptions) {
       input.hidden = !canText;
       send.hidden = !canText;
       stickerBtn.hidden = !canSticker;
+      if (!canSticker || !writable) closeTray();
       renderEmpty();
     },
     setHistory(messages: ChatMessage[]) {
@@ -166,14 +184,16 @@ export function createChatPanel(opts: ChatPanelOptions) {
   };
 }
 
-function openStickerPicker(search: (q: string) => Promise<Sticker[]>, onPick: (s: Sticker) => void) {
-  const q = h("input", { type: "search", placeholder: "Buscar en GIPHY", enterkeyhint: "search", "aria-label": "Buscar stickers" });
-  const grid = h("div", { class: "sticker-grid", role: "list" });
-  const note = h("p", { class: "sticker-note" });
-  const close = trusted("button", { type: "button", class: "key key-icon sheet-close", "aria-label": "Cerrar" }, icon("close"));
-  const sheet = h("dialog", { class: "sheet sticker-sheet", "aria-labelledby": "sticker-title" }, close, h("h2", { id: "sticker-title" }, "Stickers"), q, grid, note, h("p", { class: "giphy-credit" }, "Con tecnología de GIPHY"));
+/** GIPHY search docked inside the chat, above the composer. */
+function createStickerTray(search: ((q: string) => Promise<Sticker[]>) | undefined, onPick: (s: Sticker) => void, onEscape: () => void) {
+  const q = h("input", { type: "search", class: "sticker-search", placeholder: "Buscar en GIPHY", enterkeyhint: "search", autocomplete: "off", "aria-label": "Buscar stickers" });
+  const grid = h("div", { class: "sticker-grid", role: "list", "aria-label": "Resultados" });
+  const note = h("p", { class: "sticker-note", role: "status" });
+  const el = h("div", { class: "sticker-tray", id: "chat-sticker-tray", hidden: true }, q, grid, h("div", { class: "sticker-foot" }, note, h("p", { class: "giphy-credit" }, "Con tecnología de GIPHY")));
   let seq = 0;
+  let loaded = false;
   const load = async () => {
+    if (!search) return;
     const mine = ++seq;
     note.textContent = "Buscando…";
     let results: Sticker[] = [];
@@ -183,14 +203,12 @@ function openStickerPicker(search: (q: string) => Promise<Sticker[]>, onPick: (s
       /* handled below */
     }
     if (mine !== seq) return;
+    loaded = true;
     note.textContent = results.length ? "" : "No encontramos stickers. Prueba otra palabra.";
     grid.replaceChildren(
       ...results.map((s) => {
-        const b = h("button", { type: "button", class: "sticker-pick", role: "listitem", "aria-label": s.title || "Sticker" }, h("img", { src: s.url, alt: "", loading: "lazy", referrerpolicy: "no-referrer", width: s.width, height: s.height }));
-        b.addEventListener("click", () => {
-          onPick(s);
-          sheet.close();
-        });
+        const b = h("button", { type: "button", class: "sticker-pick", role: "listitem", "aria-label": s.title || "Sticker", title: s.title || "Sticker" }, h("img", { src: s.url, alt: "", loading: "lazy", decoding: "async", referrerpolicy: "no-referrer", width: s.width, height: s.height }));
+        b.addEventListener("click", () => onPick(s));
         return b;
       }),
     );
@@ -200,9 +218,23 @@ function openStickerPicker(search: (q: string) => Promise<Sticker[]>, onPick: (s
     clearTimeout(debounce);
     debounce = window.setTimeout(load, 350);
   });
-  close.addEventListener("click", () => sheet.close());
-  sheet.addEventListener("close", () => sheet.remove());
-  document.body.append(sheet);
-  sheet.showModal();
-  void load();
+  q.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    clearTimeout(debounce);
+    void load();
+  });
+  el.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    e.stopPropagation();
+    onEscape();
+  });
+  return {
+    el,
+    open() {
+      if (!loaded) void load();
+      // Touch keyboards would cover the results; focus the search only with a fine pointer.
+      if (window.matchMedia?.("(pointer: fine)").matches) q.focus();
+    },
+  };
 }

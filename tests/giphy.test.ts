@@ -22,6 +22,14 @@ describe("giphy proxy", () => {
     expect(url.searchParams.get("q")).toBe("hola");
   });
 
+  it("prefers the 200px rendition so stickers stay sharp in the chat", async () => {
+    const small = { webp: "https://media1.giphy.com/media/s/100w.webp", width: "100", height: "90" };
+    const wide = { webp: "https://media1.giphy.com/media/s/200w.webp", width: "200", height: "180" };
+    const f = fakeFetch({ data: [{ id: "s", title: "s", images: { fixed_width_small: small, fixed_width: wide } }] });
+    const [s] = await new Giphy("KEY", f as unknown as typeof fetch).search("x");
+    expect(s).toMatchObject({ url: wide.webp, width: 200, height: 180 });
+  });
+
   it("uses trending for an empty query", async () => {
     const f = fakeFetch({ data: [item("t")] });
     await new Giphy("KEY", f as unknown as typeof fetch).search("  ");
