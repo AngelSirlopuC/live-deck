@@ -27,7 +27,7 @@ export function bindDeckKeys(target: Window, nav: NavHandlers): () => void {
 }
 
 /** Horizontal swipe navigation for touch screens. */
-export function bindSwipe(el: HTMLElement, nav: NavHandlers, threshold = 40): () => void {
+export function bindSwipe(el: HTMLElement, nav: NavHandlers, threshold = 40, rotated: () => boolean = () => false): () => void {
   let startX = 0;
   let startY = 0;
   let tracking = false;
@@ -40,8 +40,12 @@ export function bindSwipe(el: HTMLElement, nav: NavHandlers, threshold = 40): ()
   const up = (e: PointerEvent) => {
     if (!tracking) return;
     tracking = false;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
+    // When the slide is shown rotated 90° (portrait theater mode), the slide's
+    // horizontal axis runs down the screen.
+    const sx = e.clientX - startX;
+    const sy = e.clientY - startY;
+    const dx = rotated() ? sy : sx;
+    const dy = rotated() ? -sx : sy;
     if (Math.abs(dx) < threshold || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     // A swipe must not also count as a tap on the slide.
     const swallow = (c: Event) => c.stopPropagation();

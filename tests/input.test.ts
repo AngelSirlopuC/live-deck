@@ -39,3 +39,27 @@ describe("deck keys", () => {
     dispose();
   });
 });
+
+describe("swipe", () => {
+  function swipe(el: HTMLElement, from: [number, number], to: [number, number]) {
+    // jsdom has no PointerEvent: a MouseEvent with pointerType is enough for the handler.
+    const ev = (type: string, [x, y]: [number, number]) => Object.assign(new MouseEvent(type, { clientX: x, clientY: y, bubbles: true }), { pointerType: "touch" });
+    el.dispatchEvent(ev("pointerdown", from));
+    el.dispatchEvent(ev("pointerup", to));
+  }
+
+  it("maps a vertical swipe to slide navigation when the slide is rotated", async () => {
+    const { bindSwipe } = await import("../web/src/ui/input.ts");
+    const el = document.body.appendChild(document.createElement("div"));
+    const nav = { next: vi.fn(), prev: vi.fn() };
+    let rotated = false;
+    bindSwipe(el, nav, 40, () => rotated);
+    swipe(el, [200, 100], [100, 100]); // left: next
+    expect(nav.next).toHaveBeenCalledTimes(1);
+    rotated = true;
+    swipe(el, [100, 300], [100, 150]); // up on screen = left on the rotated slide
+    expect(nav.next).toHaveBeenCalledTimes(2);
+    swipe(el, [100, 150], [100, 300]); // down = previous
+    expect(nav.prev).toHaveBeenCalledTimes(1);
+  });
+});

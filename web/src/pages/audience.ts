@@ -1,7 +1,8 @@
 import type { PublicDeck } from "../../../shared/deck.ts";
 import { exploreNext, isAfter, prevPosition, type Position } from "../../../shared/nav.ts";
 import { NAME_MAX, REACTIONS, type CloseReason, type ErrorCode, type Identity, type PersonalState, type SessionInfo, type SessionSnapshot, type Sticker } from "../../../shared/protocol.ts";
-import { Runner } from "../arcade/runner.ts";
+import { createArcade } from "../arcade/arcade.ts";
+import { createTheater } from "../ui/fullscreen.ts";
 import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
@@ -116,7 +117,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   let unlockedAll = false;
   let abandonDismissed = false;
   let view: StageView | null = null;
-  let runner: Runner | null = null;
+  let arcade: ReturnType<typeof createArcade> | null = null;
   let connStatus: ConnectionStatus = "connecting";
   let personal: PersonalState | null = null;
   let clockOffset = 0;
@@ -128,12 +129,15 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   const title = h("span", { class: "aud-title" });
   const count = h("span", { class: "aud-count", "aria-label": "Personas conectadas" });
   const shareBtn = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Compartir sesión" }, icon("share"));
-  const bar = h("header", { class: "aud-bar" }, lamp, title, count, shareBtn);
+  const fullBtn = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Pantalla completa", "aria-pressed": "false" }, icon("expand"));
+  const bar = h("header", { class: "aud-bar" }, lamp, title, count, fullBtn, shareBtn);
 
   const stageHost = h("div", { class: "aud-stage-host" });
   const notice = h("div", { class: "aud-notice", role: "status", "aria-live": "polite" });
   const floaters = h("div", { class: "floaters", "aria-hidden": "true" });
-  const stageWrap = h("div", { class: "aud-stage" }, stageHost, floaters, notice);
+  const stageExpand = trusted("button", { type: "button", class: "stage-expand", "aria-label": "Ver en pantalla completa" }, icon("expand"));
+  const theaterExit = trusted("button", { type: "button", class: "theater-exit", "aria-label": "Salir de pantalla completa" }, icon("shrink"));
+  const stageWrap = h("div", { class: "aud-stage" }, stageHost, floaters, notice, stageExpand, theaterExit);
 
   const liveKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "live", "aria-pressed": "true" }, `${icon("radio")}<span>En vivo</span>`);
   const exploreKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "explore", "aria-pressed": "false" }, `${icon("compass")}<span>Explorar</span>`);
@@ -173,6 +177,21 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   const waiting = h("section", { class: "aud-waiting", hidden: true });
   const shell = h("main", { class: "aud", "data-mode": "live" }, bar, stageWrap, controls, panel, waiting);
   root.replaceChildren(shell);
+
+  const theater = createTheater(shell, (on) => {
+    fullBtn.setAttribute("aria-pressed", String(on));
+    fullBtn.innerHTML = icon(on ? "shrink" : "expand");
+    fullBtn.setAttribute("aria-label", on ? "Salir de pantalla completa" : "Pantalla completa");
+  });
+  fullBtn.addEventListener("click", () => theater.toggle());
+  stageExpand.addEventListener("click", (e) => {
+    e.stopPropagation();
+    theater.enter();
+  });
+  theaterExit.addEventListener("click", (e) => {
+    e.stopPropagation();
+    theater.exit();
+  });
 
   // Landscape: the slide fills the screen and the chrome appears on tap.
   let chromeTimer: number | undefined;
@@ -231,7 +250,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   exploreKey.addEventListener("click", () => setMode("explore"));
   prevKey.addEventListener("click", () => go(-1));
   nextKey.addEventListener("click", () => go(1));
-  bindSwipe(stageHost, { next: () => go(1), prev: () => go(-1) });
+  bindSwipe(stageHost, { next: () => go(1), prev: () => go(-1) }, 40, () => theater.rotated);
   bindDeckKeys(window, { next: () => go(1), prev: () => go(-1) });
   shareBtn.addEventListener("click", () => openShareSheet(joinUrl, deck?.title ?? ""));
 
@@ -261,8 +280,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       mountWaiting();
       return;
     }
-    runner?.destroy();
-    runner = null;
+    arcade?.destroy();
+    arcade = null;
 
     const following = mode === "live" && !unlockedAll;
     const pos = following ? state.position : explorePos;
@@ -300,16 +319,19 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   }
 
   function mountWaiting() {
-    if (runner) return;
-    const bestLine = h("p", { class: "arcade-best" });
-    runner = new Runner((score, best) => (bestLine.textContent = score >= best && score > 0 ? `¡Nuevo récord: ${score}!` : `Puntaje ${score} · récord ${best}`));
+    if (arcade) return;
+    arcade = createArcade();
     const qr = h("div", { class: "aud-waiting-qr" });
     void qrSvg(joinUrl).then((svg) => (qr.innerHTML = svg));
     waiting.replaceChildren(
-      h("h1", { class: "aud-waiting-title" }, "La presentación empieza pronto"),
-      h("p", { class: "aud-waiting-sub" }, `${deck!.title}. Cuando el ponente inicie, la verás aquí automáticamente.`),
-      h("div", { class: "arcade" }, runner.canvas, bestLine),
-      h("div", { class: "aud-waiting-share" }, qr, h("p", {}, "¿Alguien más quiere entrar? Que escanee este código.")),
+      h(
+        "div",
+        { class: "aud-waiting-info" },
+        h("h1", { class: "aud-waiting-title" }, "La presentación empieza pronto"),
+        h("p", { class: "aud-waiting-sub" }, `${deck!.title}. Cuando el ponente inicie, la verás aquí automáticamente.`),
+        h("div", { class: "aud-waiting-share" }, qr, h("p", {}, "¿Alguien más quiere entrar? Que escanee este código.")),
+      ),
+      arcade.el,
     );
   }
 
@@ -356,7 +378,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       render();
     },
     onClosed: (reason) => {
-      runner?.destroy();
+      arcade?.destroy();
+      theater.exit();
       if (reason === "ended" || reason === "not-found") local.remove(idKey(code));
       renderClosed(root, reason);
     },

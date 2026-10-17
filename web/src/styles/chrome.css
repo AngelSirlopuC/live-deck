@@ -1828,3 +1828,276 @@ select:focus-visible {
 .monitor-program .monitor-label {
   color: color-mix(in srgb, var(--onair) 75%, var(--text));
 }
+
+/* ===================================================================== */
+/* Mobile adaptation pass                                                 */
+/* ===================================================================== */
+
+/* No column may grow past the viewport: long titles, the reaction row and the
+   arcade used to push a 320 px phone 28 px sideways. */
+.aud {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.aud > *,
+.aud-controls > *,
+.switch > *,
+.reaction-bar > * {
+  min-width: 0;
+}
+
+.aud-bar {
+  gap: 8px;
+  padding-left: 12px;
+}
+
+.aud-bar .key-icon {
+  width: 44px;
+  min-height: 44px;
+  flex: none;
+}
+
+.aud-count {
+  flex: none;
+}
+
+.aud-title {
+  font-size: clamp(0.9rem, 3.6vw, 1rem);
+}
+
+.key-switch {
+  min-height: 46px;
+  font-size: clamp(0.78rem, 3.4vw, 0.95rem);
+}
+
+.reaction-key {
+  min-height: 44px;
+  font-size: clamp(1.15rem, 5.4vw, 1.45rem);
+}
+
+/* Participation panel scrolls on its own; the chat composer stays reachable. */
+.aud-panel {
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.chat-form {
+  position: sticky;
+  bottom: calc(-16px - var(--safe-bottom));
+  margin: 0 -16px;
+  padding: 10px 16px calc(10px + var(--safe-bottom));
+  background: var(--desk);
+  border-top: 1px solid var(--seam);
+  z-index: 1;
+}
+
+.chat-list {
+  max-height: none;
+}
+
+.vote {
+  min-height: 52px;
+}
+
+/* Slide affordance: tap the corner to watch it big. */
+.stage-expand,
+.theater-exit {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgb(239 228 204 / 0.25);
+  border-radius: 10px;
+  background: rgb(15 12 9 / 0.72);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.stage-expand {
+  right: 8px;
+  bottom: 8px;
+}
+
+.theater-exit {
+  top: calc(10px + var(--safe-top));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  display: none;
+}
+
+/* Waiting room: info card + arcade cabinet. */
+.aud-waiting {
+  gap: 18px;
+}
+
+.aud-waiting-info {
+  display: grid;
+  gap: 12px;
+}
+
+.aud-waiting-share {
+  margin-top: 4px;
+}
+
+.arcade {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.arcade-picker {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  width: 100%;
+  padding: 5px;
+  border-radius: 14px;
+  background: #0f0c09;
+  border: 1px solid var(--seam);
+}
+
+.arcade-pick {
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-legend);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.arcade-pick[aria-pressed="true"] {
+  background: linear-gradient(180deg, #ffc76d, var(--amber));
+  border-color: #c98a2a;
+  color: var(--amber-ink);
+}
+
+.arcade-screen {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.arcade-canvas {
+  display: block;
+  width: min(100%, calc(58dvh * 360 / 540));
+  height: auto;
+  border-radius: 16px;
+  border: 1px solid var(--seam);
+  box-shadow: 0 12px 30px -16px rgb(0 0 0 / 0.8);
+  touch-action: manipulation;
+  cursor: pointer;
+  background: #17120d;
+}
+
+.arcade-best {
+  text-align: center;
+  font-family: var(--font-body);
+}
+
+/* Landscape phone waiting room: info left, cabinet right, no page scroll. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .aud-waiting {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px;
+    padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+    overflow: hidden;
+  }
+  .aud-waiting-title {
+    font-size: 1.6rem;
+  }
+  .aud-waiting-share {
+    padding: 10px;
+  }
+  .aud-waiting-qr {
+    width: 72px;
+  }
+  .arcade {
+    height: 100%;
+    align-content: center;
+  }
+  .arcade-canvas {
+    width: auto;
+    height: calc(100dvh - 110px);
+  }
+  .stage-expand {
+    display: none;
+  }
+}
+
+/* Theater mode: the slide fills the screen. */
+.aud.is-theater .aud-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  aspect-ratio: auto;
+  background: #000;
+}
+
+.aud.is-theater .stage-expand {
+  display: none;
+}
+
+.aud.is-theater .theater-exit {
+  display: grid;
+}
+
+.aud.is-theater .aud-bar,
+.aud.is-theater .aud-controls {
+  visibility: hidden;
+}
+
+/* Held upright: turn the slide 90° so it uses the whole screen. */
+.aud.is-rotated .aud-stage {
+  inset: auto;
+  top: 0;
+  left: 0;
+  width: 100dvh;
+  height: 100dvw;
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+}
+
+.aud.is-rotated .theater-exit {
+  top: 10px;
+  right: 10px;
+}
+
+@media (min-width: 900px) and (min-height: 561px) {
+  .stage-expand {
+    display: grid;
+  }
+  .aud-waiting {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 32px;
+    max-width: 980px;
+  }
+}
+
+.stage-expand {
+  width: 34px;
+  height: 34px;
+  right: 6px;
+  bottom: 6px;
+  opacity: 0.8;
+}
+
+.stage-expand .icon {
+  width: 18px;
+  height: 18px;
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  /* Hidden controls slide 8 px off-screen; never let that become page scroll. */
+  .aud {
+    overflow: hidden;
+  }
+}
