@@ -12,17 +12,36 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 1. Work from the Live Deck repository root (it contains `bin/live-deck.ts` and `decks/`).
 2. Read `references/deck-format.md` once per session. Follow it exactly; unknown fields are rejected.
 3. Use `references/layout-recipes.md` for boxes and font sizes. Do not invent geometry when a recipe fits.
-4. Write all deck content (titles, text, notes, quiz questions, alt text) in the user's language.
-5. Pick a deck id: lowercase letters, digits and dashes, starting with a letter or digit, at most 63 chars (`my-talk-2026`).
+4. Read `references/themes.md` before the art direction step.
+5. Write all deck content (titles, text, notes, quiz questions, alt text) in the user's language.
+6. Pick a deck id: lowercase letters, digits and dashes, starting with a letter or digit, at most 63 chars (`my-talk-2026`).
+
+## Art direction (before writing slides)
+
+1. Pick exactly one preset (`estudio`, `editorial`, `neon`, `papel`, `brutalista`, `corporativo`) from the topic, the audience and the venue (a projector in a bright room needs light, high-contrast presets; a dark auditorium suits dark ones). Use the decision table in `references/themes.md`.
+2. Write one line in your plan and to the user: `Preset: <name>, because <reason>.`
+3. Set `"theme": { "preset": "<name>" }`. Override `accent` (or other colors, `surface`) only when the user's brand requires it. Do not hand-color cards; use `card: true`.
+4. Plan a layout per slide from the recipes before writing JSON, then check the plan against the composition rules below.
+
+## Composition variety
+
+- No two consecutive slides with the same layout (recipe). Quiz slides count as a layout.
+- Alternate dense slides (icon row, chart, two-column) with breathing slides (big number, quote, one-word section break).
+- Use a rich element wherever the content supports it: a real figure becomes `big-number-card` or a `chart`; a list of 3–4 parallel ideas becomes an `icon-row`; a key phrase gets `mark`; openers, section breaks and closings get a slide `background` object or a `decor` accent.
+- Never invent data for a chart or a number; ask or use text instead.
+- Decor is decoration only: at most two per slide, never behind small text.
+- One idea per slide still holds.
 
 ## Workflow
 
-1. Plan the outline: one idea per slide, 5–25 slides for a normal talk. Add 1 quiz every 4–8 slides when the audience can answer something.
+1. Plan the outline: one idea per slide, 5–25 slides for a normal talk. Add 1 quiz every 4–8 slides when the audience can answer something. Do the art direction step and assign a layout to each slide.
 2. Scaffold: `node bin/live-deck.ts new <id> --title "<title>"`. It refuses to overwrite; if the deck exists, edit it instead (ask first if the user did not mean that deck).
 3. Replace the template slides in `decks/<id>/deck.json` with the planned slides.
 4. Validate: `node bin/live-deck.ts validate <id>`.
 5. Fix every printed issue (`path: message`, e.g. `slides.3.elements.1.box: box must stay inside the canvas`) and re-run until it prints `OK <title> (<n> slides, <q> quizzes)`. Treat `warning:` lines as defects too.
-6. Tell the user: deck path, slide and quiz count, and preview at `/preview/<id>` (dev: `http://localhost:5180/preview/<id>`). To present, they create a session from the home page.
+6. Tell the user: deck path, chosen preset and why, slide and quiz count, and the difference between preview and presenting:
+   - Preview at `/preview/<id>` (dev: `http://localhost:5180/preview/<id>`) is a single-viewer rehearsal with no session: the QR shows a placeholder ("El QR aparece al presentar"), there is no audience, quizzes and chat are inactive, and they move with arrows, click or swipe.
+   - To present for real, they press "Presentar" on the preview (opens the home page with the deck preselected), set a 4–8 digit PIN and open the console. The join QR, quizzes, chat and effects work only in that live session.
 
 `npm run deck -- <command>` is equivalent to `node bin/live-deck.ts <command>`. Requires Node >= 24.
 
@@ -36,7 +55,8 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 - Quiz slides: `"layout": "quiz"`, `elements: []`, and a `quiz` with 2–6 options (each 1–120 chars), exactly one `correctIndex` (0-based, < options length), `display` `"live"` (bars move while voting) or `"secret"` (hidden until reveal), optional integer `timerSec` 5–600. A `quiz` without `layout: "quiz"` (or vice versa) is invalid.
 - Images: `src` is `https://…` or `assets/<file>`; put local files in `decks/<id>/assets/`. Never use `..`. Always set `alt`.
 - Every slide has speaker `notes` (what to say, what to do: reveal, focus, zoom).
-- Colors are hex (`#rrggbb`). Prefer theme colors; set `theme` once at deck level.
+- Set `theme` once at deck level, normally just `{ "preset": "<name>" }`. Without a preset, `background`, `foreground` and `accent` are required. Colors are hex (`#rrggbb`).
+- Only the built-in element types exist: `text`, `image`, `shape`, `qr`, `icon`, `chart`, `decor`. Free HTML or SVG is not allowed (deck content reaches audience phones). Icon names must come from `ICON_NAMES` in `shared/icons.ts`.
 - Reveal content step by step with `fragment: 1..20` (element appears on that step). Keep to <= 6 steps per slide.
 - No more than ~40 words of visible text per slide; move detail into `notes`.
 
@@ -50,26 +70,35 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 
 Request: "Make a 4-slide live deck in Spanish about safe passwords with one quiz."
 
+Preset: `estudio`, because it is a general tech-safety talk for a mixed audience in an unknown room. Layouts: hero-gradient → icon-row → quiz → closing with decor.
+
 ```json
 {
   "version": 1,
   "title": "Contraseñas seguras",
-  "theme": { "background": "#10131a", "foreground": "#f4f1ea", "accent": "#ff7a45", "muted": "#9aa3b2" },
+  "theme": { "preset": "estudio" },
   "slides": [
-    { "id": "portada", "notes": "Saluda y pide que escaneen el QR.", "elements": [
-      { "id": "titulo", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Contraseñas que nadie adivina", "style": { "fontSize": 96, "fontWeight": 800, "font": "display", "lineHeight": 1.05 } },
+    { "id": "portada", "notes": "Saluda y pide que escaneen el QR.",
+      "background": { "gradient": { "from": "#1b1f3a", "to": "#0b0d12", "angle": 135 } },
+      "elements": [
+      { "id": "decor", "type": "decor", "shape": "rings", "box": { "x": 0.0, "y": 0.55, "w": 0.26, "h": 0.45 }, "style": { "opacity": 0.25 } },
+      { "id": "titulo", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Contraseñas que nadie adivina", "style": { "fontSize": 96, "fontWeight": 800, "font": "display", "lineHeight": 1.05, "tracking": -0.02 } },
       { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "#f4f1ea", "color": "#10131a" } }
     ] },
     { "id": "reglas", "notes": "Cada regla aparece con 'siguiente'.", "elements": [
       { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.1, "w": 0.86, "h": 0.14 }, "text": "Tres reglas", "style": { "fontSize": 80, "fontWeight": 800, "font": "display" } },
-      { "id": "r1", "type": "text", "box": { "x": 0.07, "y": 0.32, "w": 0.86, "h": 0.14 }, "text": "Usa frases largas", "fragment": 1, "style": { "fontSize": 44 } },
-      { "id": "r2", "type": "text", "box": { "x": 0.07, "y": 0.5, "w": 0.86, "h": 0.14 }, "text": "Una contraseña por sitio", "fragment": 2, "style": { "fontSize": 44 } },
-      { "id": "r3", "type": "text", "box": { "x": 0.07, "y": 0.68, "w": 0.86, "h": 0.14 }, "text": "Activa la verificación en dos pasos", "fragment": 3, "style": { "fontSize": 44 } }
+      { "id": "i1", "type": "icon", "name": "key", "box": { "x": 0.16, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 1 },
+      { "id": "r1", "type": "text", "box": { "x": 0.07, "y": 0.55, "w": 0.26, "h": 0.2 }, "text": "Usa frases largas", "fragment": 1, "style": { "fontSize": 40, "align": "center" } },
+      { "id": "i2", "type": "icon", "name": "lock", "box": { "x": 0.46, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 2 },
+      { "id": "r2", "type": "text", "box": { "x": 0.37, "y": 0.55, "w": 0.26, "h": 0.2 }, "text": "Una contraseña por sitio", "fragment": 2, "style": { "fontSize": 40, "align": "center" } },
+      { "id": "i3", "type": "icon", "name": "shield-check", "box": { "x": 0.76, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 3 },
+      { "id": "r3", "type": "text", "box": { "x": 0.67, "y": 0.55, "w": 0.26, "h": 0.2 }, "text": "Activa la verificación en dos pasos", "fragment": 3, "style": { "fontSize": 40, "align": "center" } }
     ] },
     { "id": "quiz-largo", "layout": "quiz", "notes": "Revela tras 30 s.", "elements": [],
       "quiz": { "question": "¿Cuál es más difícil de adivinar?", "options": ["P@ssw0rd!", "caballo-bateria-grapa-correcto"], "correctIndex": 1, "display": "secret", "timerSec": 30 } },
-    { "id": "cierre", "notes": "Agradece y finaliza la sesión.", "elements": [
-      { "id": "gracias", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.86, "h": 0.26 }, "text": "Gracias", "style": { "fontSize": 180, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle" } }
+    { "id": "cierre", "notes": "Agradece y finaliza la sesión.", "background": { "color": "#0b0d12", "pattern": "dots" }, "elements": [
+      { "id": "decor", "type": "decor", "shape": "blob", "box": { "x": 0.7, "y": 0.55, "w": 0.3, "h": 0.45 }, "style": { "opacity": 0.3 } },
+      { "id": "gracias", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.86, "h": 0.26 }, "text": "Gracias", "style": { "fontSize": 180, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle", "mark": true } }
     ] }
   ]
 }
@@ -80,6 +109,7 @@ Then: `node bin/live-deck.ts validate contrasenas` → `OK Contraseñas seguras 
 ## References
 
 - `references/deck-format.md`: every field, allowed values and limits.
-- `references/layout-recipes.md`: proven boxes for common slide types.
+- `references/layout-recipes.md`: proven boxes for common slide types, including rich recipes (hero-gradient, icon-row, big-number-card, chart-bar, chart-donut, quote-mark, section-break).
+- `references/themes.md`: the six presets, when to use each, and composition tips.
 - `references/mcp.md`: why there is no MCP server and when one would be justified.
 - Full example using every element type: `decks/demo/deck.json`. Schema source of truth: `shared/deck.ts`.

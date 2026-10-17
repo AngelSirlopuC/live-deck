@@ -72,3 +72,94 @@ The player renders question, options, bars and timer; do not add elements.
   { "id": "contact", "type": "text", "box": { "x": 0.07, "y": 0.6, "w": 0.86, "h": 0.1 }, "text": "name@example.com", "style": { "fontSize": 36, "color": "#9aa3b2", "align": "center" } }
 ]
 ```
+
+## Recipes with rich elements
+
+These assume a `theme.preset`. They set no colors on purpose: the preset supplies fonts, card style and palette. Recipes that need a slide `background` are shown as whole slides; change `id`, texts and `notes`. Icons and decor draw in element order, so decor goes first.
+
+### hero-gradient (opener; keeps the slide-1 QR)
+
+```json
+{ "id": "hero-gradient", "notes": "Welcome; ask everyone to scan the QR.",
+  "background": { "gradient": { "from": "#1b1f3a", "to": "#0b0d12", "angle": 135 } },
+  "elements": [
+    { "id": "decor", "type": "decor", "shape": "rings", "box": { "x": 0.0, "y": 0.55, "w": 0.26, "h": 0.45 }, "style": { "opacity": 0.25 } },
+    { "id": "kicker", "type": "text", "box": { "x": 0.07, "y": 0.14, "w": 0.5, "h": 0.06 }, "text": "Event · date", "style": { "fontSize": 30, "fontWeight": 700, "font": "mono", "uppercase": true, "tracking": 0.12 } },
+    { "id": "title", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Title in up to eight words", "style": { "fontSize": 100, "fontWeight": 800, "font": "display", "lineHeight": 1.02, "tracking": -0.02 } },
+    { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "#f4f1ea", "color": "#10131a" } }
+  ] }
+```
+
+Pick gradient stops near the preset background (dark presets: two darks; light presets: two lights). Remove the `qr` only when this is not slide 1.
+
+### icon-row (3–4 ideas)
+
+Columns `w: 0.185` at x 0.07 / 0.295 / 0.52 / 0.745; icons `w: 0.08, h: 0.142` centered in each column. For 3 items use columns `w: 0.26` at x 0.07 / 0.37 / 0.67 and icons at x 0.16 / 0.46 / 0.76.
+
+```json
+[
+  { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.1, "w": 0.86, "h": 0.14 }, "text": "Four habits", "style": { "fontSize": 80, "fontWeight": 800, "font": "display" } },
+  { "id": "i1", "type": "icon", "name": "lightbulb", "box": { "x": 0.1225, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 1 },
+  { "id": "l1", "type": "text", "box": { "x": 0.07, "y": 0.55, "w": 0.185, "h": 0.2 }, "text": "Short label", "fragment": 1, "style": { "fontSize": 36, "align": "center", "lineHeight": 1.25 } },
+  { "id": "i2", "type": "icon", "name": "users", "box": { "x": 0.3475, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 2 },
+  { "id": "l2", "type": "text", "box": { "x": 0.295, "y": 0.55, "w": 0.185, "h": 0.2 }, "text": "Short label", "fragment": 2, "style": { "fontSize": 36, "align": "center", "lineHeight": 1.25 } },
+  { "id": "i3", "type": "icon", "name": "shield-check", "box": { "x": 0.5725, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 3 },
+  { "id": "l3", "type": "text", "box": { "x": 0.52, "y": 0.55, "w": 0.185, "h": 0.2 }, "text": "Short label", "fragment": 3, "style": { "fontSize": 36, "align": "center", "lineHeight": 1.25 } },
+  { "id": "i4", "type": "icon", "name": "rocket", "box": { "x": 0.7975, "y": 0.36, "w": 0.08, "h": 0.142 }, "fragment": 4 },
+  { "id": "l4", "type": "text", "box": { "x": 0.745, "y": 0.55, "w": 0.185, "h": 0.2 }, "text": "Short label", "fragment": 4, "style": { "fontSize": 36, "align": "center", "lineHeight": 1.25 } }
+]
+```
+
+### big-number-card
+
+```json
+[
+  { "id": "card", "type": "text", "box": { "x": 0.07, "y": 0.16, "w": 0.5, "h": 0.68 }, "text": "73 %", "style": { "fontSize": 220, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle", "card": true, "tracking": -0.03 } },
+  { "id": "label", "type": "text", "box": { "x": 0.62, "y": 0.16, "w": 0.31, "h": 0.68 }, "text": "of attendees check their phone in the first 10 minutes", "style": { "fontSize": 44, "lineHeight": 1.25, "valign": "middle" } }
+]
+```
+
+### chart-bar
+
+```json
+[
+  { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.08, "w": 0.86, "h": 0.12 }, "text": "Answers per minute", "style": { "fontSize": 72, "fontWeight": 800, "font": "display" } },
+  { "id": "chart", "type": "chart", "kind": "bar", "box": { "x": 0.07, "y": 0.26, "w": 0.6, "h": 0.64 }, "unit": "%",
+    "data": [ { "label": "Q1", "value": 42 }, { "label": "Q2", "value": 58 }, { "label": "Q3", "value": 71 }, { "label": "Q4", "value": 64 } ] },
+  { "id": "takeaway", "type": "text", "box": { "x": 0.71, "y": 0.26, "w": 0.22, "h": 0.64 }, "text": "Q3 peaked after the live quiz", "fragment": 1, "style": { "fontSize": 40, "lineHeight": 1.25, "valign": "middle" } }
+]
+```
+
+### chart-donut
+
+```json
+[
+  { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.08, "w": 0.86, "h": 0.12 }, "text": "Where time goes", "style": { "fontSize": 72, "fontWeight": 800, "font": "display" } },
+  { "id": "chart", "type": "chart", "kind": "donut", "box": { "x": 0.17, "y": 0.24, "w": 0.66, "h": 0.68 }, "unit": " h",
+    "data": [ { "label": "Meetings", "value": 12 }, { "label": "Focus work", "value": 18 }, { "label": "Email", "value": 6 } ] }
+]
+```
+
+### quote-mark
+
+```json
+[
+  { "id": "decor", "type": "decor", "shape": "squiggle", "box": { "x": 0.07, "y": 0.12, "w": 0.16, "h": 0.12 }, "style": { "opacity": 0.6 } },
+  { "id": "quote", "type": "text", "box": { "x": 0.07, "y": 0.28, "w": 0.78, "h": 0.4 }, "text": "The best slide is the one the audience remembers", "style": { "fontSize": 84, "fontWeight": 700, "font": "display", "lineHeight": 1.1, "tracking": -0.02, "mark": true } },
+  { "id": "author", "type": "text", "box": { "x": 0.07, "y": 0.74, "w": 0.6, "h": 0.08 }, "text": "— Author, role", "style": { "fontSize": 34, "font": "mono" } }
+]
+```
+
+`mark` highlights the whole text element: keep the quote short (<= 12 words) or split the key phrase into its own element.
+
+### section-break (one word)
+
+```json
+{ "id": "section-break", "notes": "Pause; announce the new part.",
+  "background": { "image": "assets/section.jpg", "dim": 0.55 },
+  "elements": [
+    { "id": "word", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.86, "h": 0.4 }, "text": "Practice", "style": { "fontSize": 220, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle", "uppercase": true, "tracking": -0.02, "color": "#ffffff" } }
+  ] }
+```
+
+Without a photo use `"background": { "color": "#0b0d12", "pattern": "grid" }` (pick a color from the preset world) and drop the `color` override on the text. `assets/section.jpg` must exist in `decks/<id>/assets/`.
