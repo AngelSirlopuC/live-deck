@@ -293,3 +293,72 @@ describe("live-deck import", () => {
     expect(cli("help").out).toMatch(/import <folder> --id <id> \[--title "\.\.\."\]/);
   });
 });
+
+describe("live-deck publish", () => {
+  let target: string;
+  beforeEach(() => {
+    target = mkdtempSync(join(tmpdir(), "live-deck-target-"));
+  });
+  afterEach(() => {
+    rmSync(target, { recursive: true, force: true });
+  });
+
+  function publish(env: Record<string, string>, ...args: string[]) {
+    const r = spawnSync(process.execPath, ["bin/live-deck.ts", "publish", ...args], {
+      cwd: repo,
+      encoding: "utf8",
+      env: { ...process.env, DECKS_DIR: root, LIVE_DECK_PUBLISH_TARGET: "", LIVE_DECK_PUBLIC_URL: "", ...env },
+    });
+    return { code: r.status, out: r.stdout, err: r.stderr, all: r.stdout + r.stderr };
+  }
+
+  it("validates the deck and copies it to <target>/<id>, printing the event links", () => {
+    cpSync(demoDir, join(root, "charla"), { recursive: true });
+    const r = publish({ LIVE_DECK_PUBLISH_TARGET: target, LIVE_DECK_PUBLIC_URL: "https://events.example.com/" }, "charla");
+    expect(r.code).toBe(0);
+    expect(readFileSync(join(target, "charla", "deck.json"), "utf8")).toBe(readFileSync(join(root, "charla", "deck.json"), "utf8"));
+    expect(r.out).toContain("https://events.example.com/preview/charla");
+  });
+
+  it("removes files deleted locally, only inside that deck", () => {
+    cpSync(demoDir, join(root, "charla"), { recursive: true });
+    mkdirSync(join(target, "charla"), { recursive: true });
+    writeFileSync(join(target, "charla", "old.png"), "x");
+    mkdirSync(join(target, "otro"), { recursive: true });
+    writeFileSync(join(target, "otro", "deck.json"), "{}");
+    expect(publish({ LIVE_DECK_PUBLISH_TARGET: target }, "charla").code).toBe(0);
+    expect(existsSync(join(target, "charla", "old.png"))).toBe(false);
+    expect(existsSync(join(target, "otro", "deck.json"))).toBe(true);
+  });
+
+  it("refuses an invalid deck and copies nothing", () => {
+    writeDeck("roto", { version: 1, title: "x", slides: [] });
+    const r = publish({ LIVE_DECK_PUBLISH_TARGET: target }, "roto");
+    expect(r.code).toBe(1);
+    expect(r.all).toMatch(/not published/);
+    expect(readdirSync(target)).toEqual([]);
+  });
+
+  it("explains how to set the target when it is missing", () => {
+    cpSync(demoDir, join(root, "charla"), { recursive: true });
+    const r = publish({}, "charla");
+    expect(r.code).toBe(2);
+    expect(r.all).toMatch(/LIVE_DECK_PUBLISH_TARGET/);
+  });
+
+  it("refuses a missing or invalid deck id", () => {
+    expect(publish({ LIVE_DECK_PUBLISH_TARGET: target }).code).toBe(2);
+    expect(publish({ LIVE_DECK_PUBLISH_TARGET: target }, "../x").code).toBe(2);
+  });
+
+  it("copies nothing with --dry-run", () => {
+    cpSync(demoDir, join(root, "charla"), { recursive: true });
+    const r = publish({ LIVE_DECK_PUBLISH_TARGET: target }, "charla", "--dry-run");
+    expect(r.code).toBe(0);
+    expect(readdirSync(target)).toEqual([]);
+  });
+
+  it("is listed in the usage text", () => {
+    expect(cli("help").out).toMatch(/publish <id> \[--dry-run\]/);
+  });
+});

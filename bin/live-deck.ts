@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Live Deck authoring CLI. Zero dependencies beyond the project itself; runs on
 // Node >= 24 with native TypeScript: `node bin/live-deck.ts <command>`.
+import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,11 +19,18 @@ Commands:
   new <id> [--title "..."]                     Scaffold decks/<id>/deck.json from a template
   import <folder> --id <id> [--title "..."]    Build decks/<id> from slide images exported by any tool
   list                                         List decks with title and slide count
+  publish <id> [--dry-run]                     Validate decks/<id> and copy it to the server (rsync)
   help                                         Show this help
 
 Deck ids: lowercase letters, digits and dashes (${DECK_ID.source}).
 Decks root: ${DECKS_DIR} (override with DECKS_DIR).
 Preview a deck in the browser at /preview/<id>.
+
+Publish: copies decks/<id>/ to $LIVE_DECK_PUBLISH_TARGET/<id>/ with rsync,
+e.g. LIVE_DECK_PUBLISH_TARGET=user@host:/opt/live-deck/decks (or a local path).
+Files deleted locally are removed only inside that deck. The server reads decks
+when a session is created, so no restart is needed. Set LIVE_DECK_PUBLIC_URL
+(e.g. https://events.example.com) to print the preview link.
 
 Import: takes .png, .jpg, .jpeg and .webp files (up to 200) in natural order
 (slide2 before slide10), copies them to decks/<id>/assets/slide-01.<ext>... as
@@ -286,6 +294,38 @@ function list(): number {
   return 0;
 }
 
+function publish(args: string[]): number {
+  const dryRun = args.includes("--dry-run");
+  const id = args.find((a) => !a.startsWith("--"));
+  if (!id || !DECK_ID.test(id)) {
+    process.stderr.write(`publish needs a deck id (${DECK_ID.source})\n\n${USAGE}`);
+    return 2;
+  }
+  const target = process.env.LIVE_DECK_PUBLISH_TARGET?.trim().replace(/\/+$/, "");
+  if (!target) {
+    process.stderr.write("Set LIVE_DECK_PUBLISH_TARGET to where the server reads decks, e.g. user@host:/opt/live-deck/decks (it can live in .env).\n");
+    return 2;
+  }
+  const report = check(join(DECKS_DIR, id, "deck.json"));
+  for (const w of report.warnings) process.stderr.write(`warning: ${w}\n`);
+  if (report.errors.length || !report.deck) {
+    for (const e of report.errors) process.stdout.write(`${e}\n`);
+    process.stderr.write(`${id}: not published (fix the errors above)\n`);
+    return 1;
+  }
+  // Trailing slashes: copy the folder's contents into <target>/<id>; --delete stays inside it.
+  const rsyncArgs = ["-a", "--delete", "--exclude", ".DS_Store", ...(dryRun ? ["-n", "-v"] : []), `${join(DECKS_DIR, id)}/`, `${target}/${id}/`];
+  const run = spawnSync("rsync", rsyncArgs, { stdio: "inherit" });
+  if (run.error || run.status !== 0) {
+    process.stderr.write(`${id}: rsync failed${run.error ? ` (${run.error.message})` : ` with exit code ${run.status}`}\n`);
+    return 1;
+  }
+  const base = process.env.LIVE_DECK_PUBLIC_URL?.trim().replace(/\/+$/, "");
+  process.stdout.write(`${dryRun ? "Dry run, nothing copied:" : "Published"} ${report.deck.title} -> ${target}/${id}\n`);
+  if (base && !dryRun) process.stdout.write(`Preview: ${base}/preview/${id}\nCreate the session for the event from ${base}/ (needs the admin key).\n`);
+  return 0;
+}
+
 function main(argv: string[]): number {
   const [command, ...args] = argv;
   switch (command) {
@@ -303,6 +343,8 @@ function main(argv: string[]): number {
       return importDeck(args);
     case "list":
       return list();
+    case "publish":
+      return publish(args);
     default:
       process.stderr.write(`unknown command "${command}"\n\n${USAGE}`);
       return 2;

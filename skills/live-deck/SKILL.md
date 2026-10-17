@@ -48,6 +48,7 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 6. Tell the user: deck path, chosen preset and why, slide and quiz count, and the difference between preview and presenting:
    - Preview at `/preview/<id>` (dev: `http://localhost:5180/preview/<id>`) is a single-viewer rehearsal with no session: the QR shows a placeholder ("El QR aparece al presentar"), there is no audience, quizzes and chat are inactive, and they move with arrows, click or swipe.
    - To present for real, they press "Presentar" on the preview (opens the home page with the deck preselected), set a 4–8 digit PIN and open the console. The join QR, quizzes, chat and effects work only in that live session.
+   - For an event on a hosted server, publish it with `npm run publish:deck -- <id>` (needs `LIVE_DECK_PUBLISH_TARGET` in `.env`; add `--dry-run` first). It validates again and copies only that deck. Never publish without the user asking.
 
 `npm run deck -- <command>` is equivalent to `node bin/live-deck.ts <command>`. Requires Node >= 24.
 

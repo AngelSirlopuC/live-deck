@@ -182,6 +182,24 @@ See [docs/self-hosting.md](docs/self-hosting.md) for HTTPS with Caddy, LAN use
 in rooms, GIPHY stickers and sizing (about 200 attendees per session on one
 small server).
 
+### One deck per event
+
+Write or import the event's deck locally, then publish it to the server's
+decks folder (the one mounted at `/app/decks`):
+
+```sh
+# .env (local, not committed)
+LIVE_DECK_PUBLISH_TARGET=user@your-server:/opt/live-deck/decks
+LIVE_DECK_PUBLIC_URL=https://events.example.com
+
+npm run publish:deck -- my-event --dry-run   # show what would change
+npm run publish:deck -- my-event             # validate, then rsync decks/my-event/
+```
+
+It refuses an invalid deck, removes files you deleted only inside that deck,
+and needs no restart: the server reads decks when a session is created. Then
+create the session from the home page with the admin key.
+
 ## Architecture
 
 ```
