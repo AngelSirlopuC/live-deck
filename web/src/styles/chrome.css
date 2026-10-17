@@ -2404,3 +2404,16 @@ select:focus-visible {
 .chat-name {
   flex-basis: 100%;
 }
+
+/* Preview page overlay: .key sets position: relative, so pin these explicitly. */
+.preview .preview-present {
+  position: absolute;
+  top: calc(12px + var(--safe-top));
+  right: 16px;
+  z-index: 2;
+}
+
+.preview .preview-note {
+  position: absolute;
+  z-index: 2;
+}
