@@ -50,7 +50,7 @@ export function applyQuizView(stage: HTMLElement, view: QuizView | null, opts: Q
     item.style.setProperty("--share", String(share));
     item.style.order = ranking ? String(position + 1) : "";
     item.querySelector(".quiz-count")!.textContent = count !== undefined ? `${Math.round(share * 100)}%` : "";
-    item.querySelector(".quiz-rank")!.textContent = showRanks && rank ? `${rank}º` : "";
+    item.querySelector(".quiz-rank")!.textContent = showRanks && anyVotes && rank ? `${rank}º` : "";
     const revealed = view?.status === "revealed";
     item.classList.toggle("is-correct", revealed && view?.correctIndex === i);
     item.classList.toggle("is-wrong", revealed && view?.correctIndex !== i);

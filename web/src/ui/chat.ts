@@ -69,7 +69,10 @@ export function createChatPanel(opts: ChatPanelOptions) {
       const canText = state.mode === "text" || state.mode === "mixed";
       const canSticker = (state.mode === "sticker" || state.mode === "mixed") && !!opts.stickersEnabled;
       el.dataset.mode = state.mode;
-      status.textContent = state.mode === "off" ? MODE_COPY.off : state.paused ? "El ponente pausó el chat." : "";
+      // The presenter (moderator) reads how to act; the audience reads what happened.
+      const off = opts.moderate ? "Chat cerrado. Ábrelo desde ⚙ para que el público escriba." : MODE_COPY.off;
+      const paused = opts.moderate ? "Chat en pausa: el público no puede escribir." : "El ponente pausó el chat.";
+      status.textContent = state.mode === "off" ? off : state.paused ? paused : "";
       status.hidden = !status.textContent;
       const writable = !!opts.onSend && state.mode !== "off" && !state.paused;
       form.hidden = !writable;

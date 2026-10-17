@@ -2920,3 +2920,87 @@ select:focus-visible {
     opacity: 1;
   }
 }
+
+/* Console layout v3: the program monitor is sized by the available height so
+   the desk panels below always stay visible; the side column (next + chat)
+   takes the remaining width, so there is no empty band either. */
+.console-body {
+  grid-template-columns: auto minmax(320px, 1fr);
+}
+
+.console-main {
+  width: min(calc((100dvh - 400px) * 16 / 9), calc(100vw - 368px));
+  grid-template-rows: auto minmax(170px, 1fr);
+  overflow: hidden;
+}
+
+.console-desk {
+  min-height: 0;
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .console-body {
+    grid-template-columns: 1fr;
+  }
+  .console-main {
+    width: auto;
+    overflow: visible;
+  }
+}
+
+/* Console layout v4: no desk under the program. The program uses the full
+   height; quiz, chat and audience settings live in the side column. */
+.console-main {
+  width: min(calc((100dvh - 230px) * 16 / 9), calc(100vw - 400px));
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.console-side > .pq {
+  flex: none;
+}
+
+.console-settings {
+  flex: none;
+  border-radius: 10px;
+  border: 1px solid var(--seam);
+  background: var(--panel);
+}
+
+.console-settings > summary {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-family: var(--font-legend);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.console-settings[open] > summary {
+  color: var(--text);
+}
+
+.console-settings-body {
+  display: grid;
+  gap: 10px;
+  max-height: 40vh;
+  overflow: auto;
+  padding: 0 10px 10px;
+}
+
+.console-settings-body > * {
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+/* Side column: chat keeps a usable height; the column scrolls if it must. */
+.console-side {
+  overflow-y: auto;
+}
+
+.console-side > .presenter-chat {
+  min-height: 200px;
+}

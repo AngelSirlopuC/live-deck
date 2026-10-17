@@ -138,3 +138,21 @@ describe("zone quiz overlay", () => {
     expect(zones.map((z) => z.style.order)).toEqual(["", "", ""]);
   });
 });
+
+describe("rank badges before any vote", () => {
+  it("shows no rank badges while every option has zero votes", () => {
+    const d: Deck = { version: 1, title: "T", slides: [{ id: "q", layout: "quiz", elements: [], quiz: { question: "Q?", options: ["A", "B"], correctIndex: 0, display: "live" } }] };
+    const stage = renderSlide(d, 0, { step: 0 });
+    applyQuizView(stage, { slideId: "q", status: "open", counts: [0, 0], total: 0, correctIndex: null, endsAt: null });
+    expect([...stage.querySelectorAll(".quiz-rank")].map((e) => e.textContent)).toEqual(["", ""]);
+  });
+});
+
+describe("grid results keep no rank badges", () => {
+  it("does not show rank badges with results: grid even with votes", () => {
+    const d: Deck = { version: 1, title: "T", slides: [{ id: "q", layout: "quiz", elements: [], quiz: { question: "Q?", options: ["A", "B"], correctIndex: 0, display: "live", results: "grid" } }] };
+    const stage = renderSlide(d, 0, { step: 0 });
+    applyQuizView(stage, { slideId: "q", status: "open", counts: [2, 1], total: 3, correctIndex: null, endsAt: null });
+    expect([...stage.querySelectorAll(".quiz-rank")].map((e) => e.textContent)).toEqual(["", ""]);
+  });
+});

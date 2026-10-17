@@ -297,10 +297,15 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const nextMon = h("section", { class: "monitor monitor-next", "aria-label": "Siguiente" }, h("span", { class: "monitor-label" }, "Siguiente"), nextHost);
   const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
   const pa = createPresenterAudience(ctx.send);
-  const side = h("aside", { class: "console-side" }, nextMon, chatUi.el);
-  // Audience-facing controls live on the desk under the program monitor so the
-  // next-slide monitor and timer never scroll out of view.
-  const desk = h("div", { class: "console-desk" }, pq.quizEl, pq.boardEl, pa.el);
+  // Audience settings (scores, reactions) fold away under the chat.
+  const audienceSettings = h(
+    "details",
+    { class: "console-settings" },
+    h("summary", {}, "Puntaje y reacciones"),
+    h("div", { class: "console-settings-body" }, pq.boardEl, pa.el),
+  );
+  const side = h("aside", { class: "console-side" }, nextMon, pq.quizEl, chatUi.el, audienceSettings);
+
   const programFloaters = h("div", { class: "floaters", "aria-hidden": "true" });
   // Inside the host so the stage clipping also clips the floaters.
   programHost.append(programFloaters);
@@ -312,7 +317,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const actions = sessionActions(ctx);
   const transport = h("footer", { class: "console-transport" }, actions.start, prev, next, h("span", { class: "spacer" }), actions.restrict, h("span", { class: "transport-gap" }), actions.end);
 
-  const body = h("div", { class: "console-body" }, h("div", { class: "console-main" }, program, desk), side);
+  const body = h("div", { class: "console-body" }, h("div", { class: "console-main" }, program), side);
   const consoleEl = h("main", { class: "console" }, header, body, transport);
   root.replaceChildren(consoleEl);
 
