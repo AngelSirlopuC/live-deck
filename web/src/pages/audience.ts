@@ -139,10 +139,10 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   const theaterExit = trusted("button", { type: "button", class: "theater-exit", "aria-label": "Salir de pantalla completa" }, icon("shrink"));
   const stageWrap = h("div", { class: "aud-stage" }, stageHost, floaters, notice, stageExpand, theaterExit);
 
-  const liveKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "live", "aria-pressed": "true" }, `${icon("radio")}<span>En vivo</span>`);
-  const exploreKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "explore", "aria-pressed": "false" }, `${icon("compass")}<span>Explorar</span>`);
-  const prevKey = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Diapositiva anterior" }, icon("prev"));
-  const nextKey = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Diapositiva siguiente" }, icon("next"));
+  const liveKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "live", "aria-pressed": "true", "aria-describedby": "aud-mode-hint" }, `${icon("radio")}<span>En vivo</span>`);
+  const exploreKey = trusted("button", { type: "button", class: "key key-switch", "data-mode": "explore", "aria-pressed": "false", "aria-describedby": "aud-mode-hint", title: "Recorre por tu cuenta las diapositivas que el ponente ya mostró" }, `${icon("compass")}<span>Explorar</span>`);
+  const prevKey = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Diapositiva anterior", title: "Diapositiva anterior (←)" }, icon("prev"));
+  const nextKey = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Diapositiva siguiente", title: "Diapositiva siguiente (→). Llegas hasta donde va el ponente." }, icon("next"));
   const posLabel = h("span", { class: "aud-pos", "aria-live": "polite" });
   const exploreNav = h("div", { class: "aud-explore-nav" }, prevKey, posLabel, nextKey);
   const reactionBar = createReactionBar((i) => {
@@ -151,7 +151,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     floatReactions(floaters, REACTIONS.map((_, k) => (k === i ? 1 : 0)));
     conn.send({ t: "react", i });
   });
-  const controls = h("div", { class: "aud-controls" }, h("div", { class: "switch", role: "group", "aria-label": "Modo de vista" }, liveKey, exploreKey), exploreNav, reactionBar.el);
+  const modeHint = h("p", { class: "aud-mode-hint", id: "aud-mode-hint", "aria-live": "polite" });
+  const controls = h("div", { class: "aud-controls" }, h("div", { class: "switch", role: "group", "aria-label": "Modo de vista" }, liveKey, exploreKey), modeHint, exploreNav, reactionBar.el);
 
   const banner = h("p", { class: "aud-banner", hidden: true });
   const who = h("p", { class: "aud-who" });
@@ -275,8 +276,45 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     render();
   };
 
+  /** The first switch to Explorar on this device asks once, so a stray tap or swipe never drops the live view. */
+  const EXPLORE_OK = "ld:explore-confirmed";
+  let confirming = false;
+  const confirmExplore = (then: () => void) => {
+    if (unlockedAll || local.read<boolean>(EXPLORE_OK)) return then();
+    if (confirming) return;
+    confirming = true;
+    const yes = trusted("button", { type: "button", class: "key key-primary" }, `${icon("compass")}<span>Explorar</span>`);
+    const no = trusted("button", { type: "button", class: "key" }, `${icon("radio")}<span>Seguir en vivo</span>`);
+    const sheet = h(
+      "dialog",
+      { class: "sheet explore-sheet", "aria-labelledby": "explore-title", "aria-describedby": "explore-text" },
+      h("h2", { id: "explore-title" }, "¿Explorar por tu cuenta?"),
+      h("p", { id: "explore-text" }, "Dejarás de seguir al ponente y podrás recorrer las diapositivas que ya mostró. Para volver, toca «Volver al aire»."),
+      h("div", { class: "sheet-actions" }, no, yes),
+    );
+    let accepted = false;
+    yes.addEventListener("click", () => {
+      accepted = true;
+      local.write(EXPLORE_OK, true);
+      sheet.close();
+    });
+    no.addEventListener("click", () => sheet.close());
+    sheet.addEventListener("click", (e) => {
+      if (e.target === sheet) sheet.close();
+    });
+    sheet.addEventListener("close", () => {
+      sheet.remove();
+      confirming = false;
+      if (accepted) then();
+    });
+    document.body.append(sheet);
+    sheet.showModal();
+    no.focus();
+  };
+
   const go = (dir: 1 | -1) => {
     if (!deck || !state || (state.status !== "live" && !unlockedAll)) return;
+    if (mode === "live" && !unlockedAll && !local.read<boolean>(EXPLORE_OK)) return confirmExplore(() => go(dir));
     if (mode === "live") {
       if (unlockedAll) return;
       // Swiping while live drops you into Explorar at the same slide.
@@ -291,7 +329,10 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     if (unlockedAll && !state?.presenterOnline) return;
     setMode("live");
   });
-  exploreKey.addEventListener("click", () => setMode("explore"));
+  exploreKey.addEventListener("click", () => {
+    if (mode === "explore") return;
+    confirmExplore(() => setMode("explore"));
+  });
   prevKey.addEventListener("click", () => go(-1));
   nextKey.addEventListener("click", () => go(1));
   bindSwipe(stageHost, { next: () => go(1), prev: () => go(-1) }, 40, () => theater.rotated);
@@ -313,6 +354,12 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
 
     liveKey.setAttribute("aria-pressed", String(mode === "live"));
     liveKey.querySelector("span")!.textContent = mode === "explore" && !unlockedAll ? "Volver al aire" : "En vivo";
+    liveKey.title = mode === "explore" ? "Vuelve a la diapositiva que está mostrando el ponente" : "Sigue al ponente: ves cada diapositiva cuando la muestra";
+    modeHint.textContent = unlockedAll
+      ? "Toda la presentación está abierta: recórrela a tu ritmo."
+      : mode === "live"
+        ? "Sigues al ponente. Toca Explorar para revisar diapositivas anteriores."
+        : "Exploras por tu cuenta. Toca Volver al aire para seguir al ponente.";
     exploreKey.setAttribute("aria-pressed", String(mode === "explore"));
     liveKey.disabled = unlockedAll && !state.presenterOnline;
 

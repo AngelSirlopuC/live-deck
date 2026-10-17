@@ -3262,3 +3262,30 @@ select:focus-visible {
     font-size: 0.95rem;
   }
 }
+
+/* Mode hint under the En vivo / Explorar switch: one line that says what the
+   current mode does and how to change it. */
+.aud-mode-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* Landscape phone: chrome overlays the slide, so keep it to the controls. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .aud-mode-hint {
+    display: none;
+  }
+}
+
+.explore-sheet .sheet-actions .key {
+  flex: 1 1 0;
+}
+
+@media (max-width: 480px) {
+  .explore-sheet .sheet-actions {
+    flex-direction: column-reverse;
+  }
+}
