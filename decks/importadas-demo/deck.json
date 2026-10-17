@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "title": "Presenta mejor en 10 minutos",
+  "theme": {
+    "preset": "estudio",
+    "background": "#1d1a2f",
+    "accent": "#ff8a5c"
+  },
+  "slides": [
+    {
+      "id": "s01",
+      "background": {
+        "image": "assets/slide-01.png"
+      },
+      "elements": [
+        {
+          "id": "qr",
+          "type": "qr",
+          "box": {
+            "x": 0.81,
+            "y": 0.66,
+            "w": 0.16,
+            "h": 0.3
+          },
+          "style": {
+            "background": "#ffffff",
+            "color": "#0a0a0a"
+          }
+        }
+      ],
+      "notes": "Bienvenida. Estas diapositivas se diseñaron fuera de Live Deck y se importaron como imágenes. Pide que escaneen el QR."
+    },
+    {
+      "id": "s02",
+      "background": {
+        "image": "assets/slide-02.png"
+      },
+      "elements": [],
+      "notes": "Las tres reglas aparecen juntas en el diseño; usa Enfocar sobre cada tarjeta mientras la explicas."
+    },
+    {
+      "id": "s03",
+      "background": {
+        "image": "assets/slide-03.png"
+      },
+      "elements": [],
+      "notes": "Quiz diseñado: la gente vota tocando la opción en su celular o en la diapositiva. Revela cuando la mayoría haya votado.",
+      "layout": "quiz",
+      "quiz": {
+        "question": "¿Cuántas ideas debería tener cada diapositiva?",
+        "options": [
+          "Una",
+          "Tres",
+          "Cinco",
+          "Todas las que quepan"
+        ],
+        "correctIndex": 0,
+        "display": "live",
+        "zones": [
+          {
+            "x": 0.0729,
+            "y": 0.3704,
+            "w": 0.4167,
+            "h": 0.2222
+          },
+          {
+            "x": 0.5104,
+            "y": 0.3704,
+            "w": 0.4167,
+            "h": 0.2222
+          },
+          {
+            "x": 0.0729,
+            "y": 0.6296,
+            "w": 0.4167,
+            "h": 0.2222
+          },
+          {
+            "x": 0.5104,
+            "y": 0.6296,
+            "w": 0.4167,
+            "h": 0.2222
+          }
+        ]
+      }
+    },
+    {
+      "id": "s04",
+      "background": {
+        "image": "assets/slide-04.png"
+      },
+      "elements": [],
+      "notes": "Dato ilustrativo del diseño de ejemplo. Usa Zoom sobre el 80% y aclara que no es una cifra real."
+    },
+    {
+      "id": "quiz-preguntas",
+      "layout": "quiz",
+      "notes": "Quiz nativo de Live Deck intercalado entre las imágenes. Respuesta secreta, 20 segundos.",
+      "elements": [],
+      "quiz": {
+        "question": "¿Cada cuánto conviene hacerle una pregunta al público?",
+        "options": [
+          "Cada 5 minutos",
+          "Solo al final",
+          "Nunca",
+          "Cada 30 minutos"
+        ],
+        "correctIndex": 0,
+        "display": "secret",
+        "timerSec": 20
+      }
+    },
+    {
+      "id": "s05",
+      "background": {
+        "image": "assets/slide-05.png"
+      },
+      "elements": [],
+      "notes": "Cierre con créditos. Finaliza la sesión para descargar el resumen."
+    }
+  ]
+}
