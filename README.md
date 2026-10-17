@@ -43,7 +43,7 @@ slides, speaker notes and a `qr` element that shows the join code.
 The easiest way to write one is with Claude and the bundled skill:
 
 ```sh
-npx skills add <this-repo-url>   # installs skills/live-deck
+npx skills add AngelSirlopuC/live-deck   # installs skills/live-deck
 ```
 
 Then ask: "create a live deck about …". The skill writes the deck, validates it
