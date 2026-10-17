@@ -71,7 +71,9 @@
 
 [data-font="display"] {
   font-family: var(--font-display);
-  letter-spacing: -0.02em;
+  font-weight: var(--heading-weight, inherit);
+  letter-spacing: var(--heading-tracking, -0.02em);
+  text-transform: var(--heading-transform, none);
 }
 
 [data-font="mono"] {
@@ -82,6 +84,126 @@
 .el-image img {
   width: 100%;
   height: 100%;
+}
+
+/* Rich decks: cards, marks, icons, charts, decor ---------------------------- */
+.el.card {
+  background: var(--card-bg, var(--theme-surface, color-mix(in srgb, var(--theme-fg) 8%, var(--theme-bg))));
+  border: var(--card-border, 1px solid color-mix(in srgb, var(--theme-fg) 10%, transparent));
+  border-radius: var(--card-radius, 28px);
+  box-shadow: var(--card-shadow, 0 28px 56px -28px rgb(0 0 0 / 0.7));
+  padding: var(--card-padding, 40px);
+}
+
+.el-mark {
+  font-family: var(--font-accent, inherit);
+  background-image: linear-gradient(transparent 58%, color-mix(in srgb, var(--theme-accent) 55%, transparent) 58%, color-mix(in srgb, var(--theme-accent) 55%, transparent) 92%, transparent 92%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.08em;
+}
+
+.el-icon {
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-accent);
+}
+
+.el-icon.has-background {
+  padding: 18%;
+}
+
+.el-icon svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.el-chart svg,
+.el-decor svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.el-decor {
+  pointer-events: none;
+}
+
+.chart text {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart .chart-value,
+.chart .chart-total {
+  fill: var(--theme-fg);
+  font-weight: 700;
+}
+
+.chart .chart-total {
+  font-family: var(--font-display);
+}
+
+.chart .chart-label {
+  fill: var(--theme-muted);
+}
+
+.chart .chart-axis {
+  stroke: color-mix(in srgb, var(--theme-fg) 28%, transparent);
+}
+
+.chart .chart-track {
+  stroke: color-mix(in srgb, var(--theme-fg) 10%, transparent);
+}
+
+/* Slide backgrounds: painted under the content layer, bottom to top. */
+.stage-bg,
+.stage-bg > * {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stage-bg-art {
+  background-image: var(--bg-art);
+}
+
+.stage-bg-gradient {
+  background-image: var(--bg-gradient);
+}
+
+.stage-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.stage-bg-dim {
+  background: #000;
+}
+
+.stage-bg-pattern[data-pattern="dots"] {
+  background-image: radial-gradient(color-mix(in srgb, var(--theme-fg) 16%, transparent) 2.5px, transparent 3px);
+  background-size: 40px 40px;
+}
+
+.stage-bg-pattern[data-pattern="grid"] {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--theme-fg) 9%, transparent) 2px, transparent 2px),
+    linear-gradient(90deg, color-mix(in srgb, var(--theme-fg) 9%, transparent) 2px, transparent 2px);
+  background-size: 80px 80px;
+}
+
+.stage-bg-pattern[data-pattern="lines"] {
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--theme-fg) 8%, transparent) 0 2px, transparent 2px 28px);
+}
+
+.stage-bg-pattern[data-pattern="noise"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.24 0 0 0 0 0.16 0 0 0 0 0.08 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  opacity: 0.45;
+  mix-blend-mode: multiply;
 }
 
 .el-qr {
@@ -141,8 +263,10 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: 68px;
+  font-weight: var(--heading-weight, bold);
   line-height: 1.08;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--heading-tracking, -0.02em);
+  text-transform: var(--heading-transform, none);
 }
 
 .quiz-options {
@@ -180,7 +304,7 @@
   height: 80px;
   border-radius: 20px;
   background: var(--theme-accent);
-  color: var(--theme-bg);
+  color: var(--theme-on-accent, var(--theme-bg));
   font-family: var(--font-mono);
   font-weight: 700;
 }

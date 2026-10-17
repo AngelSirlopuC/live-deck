@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseDeck, publicDeck, slideSteps } from "../shared/deck.ts";
 
 const demo = JSON.parse(readFileSync(new URL("../decks/demo/deck.json", import.meta.url), "utf8"));
+const guide = JSON.parse(readFileSync(new URL("../decks/como-crear-una-presentacion/deck.json", import.meta.url), "utf8"));
 
 function minimal(): any {
   return {
@@ -74,6 +75,119 @@ describe("deck schema", () => {
     if (!parsed.ok) throw new Error(parsed.error);
     expect(slideSteps(parsed.deck.slides[0]!)).toBe(2);
     expect(slideSteps(minimal().slides[0])).toBe(0);
+  });
+});
+
+describe("rich deck format", () => {
+  const box = { x: 0, y: 0, w: 0.5, h: 0.5 };
+  const withElement = (el: any) => {
+    const deck = minimal();
+    deck.slides[0].elements.push({ id: "x", box, ...el });
+    return parseDeck(deck);
+  };
+  const errorOf = (r: ReturnType<typeof parseDeck>) => (r.ok ? "" : r.error);
+
+  it("still accepts both existing decks", () => {
+    expect(parseDeck(demo).ok).toBe(true);
+    expect(parseDeck(guide).ok).toBe(true);
+  });
+
+  it("makes theme colours optional overrides when a preset is chosen", () => {
+    const deck = minimal();
+    deck.theme = { preset: "editorial" };
+    expect(parseDeck(deck).ok).toBe(true);
+    deck.theme = { preset: "neon", accent: "#00ffaa", surface: "#111111" };
+    expect(parseDeck(deck).ok).toBe(true);
+  });
+
+  it("keeps background, foreground and accent required without a preset", () => {
+    const deck = minimal();
+    deck.theme = { foreground: "#ffffff", accent: "#ff0000" };
+    const result = parseDeck(deck);
+    expect(result.ok).toBe(false);
+    expect(errorOf(result)).toContain("theme.background");
+    deck.theme = { background: "#000000", foreground: "#ffffff", accent: "#ff0000" };
+    expect(parseDeck(deck).ok).toBe(true);
+  });
+
+  it("rejects unknown presets and non-hex surfaces", () => {
+    const deck = minimal();
+    deck.theme = { preset: "vaporwave" };
+    expect(parseDeck(deck).ok).toBe(false);
+    deck.theme = { preset: "papel", surface: "red" };
+    expect(parseDeck(deck).ok).toBe(false);
+  });
+
+  it("accepts slide backgrounds as hex or as an object of layers", () => {
+    const deck = minimal();
+    for (const background of [
+      "#123456",
+      { color: "#000000" },
+      { gradient: { from: "#000000", to: "#ffffff", angle: 135 } },
+      { image: "assets/bg.jpg", dim: 0.5 },
+      { image: "https://example.com/a.png", pattern: "noise" },
+      { pattern: "dots" },
+    ]) {
+      deck.slides[0].background = background;
+      expect(parseDeck(deck).ok, JSON.stringify(background)).toBe(true);
+    }
+  });
+
+  it("rejects unsafe or out-of-range slide backgrounds", () => {
+    const deck = minimal();
+    for (const background of [
+      {},
+      { image: "assets/../secret.png" },
+      { image: "http://example.com/a.png" },
+      { color: "red" },
+      { gradient: { from: "#000000", to: "#ffffff", angle: 400 } },
+      { gradient: { from: "#000000" } },
+      { color: "#000000", dim: 0.95 },
+      { pattern: "stripes" },
+      { color: "#000000", html: "<b>" },
+    ]) {
+      deck.slides[0].background = background;
+      expect(parseDeck(deck).ok, JSON.stringify(background)).toBe(false);
+    }
+  });
+
+  it("accepts the new text style flags within range", () => {
+    expect(withElement({ type: "text", text: "a", style: { card: true, uppercase: true, tracking: 0.2, mark: true } }).ok).toBe(true);
+    expect(withElement({ type: "text", text: "a", style: { tracking: -0.06 } }).ok).toBe(false);
+    expect(withElement({ type: "text", text: "a", style: { tracking: 0.31 } }).ok).toBe(false);
+  });
+
+  it("accepts curated icon names and rejects anything else", () => {
+    expect(withElement({ type: "icon", name: "rocket", style: { color: "#ffffff", background: "#000000", strokeWidth: 1.5, radius: 24 } }).ok).toBe(true);
+    expect(withElement({ type: "icon", name: "bar-chart-3" }).ok).toBe(true);
+    expect(withElement({ type: "icon", name: "not-an-icon" }).ok).toBe(false);
+    expect(withElement({ type: "icon", name: "Rocket" }).ok).toBe(false);
+    expect(withElement({ type: "icon", name: "rocket", style: { strokeWidth: 4 } }).ok).toBe(false);
+  });
+
+  it("limits chart data per kind", () => {
+    const data = (n: number) => Array.from({ length: n }, (_, i) => ({ label: `L${i}`, value: i }));
+    expect(withElement({ type: "chart", kind: "bar", data: data(1) }).ok).toBe(true);
+    expect(withElement({ type: "chart", kind: "bar", data: data(8), unit: "%" }).ok).toBe(true);
+    expect(errorOf(withElement({ type: "chart", kind: "bar", data: data(9) }))).toContain("data");
+    expect(withElement({ type: "chart", kind: "bar", data: [] }).ok).toBe(false);
+    expect(withElement({ type: "chart", kind: "donut", data: data(2) }).ok).toBe(true);
+    expect(withElement({ type: "chart", kind: "donut", data: data(6) }).ok).toBe(true);
+    expect(errorOf(withElement({ type: "chart", kind: "donut", data: data(1) }))).toContain("data");
+    expect(withElement({ type: "chart", kind: "donut", data: data(7) }).ok).toBe(false);
+    expect(withElement({ type: "chart", kind: "pie", data: data(3) }).ok).toBe(false);
+    expect(withElement({ type: "chart", kind: "bar", data: [{ label: "a", value: -1 }] }).ok).toBe(false);
+    expect(withElement({ type: "chart", kind: "bar", data: [{ label: "x".repeat(41), value: 1 }] }).ok).toBe(false);
+    expect(withElement({ type: "chart", kind: "bar", data: data(2), unit: "123456789" }).ok).toBe(false);
+  });
+
+  it("accepts built-in decor shapes only", () => {
+    for (const shape of ["blob", "wave", "dots", "rings", "arc", "squiggle", "star", "grid"]) {
+      expect(withElement({ type: "decor", shape, style: { color: "#ff0000", opacity: 0.3 } }).ok, shape).toBe(true);
+    }
+    expect(withElement({ type: "decor", shape: "svg" }).ok).toBe(false);
+    expect(withElement({ type: "decor", shape: "blob", svg: "<svg/>" }).ok).toBe(false);
+    expect(withElement({ type: "decor", shape: "blob", style: { opacity: 0.01 } }).ok).toBe(false);
   });
 });
 

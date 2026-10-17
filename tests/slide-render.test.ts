@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { Rocket } from "lucide";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { Deck } from "../shared/deck.ts";
+import { THEME_PRESETS } from "../shared/themes.ts";
 import { STAGE_HEIGHT, STAGE_WIDTH, renderSlide } from "../web/src/render/slide.ts";
 
 const deck: Deck = {
@@ -66,5 +69,129 @@ describe("renderSlide", () => {
     expect(options).toHaveLength(3);
     expect(el.textContent).toContain("Best?");
     expect(el.innerHTML).not.toContain("correct");
+  });
+});
+
+const box = { x: 0.1, y: 0.1, w: 0.3, h: 0.3 };
+const one = (slide: Partial<Deck["slides"][number]>, theme?: Deck["theme"]): Deck => ({
+  version: 1,
+  title: "T",
+  ...(theme ? { theme } : {}),
+  slides: [{ id: "s", elements: [], ...slide }],
+});
+
+describe("renderSlide with rich decks", () => {
+  beforeEach(() => document.head.replaceChildren());
+
+  it("renders legacy decks without preset layers, font overrides or font links", () => {
+    for (const name of ["demo", "como-crear-una-presentacion"]) {
+      const legacy = JSON.parse(readFileSync(`${process.cwd()}/decks/${name}/deck.json`, "utf8")) as Deck;
+      legacy.slides.forEach((slide, i) => {
+        const stage = renderSlide(legacy, i, { step: 99 });
+        expect(stage.dataset.preset).toBeUndefined();
+        expect(stage.querySelector(".stage-bg")).toBeNull();
+        expect(stage.style.getPropertyValue("--font-display")).toBe("");
+        expect(stage.style.getPropertyValue("--theme-bg")).toBe(slide.background ?? legacy.theme!.background);
+      });
+    }
+    expect(document.head.querySelector("link")).toBeNull();
+  });
+
+  it("exposes preset colours, fonts and card tokens as CSS variables on the stage", () => {
+    const stage = renderSlide(one({}, { preset: "editorial", accent: "#0044ff" }), 0, { step: 0 });
+    expect(stage.dataset.preset).toBe("editorial");
+    expect(stage.style.getPropertyValue("--theme-bg")).toBe(THEME_PRESETS.editorial.colors.background);
+    expect(stage.style.getPropertyValue("--theme-accent")).toBe("#0044ff");
+    expect(stage.style.getPropertyValue("--theme-surface")).toBe(THEME_PRESETS.editorial.colors.surface);
+    expect(stage.style.getPropertyValue("--font-display")).toContain("Fraunces");
+    expect(stage.style.getPropertyValue("--card-radius")).not.toBe("");
+  });
+
+  it("loads each preset's Google Fonts stylesheet once", () => {
+    renderSlide(one({}, { preset: "neon" }), 0, { step: 0 });
+    renderSlide(one({}, { preset: "neon" }), 0, { step: 0 });
+    const links = document.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]');
+    expect(links).toHaveLength(1);
+    expect(links[0]!.href).toContain("fonts.googleapis.com/css2");
+    expect(links[0]!.dataset.presetFonts).toBe("neon");
+  });
+
+  it("draws gradient, image, pattern and dim background layers", () => {
+    const stage = renderSlide(
+      one({ background: { color: "#101010", gradient: { from: "#000000", to: "#ffffff", angle: 90 }, image: "assets/bg.jpg", dim: 0.4, pattern: "grid" } }),
+      0,
+      { step: 0, assetBase: "/decks/x/" },
+    );
+    expect(stage.style.getPropertyValue("--theme-bg")).toBe("#101010");
+    const bg = stage.querySelector<HTMLElement>(".stage-bg")!;
+    expect(bg).not.toBeNull();
+    expect(stage.firstElementChild).toBe(bg);
+    expect(bg.querySelector<HTMLElement>(".stage-bg-gradient")!.style.getPropertyValue("--bg-gradient")).toBe("linear-gradient(90deg, #000000, #ffffff)");
+    expect(bg.querySelector<HTMLImageElement>(".stage-bg-image")!.getAttribute("src")).toBe("/decks/x/assets/bg.jpg");
+    expect(bg.querySelector<HTMLElement>(".stage-bg-pattern")!.dataset.pattern).toBe("grid");
+    expect(bg.querySelector<HTMLElement>(".stage-bg-dim")!.style.opacity).toBe("0.4");
+  });
+
+  it("uses only the requested background layers", () => {
+    const stage = renderSlide(one({ background: { pattern: "dots" } }), 0, { step: 0 });
+    const bg = stage.querySelector(".stage-bg")!;
+    expect(bg.querySelector(".stage-bg-pattern")).not.toBeNull();
+    expect(bg.querySelector(".stage-bg-gradient, .stage-bg-image, .stage-bg-dim")).toBeNull();
+  });
+
+  it("paints a colour-only background object as the ground with no extra layer", () => {
+    const stage = renderSlide(one({ background: { color: "#223344" } }, { preset: "neon" }), 0, { step: 0 });
+    expect(stage.style.getPropertyValue("--theme-bg")).toBe("#223344");
+    expect(stage.querySelector(".stage-bg")).toBeNull();
+  });
+
+  it("applies card, uppercase, tracking and mark text styles", () => {
+    const stage = renderSlide(
+      one({ elements: [{ id: "t", type: "text", box, text: "Hola", style: { card: true, uppercase: true, tracking: 0.12, mark: true } }] }),
+      0,
+      { step: 0 },
+    );
+    const t = stage.querySelector<HTMLElement>('[data-element-id="t"]')!;
+    expect(t.classList.contains("card")).toBe(true);
+    expect(t.style.textTransform).toBe("uppercase");
+    expect(t.style.letterSpacing).toBe("0.12em");
+    const mark = t.querySelector(".el-mark")!;
+    expect(mark.textContent).toBe("Hola");
+    expect(t.textContent).toBe("Hola");
+  });
+
+  it("renders icons as Lucide SVG built with DOM APIs", () => {
+    const stage = renderSlide(
+      one({ elements: [{ id: "i", type: "icon", box, name: "rocket", style: { color: "#ff0000", strokeWidth: 1.5, background: "#000000", radius: 20 } }] }),
+      0,
+      { step: 0 },
+    );
+    const node = stage.querySelector<HTMLElement>('[data-element-id="i"]')!;
+    const svg = node.querySelector("svg")!;
+    expect(svg.namespaceURI).toBe("http://www.w3.org/2000/svg");
+    expect(svg.getAttribute("stroke-width")).toBe("1.5");
+    expect(svg.querySelectorAll("path")).toHaveLength(Rocket.length);
+    expect(svg.querySelector("path")!.getAttribute("d")).toBe(Rocket[0]![1].d);
+    expect(node.style.color).toBe("rgb(255, 0, 0)");
+    expect(node.style.borderRadius).toBe("20px");
+  });
+
+  it("renders nothing inside an icon whose name is not curated", () => {
+    const deck = one({ elements: [{ id: "i", type: "icon", box, name: "<img src=x onerror=1>" as never }] });
+    const node = renderSlide(deck, 0, { step: 0 }).querySelector('[data-element-id="i"]')!;
+    expect(node.children).toHaveLength(0);
+    expect(node.innerHTML).toBe("");
+  });
+
+  it("renders decor as a built-in SVG shape", () => {
+    for (const shape of ["blob", "wave", "dots", "rings", "arc", "squiggle", "star", "grid"] as const) {
+      const stage = renderSlide(one({ elements: [{ id: "d", type: "decor", box, shape, style: { color: "#00ff00", opacity: 0.5 } }] }), 0, { step: 0 });
+      const node = stage.querySelector<HTMLElement>('[data-element-id="d"]')!;
+      const svg = node.querySelector("svg")!;
+      expect(svg, shape).not.toBeNull();
+      expect(svg.children.length, shape).toBeGreaterThan(0);
+      expect(node.style.opacity).toBe("0.5");
+      expect(node.getAttribute("aria-hidden")).toBe("true");
+    }
   });
 });

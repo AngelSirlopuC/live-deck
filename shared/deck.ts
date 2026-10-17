@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ICON_NAMES } from "./icons.ts";
+import { PRESET_NAMES } from "./themes.ts";
 
 // Deck format v1. Every geometric value is normalized (0..1) against a 16:9
 // canvas so the same deck renders identically on a projector and a phone, and
@@ -25,6 +27,13 @@ export const TextStyleSchema = z
     background: hex.optional(),
     radius: z.number().min(0).max(540).optional(),
     padding: z.number().min(0).max(200).optional(),
+    // Uses the theme surface, radius, border and shadow instead of a hand-set background.
+    card: z.boolean().optional(),
+    uppercase: z.boolean().optional(),
+    // Letter spacing in em.
+    tracking: z.number().min(-0.05).max(0.3).optional(),
+    // Accent highlight behind the text.
+    mark: z.boolean().optional(),
   })
   .strict();
 
@@ -56,7 +65,56 @@ export const ShapeElementSchema = z
 // Renders the session join QR + URL at runtime; it carries no payload in the deck.
 export const QrElementSchema = z.object({ ...base, type: z.literal("qr"), style: TextStyleSchema.pick({ color: true, background: true }).optional() }).strict();
 
-export const ElementSchema = z.discriminatedUnion("type", [TextElementSchema, ImageElementSchema, ShapeElementSchema, QrElementSchema]);
+// Curated Lucide icon, drawn from built-in icon nodes (never markup from the deck).
+export const IconElementSchema = z
+  .object({
+    ...base,
+    type: z.literal("icon"),
+    name: z.enum(ICON_NAMES),
+    style: z
+      .object({ color: hex.optional(), background: hex.optional(), strokeWidth: z.number().min(1).max(3).optional(), radius: z.number().min(0).max(540).optional() })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+const CHART_LIMITS = { bar: [1, 8], donut: [2, 6] } as const;
+export const ChartElementSchema = z
+  .object({
+    ...base,
+    type: z.literal("chart"),
+    kind: z.enum(["bar", "donut"]),
+    data: z.array(z.object({ label: z.string().max(40), value: z.number().min(0).finite() }).strict()).min(1).max(8),
+    unit: z.string().max(8).optional(),
+    style: z.object({ color: hex.optional() }).strict().optional(),
+  })
+  .strict()
+  .superRefine((chart, ctx) => {
+    const [min, max] = CHART_LIMITS[chart.kind];
+    if (chart.data.length < min || chart.data.length > max) {
+      ctx.addIssue({ code: "custom", message: `a ${chart.kind} chart takes ${min}-${max} data points`, path: ["data"] });
+    }
+  });
+
+// Built-in decorative SVG shapes; decks cannot supply their own SVG.
+export const DecorElementSchema = z
+  .object({
+    ...base,
+    type: z.literal("decor"),
+    shape: z.enum(["blob", "wave", "dots", "rings", "arc", "squiggle", "star", "grid"]),
+    style: z.object({ color: hex.optional(), opacity: z.number().min(0.05).max(1).optional() }).strict().optional(),
+  })
+  .strict();
+
+export const ElementSchema = z.discriminatedUnion("type", [
+  TextElementSchema,
+  ImageElementSchema,
+  ShapeElementSchema,
+  QrElementSchema,
+  IconElementSchema,
+  ChartElementSchema,
+  DecorElementSchema,
+]);
 
 export const QuizSchema = z
   .object({
@@ -72,11 +130,24 @@ export const QuizSchema = z
   .strict()
   .refine((q) => q.correctIndex < q.options.length, { message: "correctIndex must point to an option", path: ["correctIndex"] });
 
+// Layers paint bottom to top: color, gradient, image, pattern, then the dim overlay.
+export const SlideBackgroundSchema = z
+  .object({
+    color: hex.optional(),
+    gradient: z.object({ from: hex, to: hex, angle: z.number().min(0).max(360).optional() }).strict().optional(),
+    image: assetSrc.optional(),
+    // Darkens the layers below so text on top stays readable.
+    dim: z.number().min(0).max(0.9).optional(),
+    pattern: z.enum(["dots", "grid", "lines", "noise"]).optional(),
+  })
+  .strict()
+  .refine((b) => b.color !== undefined || b.gradient !== undefined || b.image !== undefined || b.pattern !== undefined, "background needs a color, gradient, image or pattern");
+
 export const SlideSchema = z
   .object({
     id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
     layout: z.enum(["free", "quiz"]).optional(),
-    background: hex.optional(),
+    background: z.union([hex, SlideBackgroundSchema]).optional(),
     notes: z.string().max(5000).optional(),
     elements: z.array(ElementSchema).max(60),
     quiz: QuizSchema.optional(),
@@ -92,9 +163,24 @@ export const SlideSchema = z
     if (slide.quiz && slide.layout !== "quiz") ctx.addIssue({ code: "custom", message: "a quiz requires layout \"quiz\"", path: ["layout"] });
   });
 
+// With a preset every colour is an optional override; without one, background,
+// foreground and accent stay required as in the original format.
 export const ThemeSchema = z
-  .object({ background: hex, foreground: hex, accent: hex, muted: hex.optional() })
-  .strict();
+  .object({
+    preset: z.enum(PRESET_NAMES).optional(),
+    background: hex.optional(),
+    foreground: hex.optional(),
+    accent: hex.optional(),
+    muted: hex.optional(),
+    surface: hex.optional(),
+  })
+  .strict()
+  .superRefine((theme, ctx) => {
+    if (theme.preset) return;
+    for (const key of ["background", "foreground", "accent"] as const) {
+      if (theme[key] === undefined) ctx.addIssue({ code: "custom", message: "required unless theme.preset is set", path: [key] });
+    }
+  });
 
 export const DeckSchema = z
   .object({
@@ -117,6 +203,10 @@ export type TextStyle = z.infer<typeof TextStyleSchema>;
 export type DeckElement = z.infer<typeof ElementSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
 export type Slide = z.infer<typeof SlideSchema>;
+export type SlideBackground = z.infer<typeof SlideBackgroundSchema>;
+export type IconElement = z.infer<typeof IconElementSchema>;
+export type ChartElement = z.infer<typeof ChartElementSchema>;
+export type DecorElement = z.infer<typeof DecorElementSchema>;
 export type Theme = z.infer<typeof ThemeSchema>;
 export type Deck = z.infer<typeof DeckSchema>;
 

@@ -1,5 +1,10 @@
-import { DEFAULT_THEME, type PublicSlide, type RenderableDeck } from "../../../shared/deck-core.ts";
-import type { DeckElement, TextStyle } from "../../../shared/deck.ts";
+import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
+import type { DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
+import { iconNode } from "../../../shared/icons.ts";
+import { THEME_PRESETS, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
+import { renderChart } from "./charts.ts";
+import { renderDecor } from "./decor.ts";
+import { ensurePresetFonts } from "./fonts.ts";
 
 // Slides render on a fixed logical stage and are scaled with a CSS transform,
 // so geometry, font sizes, and effect targets are identical on every screen.
@@ -24,28 +29,115 @@ const px = (n: number) => `${Math.round(n * 100) / 100}px`;
 export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOptions): HTMLElement {
   const slide = deck.slides[index];
   if (!slide) throw new RangeError(`slide ${index} out of range`);
-  const theme = { ...DEFAULT_THEME, ...deck.theme };
+  const theme = resolveTheme(deck.theme);
+  const bg = typeof slide.background === "object" ? slide.background : undefined;
 
   const stage = document.createElement("div");
   stage.className = "stage";
   stage.dataset.slideId = slide.id;
   stage.style.width = px(STAGE_WIDTH);
   stage.style.height = px(STAGE_HEIGHT);
-  stage.style.setProperty("--theme-bg", slide.background ?? theme.background);
-  stage.style.setProperty("--theme-fg", theme.foreground);
-  stage.style.setProperty("--theme-accent", theme.accent);
-  stage.style.setProperty("--theme-muted", theme.muted ?? theme.foreground);
+  const ground = typeof slide.background === "string" ? slide.background : (bg?.color ?? theme.colors.background);
+  stage.style.setProperty("--theme-bg", ground);
+  stage.style.setProperty("--theme-fg", theme.colors.foreground);
+  stage.style.setProperty("--theme-accent", theme.colors.accent);
+  stage.style.setProperty("--theme-muted", theme.colors.muted);
+  if (theme.colors.surface) stage.style.setProperty("--theme-surface", theme.colors.surface);
+  if (theme.preset) applyPreset(stage, theme.preset, theme);
+
+  // A slide background object replaces the preset art; a hex background keeps it.
+  const backdrop = bg ? renderBackground(bg, opts) : theme.preset ? renderPresetArt(theme.preset) : null;
+  if (backdrop) stage.append(backdrop);
 
   // Content sits in its own layer so presenter zoom can transform it while the
   // effects layer (focus mask, ripples) stays in stage coordinates.
   const layer = document.createElement("div");
   layer.className = "stage-layer";
-  for (const el of slide.elements) layer.append(renderElement(el, opts));
+  for (const el of slide.elements) layer.append(renderElement(el, opts, theme));
   if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide));
   const fx = document.createElement("div");
   fx.className = "stage-fx";
   stage.append(layer, fx);
   return stage;
+}
+
+/** Preset tokens on the stage: fonts, card, heading and on-accent text. */
+function applyPreset(stage: HTMLElement, name: PresetName, theme: ResolvedTheme) {
+  const preset = THEME_PRESETS[name];
+  ensurePresetFonts(name);
+  stage.dataset.preset = name;
+  const vars: Record<string, string> = {
+    "--font-display": fontStack(preset.fonts.display),
+    "--font-body": fontStack(preset.fonts.body),
+    "--font-mono": fontStack(preset.fonts.mono),
+    "--card-bg": preset.card.background,
+    "--card-radius": preset.card.radius,
+    "--card-border": preset.card.border,
+    "--card-shadow": preset.card.shadow,
+    "--card-padding": preset.card.padding,
+    "--heading-weight": String(preset.heading.weight),
+    "--heading-tracking": preset.heading.letterSpacing,
+    "--heading-transform": preset.heading.textTransform,
+  };
+  if (preset.fonts.accent) vars["--font-accent"] = fontStack(preset.fonts.accent);
+  if (theme.colors.onAccent) vars["--theme-on-accent"] = theme.colors.onAccent;
+  for (const [k, v] of Object.entries(vars)) stage.style.setProperty(k, v);
+}
+
+function layerDiv(cls: string): HTMLDivElement {
+  const div = document.createElement("div");
+  div.className = cls;
+  return div;
+}
+
+function renderPresetArt(name: PresetName): HTMLElement | null {
+  const preset = THEME_PRESETS[name];
+  if (!preset.art && !preset.pattern) return null;
+  const wrap = layerDiv("stage-bg stage-bg-preset");
+  if (preset.art) {
+    const art = layerDiv("stage-bg-art");
+    art.style.setProperty("--bg-art", preset.art);
+    wrap.append(art);
+  }
+  if (preset.pattern) {
+    const pattern = layerDiv("stage-bg-pattern");
+    pattern.dataset.pattern = preset.pattern;
+    wrap.append(pattern);
+  }
+  return wrap;
+}
+
+// Layers paint bottom to top: color (the stage ground), gradient, image, pattern, dim.
+function renderBackground(bg: SlideBackground, opts: RenderOptions): HTMLElement | null {
+  const wrap = layerDiv("stage-bg");
+  if (bg.gradient) {
+    const g = layerDiv("stage-bg-gradient");
+    g.style.setProperty("--bg-gradient", `linear-gradient(${bg.gradient.angle ?? 135}deg, ${bg.gradient.from}, ${bg.gradient.to})`);
+    wrap.append(g);
+  }
+  if (bg.image) {
+    const img = document.createElement("img");
+    img.className = "stage-bg-image";
+    img.alt = "";
+    img.decoding = "async";
+    img.src = assetUrl(bg.image, opts);
+    wrap.append(img);
+  }
+  if (bg.pattern) {
+    const p = layerDiv("stage-bg-pattern");
+    p.dataset.pattern = bg.pattern;
+    wrap.append(p);
+  }
+  if (bg.dim) {
+    const dim = layerDiv("stage-bg-dim");
+    dim.style.opacity = String(bg.dim);
+    wrap.append(dim);
+  }
+  return wrap.childElementCount ? wrap : null;
+}
+
+function assetUrl(src: string, opts: RenderOptions): string {
+  return src.startsWith("assets/") ? `${opts.assetBase ?? ""}${src}` : src;
 }
 
 function place(node: HTMLElement, el: DeckElement) {
@@ -70,9 +162,12 @@ function applyText(node: HTMLElement, style: TextStyle | undefined) {
   if (style.background) node.style.background = style.background;
   if (style.radius !== undefined) node.style.borderRadius = px(style.radius);
   if (style.padding !== undefined) node.style.padding = px(style.padding);
+  if (style.card) node.classList.add("card");
+  if (style.uppercase) node.style.textTransform = "uppercase";
+  if (style.tracking !== undefined) node.style.letterSpacing = `${style.tracking}em`;
 }
 
-function renderElement(el: DeckElement, opts: RenderOptions): HTMLElement {
+function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedTheme): HTMLElement {
   const node = document.createElement("div");
   place(node, el);
   if (el.fragment !== undefined) {
@@ -85,7 +180,15 @@ function renderElement(el: DeckElement, opts: RenderOptions): HTMLElement {
     case "text": {
       const inner = document.createElement("div");
       inner.className = "el-text-inner";
-      inner.textContent = el.text;
+      if (el.style?.mark) {
+        // Inline span so the highlight follows each wrapped line.
+        const mark = document.createElement("span");
+        mark.className = "el-mark";
+        mark.textContent = el.text;
+        inner.append(mark);
+      } else {
+        inner.textContent = el.text;
+      }
       node.append(inner);
       applyText(node, el.style);
       break;
@@ -94,7 +197,7 @@ function renderElement(el: DeckElement, opts: RenderOptions): HTMLElement {
       const img = document.createElement("img");
       img.alt = el.alt;
       img.decoding = "async";
-      img.src = el.src.startsWith("assets/") ? `${opts.assetBase ?? ""}${el.src}` : el.src;
+      img.src = assetUrl(el.src, opts);
       img.style.objectFit = el.fit ?? "contain";
       if (el.style?.radius !== undefined) img.style.borderRadius = px(el.style.radius);
       node.append(img);
@@ -131,8 +234,55 @@ function renderElement(el: DeckElement, opts: RenderOptions): HTMLElement {
       node.append(code, caption);
       break;
     }
+    case "icon": {
+      const s = el.style ?? {};
+      if (s.color) node.style.color = s.color;
+      if (s.background) node.style.background = s.background;
+      if (s.radius !== undefined) node.style.borderRadius = px(s.radius);
+      if (s.background) node.classList.add("has-background");
+      const svg = renderIcon(el.name, s.strokeWidth ?? 2);
+      if (svg) node.append(svg);
+      break;
+    }
+    case "chart": {
+      node.append(renderChart(el, { width: el.box.w * STAGE_WIDTH, height: el.box.h * STAGE_HEIGHT, accent: theme.colors.accent, palette: theme.palette }));
+      break;
+    }
+    case "decor": {
+      node.setAttribute("aria-hidden", "true");
+      if (el.style?.opacity !== undefined) node.style.opacity = String(el.style.opacity);
+      node.append(renderDecor(el.shape, el.style?.color ?? theme.colors.accent, el.box.w * STAGE_WIDTH, el.box.h * STAGE_HEIGHT));
+      break;
+    }
   }
   return node;
+}
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/** Lucide icon from the curated set, built with DOM APIs; unknown names render nothing. */
+function renderIcon(name: string, strokeWidth: number): SVGSVGElement | null {
+  const nodes = iconNode(name);
+  if (!nodes) return null;
+  const svg = document.createElementNS(SVG_NS, "svg");
+  const attrs: Record<string, string> = {
+    viewBox: "0 0 24 24",
+    width: "100%",
+    height: "100%",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": String(strokeWidth),
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+    "aria-hidden": "true",
+  };
+  for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, v);
+  for (const [tag, props] of nodes) {
+    const child = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(props)) if (v !== undefined) child.setAttribute(k, String(v));
+    svg.append(child);
+  }
+  return svg;
 }
 
 function renderQuiz(slide: PublicSlide): HTMLElement {

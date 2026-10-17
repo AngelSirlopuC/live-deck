@@ -2,7 +2,15 @@
 // does not ship zod. Validation lives in deck.ts (server and tooling).
 import type { Deck, Quiz, Slide, Theme } from "./deck.ts";
 
-export const DEFAULT_THEME: Theme = { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" };
+export interface ThemeColorsBase {
+  background: string;
+  foreground: string;
+  accent: string;
+  muted: string;
+}
+
+/** Colours of decks without a theme; also the "estudio" preset colours. */
+export const DEFAULT_THEME: ThemeColorsBase = { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" };
 
 /** Number of fragment steps on a slide (0 when everything is visible at once). */
 export function slideSteps(slide: Pick<Slide, "elements">): number {
