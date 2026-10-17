@@ -297,6 +297,9 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     waiting.hidden = !waitingNow;
     stageWrap.hidden = waitingNow;
     controls.hidden = waitingNow;
+    // Chat works before the presentation starts too, so sync it before the waiting screen returns.
+    chatBtn.classList.toggle("is-live", state.chat.mode !== "off" && !state.chat.paused);
+    chat.setState(state.chat);
     if (waitingNow) {
       mountWaiting();
       return;
@@ -318,8 +321,6 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     );
     scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
     idle.hidden = !quizPanel.el.hidden || !scorePanel.el.hidden;
-    chatBtn.classList.toggle("is-live", state.chat.mode !== "off" && !state.chat.paused);
-    chat.setState(state.chat);
     reactionBar.setEnabled(state.status === "live");
     const lim = limit();
     posLabel.textContent =

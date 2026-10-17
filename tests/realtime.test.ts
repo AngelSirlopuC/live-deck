@@ -399,3 +399,18 @@ describe("end of session", () => {
     expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
   });
 });
+
+describe("chat before the presentation starts", () => {
+  it("delivers messages while the session is still waiting", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    const b = await audience(s, "Bea");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    await b.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "chat-mode", mode: "text" });
+    await a.waitFor((m) => m.t === "state" && m.state.status === "waiting" && m.state.chat.mode === "text");
+    a.send({ t: "chat", text: "¿Ya empieza?" });
+    expect(await b.waitFor((m) => m.t === "chat")).toMatchObject({ message: { text: "¿Ya empieza?" } });
+  });
+});
