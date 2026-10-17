@@ -91,4 +91,32 @@ describe("effect tools and overlay buttons", () => {
     expect(captured).toEqual([]);
     expect(sent).toEqual([]);
   });
+
+  it("streams the laser at a capped rate, always delivering the last move, and hides it on leave", async () => {
+    vi.useFakeTimers();
+    try {
+      const { bindEffectTools } = await import("../web/src/ui/effect-tools.ts");
+      const host = document.body.appendChild(document.createElement("div"));
+      let x = 0.1;
+      const view = { host, toSlidePoint: () => ({ x, y: 0.5 }) } as any;
+      const sent: any[] = [];
+      bindEffectTools(view, () => "laser", (c) => void sent.push(c), () => []);
+      const move = (nx: number) => {
+        x = nx;
+        host.dispatchEvent(Object.assign(new MouseEvent("pointermove", { bubbles: true, clientX: 10, clientY: 10 }), { pointerId: 1 }));
+      };
+      move(0.1);
+      move(0.2);
+      move(0.3);
+      expect(sent).toEqual([{ t: "laser", at: { x: 0.1, y: 0.5 } }]);
+      vi.advanceTimersByTime(100);
+      expect(sent.at(-1)).toEqual({ t: "laser", at: { x: 0.3, y: 0.5 } });
+      expect(sent).toHaveLength(2);
+      host.dispatchEvent(new MouseEvent("pointerleave"));
+      vi.advanceTimersByTime(100);
+      expect(sent.at(-1)).toEqual({ t: "laser", at: null });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

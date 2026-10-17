@@ -22,10 +22,12 @@ export interface HubOptions {
 }
 
 type Client =
-  | { kind: "presenter"; ws: WebSocket; entry: SessionEntry; surface: PresenterSurface; bucket: Bucket }
+  | { kind: "presenter"; ws: WebSocket; entry: SessionEntry; surface: PresenterSurface; bucket: Bucket; laserBucket: Bucket }
   | { kind: "audience"; ws: WebSocket; entry: SessionEntry; id: string; bucket: Bucket; reactBucket: Bucket };
 
 const HELLO_TIMEOUT_MS = 10_000;
+/** Laser moves have their own budget so a moving cursor never starves navigation. */
+const LASER_PER_SECOND = 25;
 const HEARTBEAT_MS = 30_000;
 /** Vote bursts are coalesced into one state broadcast per window. */
 const BROADCAST_COALESCE_MS = 250;
@@ -171,7 +173,7 @@ export class WsHub {
       return this.reject(ws, auth.reason, message);
     }
     const { entry } = auth;
-    const client: Client = { kind: "presenter", ws, entry, surface: hello.surface, bucket: new Bucket(15, 30, now) };
+    const client: Client = { kind: "presenter", ws, entry, surface: hello.surface, bucket: new Bucket(15, 30, now), laserBucket: new Bucket(LASER_PER_SECOND, LASER_PER_SECOND, now) };
     this.add(client);
     entry.session.presenterJoined(now);
     send(ws, {
@@ -226,8 +228,10 @@ export class WsHub {
   }
 
   private onPresenterMessage(client: Extract<Client, { kind: "presenter" }>, data: RawData) {
+    const raw = parse(data);
+    if ((raw as { t?: unknown } | null)?.t === "laser") return this.onLaser(client, raw);
     if (!client.bucket.take(this.opts.now())) return send(client.ws, { t: "error", code: "rate-limited", message: "Slow down." });
-    const cmd = PresenterCommandSchema.safeParse(parse(data));
+    const cmd = PresenterCommandSchema.safeParse(raw);
     if (!cmd.success) return send(client.ws, { t: "error", code: "bad-request", message: "Unknown command." });
     const { entry } = client;
     const s = entry.session;
@@ -413,6 +417,16 @@ export class WsHub {
       if (!payload) payloads.set(role, (payload = JSON.stringify({ t: "state", state: entry.session.snapshot(role, now) } satisfies ServerMessage)));
       c.ws.send(payload);
     }
+  }
+
+  /** Live cursor: relayed as-is, never stored; moves over budget are dropped silently (the next one catches up). */
+  private onLaser(client: Extract<Client, { kind: "presenter" }>, raw: unknown) {
+    const cmd = PresenterCommandSchema.safeParse(raw);
+    if (!cmd.success || cmd.data.t !== "laser") return send(client.ws, { t: "error", code: "bad-request", message: "Unknown command." });
+    // Hiding the laser always goes through.
+    if (cmd.data.at && !client.laserBucket.take(this.opts.now())) return;
+    const ev = client.entry.session.laser(cmd.data.at);
+    if (ev) this.broadcastMessage(client.entry, { t: "laser", ...ev });
   }
 
   private broadcastMessage(entry: SessionEntry, msg: ServerMessage) {

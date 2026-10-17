@@ -2,7 +2,8 @@ import type { PersistentEffect, Rect } from "../../../shared/effects.ts";
 import type { PresenterCommand } from "../../../shared/protocol.ts";
 import type { StageView } from "../render/stage-view.ts";
 
-export type EffectTool = "ripple" | "focus" | "zoom";
+/** ripple: tap to pulse · focus/zoom: click or drag a region · laser: the cursor itself is shown live. */
+export type EffectTool = "ripple" | "focus" | "zoom" | "laser";
 
 type EffectKind = PersistentEffect["kind"];
 
@@ -13,8 +14,8 @@ type EffectKind = PersistentEffect["kind"];
  */
 export function pressTool(current: EffectTool, pressed: EffectTool, active: readonly EffectKind[]): { tool: EffectTool; clear: EffectKind | null } {
   if (pressed === "ripple" || pressed !== current) return { tool: pressed, clear: null };
-  const kind = pressed as EffectKind;
-  return { tool: "ripple", clear: active.includes(kind) ? kind : null };
+  if (pressed === "laser") return { tool: "ripple", clear: null };
+  return { tool: "ripple", clear: active.includes(pressed) ? pressed : null };
 }
 
 export interface ToolState {
@@ -27,8 +28,8 @@ export interface ToolState {
 }
 
 export function toolStates(tool: EffectTool, active: readonly EffectKind[], live: boolean): Record<EffectTool, ToolState> {
-  const st = (t: EffectTool): ToolState => ({ pressed: tool === t, active: t !== "ripple" && active.includes(t), disabled: !live });
-  return { ripple: st("ripple"), focus: st("focus"), zoom: st("zoom") };
+  const st = (t: EffectTool): ToolState => ({ pressed: tool === t, active: (t === "focus" || t === "zoom") && active.includes(t), disabled: !live });
+  return { ripple: st("ripple"), focus: st("focus"), zoom: st("zoom"), laser: st("laser") };
 }
 
 /** "Quitar efecto" clears the screen and disarms the tool, so it works whenever there is either. */
@@ -37,6 +38,8 @@ export function canClearEffects(tool: EffectTool, active: readonly EffectKind[],
 }
 
 const DRAG_MIN_PX = 8;
+/** About 15 laser updates per second: smooth enough to follow, light enough for 200 phones. */
+const LASER_INTERVAL_MS = 66;
 
 /**
  * Presenter pointer tools on a monitor: click pulses a ripple; with focus or
@@ -46,6 +49,33 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
   const host = view.host;
   let start: { x: number; y: number; cx: number; cy: number } | null = null;
   let box: HTMLElement | null = null;
+
+  // Laser: leading send, then at most one per interval carrying the latest point.
+  let laserAt: { x: number; y: number } | null = null;
+  let laserShown = false;
+  let laserLast = -Infinity;
+  let laserTimer: ReturnType<typeof setTimeout> | undefined;
+  const flushLaser = () => {
+    laserTimer = undefined;
+    if (!laserAt && !laserShown) return;
+    laserLast = Date.now();
+    laserShown = !!laserAt;
+    send({ t: "laser", at: laserAt });
+  };
+  const queueLaser = (at: { x: number; y: number } | null) => {
+    laserAt = at;
+    if (laserTimer !== undefined) return;
+    const wait = laserLast + LASER_INTERVAL_MS - Date.now();
+    if (wait <= 0) flushLaser();
+    else laserTimer = setTimeout(flushLaser, wait);
+  };
+  host.addEventListener("pointermove", (e) => {
+    if (getTool() !== "laser") return;
+    queueLaser(view.toSlidePoint(e.clientX, e.clientY));
+  });
+  host.addEventListener("pointerleave", () => {
+    if (laserShown || laserAt) queueLaser(null);
+  });
 
   host.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
@@ -58,7 +88,7 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
   });
 
   host.addEventListener("pointermove", (e) => {
-    if (!start || getTool() === "ripple") return;
+    if (!start || getTool() === "ripple" || getTool() === "laser") return;
     const dx = e.clientX - start.cx;
     const dy = e.clientY - start.cy;
     if (!box && Math.hypot(dx, dy) < DRAG_MIN_PX) return;
@@ -84,7 +114,7 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
     const tool = getTool();
     const p = view.toSlidePoint(e.clientX, e.clientY);
 
-    if (tool === "ripple") {
+    if (tool === "ripple" || tool === "laser") {
       // A swipe is navigation, not a pointer tap.
       if (p && Math.hypot(e.clientX - s.cx, e.clientY - s.cy) < DRAG_MIN_PX * 2) send({ t: "ripple", x: p.x, y: p.y });
       return;
@@ -114,4 +144,10 @@ export function bindEffectTools(view: StageView, getTool: () => EffectTool, send
     box?.remove();
     box = null;
   });
+  return {
+    /** Hides the laser everywhere (e.g. when the tool is put down). */
+    hideLaser() {
+      if (laserShown || laserAt) queueLaser(null);
+    },
+  };
 }

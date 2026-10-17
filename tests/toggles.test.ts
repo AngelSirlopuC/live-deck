@@ -25,6 +25,11 @@ describe("effect tool keys", () => {
     expect(pressTool("ripple", "zoom", ["zoom"])).toEqual({ tool: "zoom", clear: null });
   });
 
+  it("arms the laser and puts it down on a second press, leaving effects alone", () => {
+    expect(pressTool("ripple", "laser", ["zoom"])).toEqual({ tool: "laser", clear: null });
+    expect(pressTool("laser", "laser", ["zoom"])).toEqual({ tool: "ripple", clear: null });
+  });
+
   it("goes back to the pointer without clearing anything", () => {
     expect(pressTool("zoom", "ripple", ["zoom"])).toEqual({ tool: "ripple", clear: null });
   });

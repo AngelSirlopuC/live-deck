@@ -117,6 +117,8 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
         ui?.update(ctx.state);
       } else if (msg.t === "ripple" && ctx && msg.slide === ctx.state.position.slide) {
         ui?.ripple(msg.x, msg.y);
+      } else if (msg.t === "laser" && ctx) {
+        ui?.laser(msg.slide === ctx.state.position.slide ? msg.at : null);
       } else if (msg.t === "summary") {
         ui?.summary?.(msg.summary);
       } else if (msg.t === "reactions") {
@@ -147,6 +149,7 @@ function connect(root: HTMLElement, token: string, surface: PresenterSurface, pi
 interface PresenterUi {
   update(state: SessionSnapshot): void;
   ripple(x: number, y: number): void;
+  laser(at: { x: number; y: number } | null): void;
   reactions?(counts: number[], totals: number[] | null): void;
   summary?(s: SessionSummary): void;
   chat?(op: "add", m: ChatMessage): void;
@@ -240,6 +243,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       ["ripple", "Señalar", "R"],
       ["focus", "Enfocar", "F"],
       ["zoom", "Zoom", "Z"],
+      ["laser", "Láser", "L"],
     ] as const
   ).map(([id, label, kbd]) => {
     const b = h("button", { type: "button", class: "key", "data-tool": id, "aria-pressed": String(id === tool), "aria-keyshortcuts": kbd }, label, " ", h("kbd", {}, kbd));
@@ -269,6 +273,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     clearFx.title = live ? "" : "Inicia la presentación para usar los efectos";
   };
   const setTool = (t: EffectTool) => {
+    if (tool === "laser" && t !== "laser") programTools.hideLaser();
     tool = t;
     syncTools();
   };
@@ -287,6 +292,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     if (k === "r") press("ripple");
     else if (k === "f") press("focus");
     else if (k === "z") press("zoom");
+    else if (k === "l") press("laser");
     else if (e.key === "Escape" && !document.querySelector("dialog[open]")) clearAll();
   });
   // Shown only in presentation mode: the slide fills the screen and this bar
@@ -506,7 +512,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   });
   bindDeckKeys(window, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) });
   // Focus and zoom stay armed after placing, so another region can be drawn right away.
-  bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effects);
+  const programTools = bindEffectTools(programView, () => tool, ctx.send, () => ctx.state.effects);
   setInterval(() => {
     timer.textContent = elapsed(ctx.state.startedAt);
     pq.update(ctx.state, ctx.clockOffset);
@@ -516,6 +522,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   return {
     ripple: (x, y) => programView.ripple(x, y),
+    laser: (at) => programView.laser(at),
     summary(s) {
       endPanel?.setSummary(s);
     },
@@ -642,6 +649,7 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
 
   return {
     ripple: (x, y) => view.ripple(x, y),
+    laser: (at) => view.laser(at),
     reactions(counts, totals) {
       if (ctx.state.presenterView.showReactions) floatReactions(floaters, counts);
       counter.update(ctx.state.presenterView.showReactionCounter ? totals : null);
@@ -685,6 +693,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       ["ripple", "Señalar"],
       ["focus", "Enfocar"],
       ["zoom", "Zoom"],
+      ["laser", "Láser"],
     ] as const
   ).map(([id, label]) => {
     const b = h("button", { type: "button", class: "key", "data-tool": id, "aria-pressed": String(id === rtool) }, label);
@@ -696,6 +705,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
     return b;
   });
   const setRtool = (t: EffectTool) => {
+    if (rtool === "laser" && t !== "laser") remoteTools.hideLaser();
     rtool = t;
     for (const k of rtools) k.setAttribute("aria-pressed", String(k.dataset.tool === rtool));
   };
@@ -720,11 +730,12 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   const view = new StageView(host, ctx.deck, { assetBase: `/decks/${ctx.deckId}/`, joinUrl: ctx.joinUrl });
   // Swipe changes slides with the pointer tool; taps place the selected effect.
   bindSwipe(host, { next: () => ctx.send({ t: "next" }), prev: () => ctx.send({ t: "prev" }) }, 40, () => false, () => rtool === "ripple");
-  bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effects);
+  const remoteTools = bindEffectTools(view, () => rtool, ctx.send, () => ctx.state.effects);
   setInterval(() => (timer.textContent = elapsed(ctx.state.startedAt)), 1000);
 
   return {
     ripple: (x, y) => view.ripple(x, y),
+    laser: (at) => view.laser(at),
     update(s) {
       const l = lampFor(s);
       lamp.dataset.state = l.state;

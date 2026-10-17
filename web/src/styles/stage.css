@@ -404,6 +404,30 @@
   }
 }
 
+/* Presenter's live cursor: a glowing red dot that glides between updates. */
+.fx-laser {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3ef 0 18%, #ff3b2f 34%, rgb(255 59 47 / 0.55) 58%, rgb(255 59 47 / 0) 72%);
+  box-shadow: 0 0 22px 8px rgb(255 59 47 / 0.45);
+  transition: transform 80ms linear;
+  will-change: transform;
+}
+
+.fx-laser.is-fresh {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-laser {
+    transition: none;
+  }
+}
+
 .fx-ripple {
   position: absolute;
   width: 0;

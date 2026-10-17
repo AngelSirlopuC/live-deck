@@ -528,6 +528,9 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
         case "ripple":
           if (mode === "live" && !unlockedAll && state && msg.slide === state.position.slide) view?.ripple(msg.x, msg.y);
           break;
+        case "laser":
+          view?.laser(mode === "live" && !unlockedAll && state && msg.slide === state.position.slide ? msg.at : null);
+          break;
         case "error":
           if (msg.code === "not-found") local.remove(idKey(code));
           else if (CHAT_ERROR_COPY[msg.code]) chat.error(CHAT_ERROR_COPY[msg.code]!);

@@ -71,6 +71,8 @@ export type ServerMessage =
   | { t: "welcome-presenter"; deck: Deck; deckId: string; code: string; joinUrl: string; baseUrl: string; state: SessionSnapshot; features: Features }
   | { t: "state"; state: SessionSnapshot }
   | { t: "ripple"; slide: number; x: number; y: number }
+  /** Presenter's live cursor on the slide; null hides it. Never part of the snapshot. */
+  | { t: "laser"; slide: number; at: { x: number; y: number } | null }
   | { t: "me"; me: PersonalState }
   | { t: "reactions"; counts: number[]; totals?: number[] }
   | { t: "chat"; message: ChatMessage }

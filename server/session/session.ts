@@ -222,6 +222,12 @@ export class Session {
     return { slide: this.position.slide, x, y };
   }
 
+  /** Live cursor position to relay, or null when not live. */
+  laser(at: { x: number; y: number } | null): { slide: number; at: { x: number; y: number } | null } | null {
+    if (this.status !== "live") return null;
+    return { slide: this.position.slide, at };
+  }
+
   private moveTo(pos: Position, now: number) {
     if (this.status !== "live") return;
     if (pos.slide !== this.position.slide) this.effects = [];

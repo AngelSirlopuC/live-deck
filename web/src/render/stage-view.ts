@@ -14,6 +14,9 @@ interface Zoom {
 const NO_ZOOM: Zoom = { scale: 1, tx: 0, ty: 0 };
 
 /** Owns a 16:9 host element, swaps slides into it, and renders presenter effects. */
+/** The laser disappears when the presenter's cursor stops reporting for this long. */
+const LASER_IDLE_MS = 4000;
+
 export class StageView {
   readonly host: HTMLElement;
   private stage: HTMLElement | null = null;
@@ -22,6 +25,7 @@ export class StageView {
   private deck: RenderableDeck;
   private extra: Omit<RenderOptions, "step" | "enterStep">;
   private effects: PersistentEffect[] = [];
+  private laserIdle: ReturnType<typeof setTimeout> | undefined;
   private zoom: Zoom = NO_ZOOM;
   private quizState: { view: QuizView | null; opts: QuizOverlayOptions } = { view: null, opts: {} };
 
@@ -96,6 +100,28 @@ export class StageView {
     for (let i = 0; i < 3; i++) dot.append(document.createElement("span"));
     fx.append(dot);
     setTimeout(() => dot.remove(), 1400);
+  }
+
+  /** Presenter's live cursor at a normalized point of the slide; null hides it. */
+  laser(at: { x: number; y: number } | null) {
+    const fx = this.stage?.querySelector<HTMLElement>(".stage-fx");
+    if (!fx) return;
+    clearTimeout(this.laserIdle);
+    let dot = fx.querySelector<HTMLElement>(".fx-laser");
+    if (!at) {
+      dot?.remove();
+      return;
+    }
+    const fresh = !dot;
+    if (!dot) {
+      dot = document.createElement("div");
+      dot.className = "fx-laser";
+      fx.append(dot);
+    }
+    dot.classList.toggle("is-fresh", fresh);
+    dot.style.transform = `translate(${at.x * STAGE_WIDTH * this.zoom.scale + this.zoom.tx}px, ${at.y * STAGE_HEIGHT * this.zoom.scale + this.zoom.ty}px)`;
+    // A lost "hide" message must not leave a dot stuck on screen.
+    this.laserIdle = setTimeout(() => dot?.remove(), LASER_IDLE_MS);
   }
 
   /** Converts a viewport point to normalized slide coordinates, undoing the zoom. */

@@ -228,6 +228,31 @@ describe("live effects", () => {
     await a.waitFor((m) => m.t === "state" && m.state.effects.length === 0);
   });
 
+  it("relays the presenter's laser to the audience while live, and its removal", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s);
+    await a.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "laser", at: { x: 0.2, y: 0.3 } }); // ignored before the start
+    p.send({ t: "start" });
+    await a.waitFor((m) => m.t === "state" && m.state.status === "live");
+    p.send({ t: "laser", at: { x: 0.5, y: 0.25 } });
+    expect(await a.waitFor((m) => m.t === "laser")).toEqual({ t: "laser", slide: 0, at: { x: 0.5, y: 0.25 } });
+    p.send({ t: "laser", at: null });
+    expect(await a.waitFor((m) => m.t === "laser" && m.at === null)).toEqual({ t: "laser", slide: 0, at: null });
+  });
+
+  it("keeps a stream of laser moves from blocking navigation", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    p.send({ t: "start" });
+    for (let i = 0; i < 60; i++) p.send({ t: "laser", at: { x: (i % 10) / 10, y: 0.5 } });
+    p.send({ t: "next" });
+    const st = await p.waitFor((m) => m.t === "state" && (m.state.position.slide > 0 || m.state.position.step > 0));
+    expect(st).toBeTruthy();
+    expect(p.messages.some((m) => m.t === "error" && m.code === "rate-limited")).toBe(false);
+  });
+
   it("rejects malformed effect coordinates", async () => {
     const s = await createSession();
     const p = await presenter(s);
