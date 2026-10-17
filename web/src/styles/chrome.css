@@ -3456,3 +3456,135 @@ select:focus-visible {
   font-size: 0.95rem;
   color: var(--text);
 }
+
+/* Phone remote: tabs (Control, Chat, Ajustes) over one scrolling panel area. */
+.remote {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+}
+
+.remote .aud-bar {
+  gap: 10px;
+}
+
+.remote-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.remote-timer {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--seam);
+  border-radius: 8px;
+  background: #0f0c09;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  margin: 0 12px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--seam);
+  background: #0f0c09;
+}
+
+.tab {
+  position: relative;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-legend);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  background: var(--panel-hi);
+  color: var(--text);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+/* New messages on a tab you are not looking at. */
+.tab[data-unread="true"]::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.remote-panels {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.remote-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.remote-panel[hidden] {
+  display: none;
+}
+
+.remote-panel > :not(.remote-tools) {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+.remote-tools {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.remote-tools .key {
+  min-width: 0;
+  font-size: 0.78rem;
+}
+
+/* The chat fills its tab and keeps its composer at the bottom. */
+.remote-chat {
+  overflow: hidden;
+}
+
+.remote-chat .presenter-chat {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.remote-chat .presenter-chat .chat {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.remote-limit {
+  justify-self: start;
+}

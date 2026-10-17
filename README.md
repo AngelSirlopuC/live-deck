@@ -40,7 +40,10 @@ Phones on the same Wi-Fi work out of the box: when the console runs on
 `localhost`, join links and QR codes use this machine's LAN address (the server
 prints it on start, e.g. `http://192.168.1.34:5180`). To drive the slides from
 your phone, press **Control móvil** in the console, scan the code and enter
-your PIN. If your OS firewall asks, allow incoming connections for Node.
+your PIN. The remote has the console's controls in three tabs: **Control**
+(effects, quiz, notes), **Chat** (live chat with moderation, a dot marks new
+messages) and **Ajustes** (time limit, scores, reactions). If your OS firewall
+asks, allow incoming connections for Node.
 
 ### Preview vs. presenting
 

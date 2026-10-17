@@ -6,6 +6,7 @@ import { StageView } from "../render/stage-view.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
 import { createPaceTimer } from "../ui/pace-timer.ts";
+import { createTabs } from "../ui/tabs.ts";
 import { TIME_LIMIT_MAX, TIME_LIMIT_MIN } from "../../../shared/pace.ts";
 import { bindEffectTools, canClearEffects, pressTool, toolStates, type EffectTool } from "../ui/effect-tools.ts";
 import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
@@ -724,7 +725,13 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   const lamp = h("span", { class: "lamp" });
   const slideNo = h("span", { class: "remote-slide-no" });
   const pace = createPaceTimer();
-  const timer = h("span", { class: "remote-timer" }, pace.el);
+  // Same as the console: the timer opens the time limit.
+  const timer = h("button", { type: "button", class: "remote-timer", title: "Límite de tiempo" }, pace.el);
+  timer.addEventListener("click", async () => {
+    const minutes = await timeLimitSheet(ctx.state.timeLimitMin);
+    if (minutes !== undefined) ctx.send({ t: "time-limit", minutes });
+  });
+  const count = h("span", { class: "remote-count" });
   const host = h("div", { class: "remote-preview" });
   const notes = h("div", { class: "console-notes remote-notes" });
   const prev = trusted("button", { type: "button", class: "key key-transport", "aria-label": "Anterior" }, icon("prev"));
@@ -732,7 +739,9 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   prev.addEventListener("click", () => ctx.send({ t: "prev" }));
   next.addEventListener("click", () => ctx.send({ t: "next" }));
   const actions = sessionActions(ctx);
-  const rq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: false });
+  const rq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
+  const chatUi = createPresenterChat(ctx.send, ctx.stickers);
+  const pa = createPresenterAudience(ctx.send);
   let rtool: EffectTool = "ripple";
   const rtools = (
     [
@@ -761,14 +770,26 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
     setRtool("ripple");
   });
 
+  // Everything the console offers, in three tabs sized for a phone.
+  const controlPanel = h("div", { class: "remote-panel" }, h("div", { class: "fx-tools remote-tools", role: "toolbar", "aria-label": "Efectos" }, ...rtools, rclear), rq.quizEl, notes);
+  const chatPanel = h("div", { class: "remote-panel remote-chat" }, chatUi.el);
+  const limitBtn = h("button", { type: "button", class: "key remote-limit" }, "Límite de tiempo");
+  limitBtn.addEventListener("click", () => timer.click());
+  const settingsPanel = h("div", { class: "remote-panel remote-settings" }, h("section", { class: "pa" }, h("h2", { class: "legend" }, "Cronómetro"), limitBtn), rq.boardEl, pa.el);
+  const tabs = createTabs("Control móvil", [
+    { id: "control", label: "Control", panel: controlPanel },
+    { id: "chat", label: "Chat", panel: chatPanel },
+    { id: "settings", label: "Ajustes", panel: settingsPanel },
+  ]);
+
   root.replaceChildren(
     h(
       "main",
       { class: "remote" },
-      h("header", { class: "aud-bar" }, lamp, slideNo, h("span", { class: "spacer" }), timer),
+      h("header", { class: "aud-bar" }, lamp, slideNo, h("span", { class: "spacer" }), count, timer),
       host,
-      h("div", { class: "fx-tools remote-tools", role: "toolbar", "aria-label": "Efectos" }, ...rtools, rclear),
-      h("div", { class: "remote-middle" }, rq.quizEl, notes),
+      tabs.list,
+      h("div", { class: "remote-panels" }, controlPanel, chatPanel, settingsPanel),
       h("div", { class: "remote-transport" }, prev, next),
       h("div", { class: "remote-actions" }, actions.start, actions.restrict, actions.end),
     ),
@@ -782,7 +803,21 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   return {
     ripple: (x, y) => view.ripple(x, y),
     laser: (at) => view.laser(at),
+    reactions(_counts, totals) {
+      if (ctx.state.presenterView.showReactionCounter) pa.counter.update(totals);
+    },
+    chat(op: "add" | "remove" | "history", arg: unknown) {
+      if (op === "add") {
+        chatUi.add(arg as ChatMessage);
+        tabs.notify("chat");
+      } else if (op === "remove") chatUi.remove(arg as string);
+      else chatUi.history(arg as ChatMessage[]);
+    },
     update(s) {
+      pa.update(s);
+      chatUi.update(s);
+      limitBtn.textContent = s.timeLimitMin === null ? "Poner límite de tiempo" : `Límite: ${s.timeLimitMin} min · cambiar`;
+      count.textContent = s.audienceCount === null ? "" : `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       const l = lampFor(s);
       lamp.dataset.state = l.state;
       lamp.textContent = l.text;
