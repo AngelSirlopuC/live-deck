@@ -324,19 +324,14 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   // the presenter view can stop the projection, and learns whether one is running.
   const channel = typeof BroadcastChannel === "function" ? new BroadcastChannel(`live-deck-present:${token}`) : null;
   let presenterWin: Window | null = null;
-  let remoteProjection = false;
-  const syncPresentButton = () => {
-    const stop = remoteProjection && !presenting;
-    presentBtn.innerHTML = stop ? `${icon("power")}<span>Dejar de presentar</span>` : `${icon("play")}<span>Presentar</span>`;
-    presentBtn.setAttribute("aria-label", stop ? "Dejar de presentar" : "Presentar");
-    presentBtn.title = stop ? "Dejar de presentar" : "Presentar";
-  };
-  channel?.addEventListener("message", (e: MessageEvent<{ t: string; on?: boolean }>) => {
+  let projectingLabel = "";
+  channel?.addEventListener("message", (e: MessageEvent<{ t: string; on?: boolean; label?: string }>) => {
     if (e.data.t === "stop" && presenting) setPresenting(false);
-    else if (e.data.t === "hello" && presenting) channel.postMessage({ t: "projecting", on: true });
+    else if (e.data.t === "hello" && presenting) channel.postMessage({ t: "projecting", on: true, label: projectingLabel });
+    // In the presenter view: show the compact "Proyectando" pill for the other tab.
     else if (e.data.t === "projecting") {
-      remoteProjection = !!e.data.on;
-      syncPresentButton();
+      if (e.data.on) showSharing(e.data.label || "otra pantalla", "remote");
+      else if (sharingKind === "remote") hideSharing();
     }
   });
   channel?.postMessage({ t: "hello" });
@@ -365,7 +360,8 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
 
   const setPresenting = (on: boolean, plan?: PresentPlan) => {
     presenting = on;
-    channel?.postMessage({ t: "projecting", on });
+    if (plan) projectingLabel = plan.screenLabel;
+    channel?.postMessage({ t: "projecting", on, label: projectingLabel });
     if (!on) {
       recover.hidden = true;
       presenterWin = null;
@@ -383,13 +379,6 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     programView.refit();
   };
   presentBtn.addEventListener("click", async () => {
-    // From a presenter window while another tab projects, the button stops it.
-    if (remoteProjection && !presenting) {
-      channel?.postMessage({ t: "stop" });
-      remoteProjection = false;
-      syncPresentButton();
-      return;
-    }
     const req = await openPresentDialog(`/p/${token}/screen`);
     if (!req) return;
     const plan = planPresentation(req, req.screens, req.currentId);
@@ -401,21 +390,21 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       // presentation connection, never in the URL.
       const pin = session.read<string>(pinKey(token)) ?? "";
       projection = await startProjection(`/p/${token}/screen`, (send) => send({ t: "auth", pin }), hideSharing);
-      if (projection) showSharing("la pantalla elegida en Chrome");
+      if (projection) showSharing("pantalla elegida en Chrome", "display");
       return;
     }
     if (plan.projectorWindow) {
       // The console stays here; the slide opens covering the chosen screen.
       projectorWin = window.open(`/p/${token}/screen?present=1`, "live-deck-screen", features(plan.projectorWindow));
       if (!projectorWin) return notifyBlocked();
-      showSharing(plan.screenLabel);
+      showSharing(plan.screenLabel, "window");
       return;
     }
     setPresenting(true, plan);
     // Fullscreen first: Chrome may still let the same click open the presenter window.
     usedFullscreen = plan.fullscreen;
-    pendingScreen = null;
-    if (plan.fullscreen) await goFullscreen(null);
+    pendingScreen = plan.fullscreenScreen;
+    if (plan.fullscreen) await goFullscreen(plan.fullscreenScreen);
     syncFsPrompt();
     if (plan.presenterWindow) {
       lastPresenterRect = plan.presenterWindow;
@@ -423,28 +412,30 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       if (!presenterWin) notifyBlocked();
     }
   });
-  // "Presentando en …" banner while the projection lives on another screen.
+  // Compact "● Proyectando en … · Detener" pill in the console header.
   let projectorWin: Window | null = null;
   let projection: Projection | null = null;
-  const shareLabel = h("p", { class: "share-banner-text" });
-  const stopShare = trusted("button", { type: "button", class: "key key-danger" }, `${icon("power")}<span>Detener</span>`);
-  const shareBanner = h("div", { class: "share-banner", role: "status", hidden: true }, h("span", { class: "share-dot", "aria-hidden": "true" }), shareLabel, stopShare);
-  consoleEl.insertBefore(shareBanner, body);
+  let sharingKind: "remote" | "display" | "window" | null = null;
+  const shareLabel = h("span", { class: "share-pill-text" });
+  const stopShare = h("button", { type: "button", class: "share-pill-stop" }, "Detener");
+  const sharePill = h("div", { class: "share-pill", role: "status", hidden: true }, h("span", { class: "share-dot", "aria-hidden": "true" }), shareLabel, stopShare);
+  presentBtn.before(sharePill);
   const hideSharing = () => {
-    shareBanner.hidden = true;
+    sharePill.hidden = true;
     presentBtn.hidden = ctx.state.status === "ended";
     projectorWin = null;
     projection = null;
+    sharingKind = null;
   };
-  const showSharing = (where: string) => {
-    shareLabel.textContent =
-      where === "la pantalla elegida en Chrome"
-        ? "Presentando en la pantalla elegida en Chrome."
-        : `Presentando en ${where === "una ventana aparte" ? where : `«${where}»`}. Haz clic una vez en la diapositiva de esa pantalla para verla en pantalla completa.`;
-    shareBanner.hidden = false;
+  const showSharing = (where: string, kind: "remote" | "display" | "window") => {
+    sharingKind = kind;
+    shareLabel.textContent = `Proyectando en ${where}`;
+    sharePill.title = kind === "window" ? "Haz clic una vez en la diapositiva de esa pantalla para verla en pantalla completa" : `Proyectando en ${where}`;
+    sharePill.hidden = false;
     presentBtn.hidden = true;
   };
   stopShare.addEventListener("click", () => {
+    if (sharingKind === "remote") channel?.postMessage({ t: "stop" });
     channel?.postMessage({ t: "close-screen" });
     projectorWin?.close();
     projection?.stop();

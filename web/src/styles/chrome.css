@@ -2640,35 +2640,6 @@ select:focus-visible {
   display: none;
 }
 
-/* Console banner while the projection is on another screen. */
-.share-banner:not([hidden]) {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  background: color-mix(in srgb, var(--onair) 14%, var(--bg));
-  border-bottom: 1px solid color-mix(in srgb, var(--onair) 45%, var(--seam));
-}
-
-.share-dot {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--onair);
-  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--onair) 70%, transparent);
-}
-
-.share-banner-text {
-  flex: 1;
-  margin: 0;
-  font-size: 0.92rem;
-}
-
-.share-banner .key {
-  min-height: 40px;
-}
-
 /* Projector window: one click to go fullscreen. */
 .screen-start {
   position: absolute;
@@ -2696,4 +2667,42 @@ select:focus-visible {
 
 .po-permission.is-irrelevant {
   display: none !important;
+}
+
+/* Compact projection indicator in the console header. */
+.share-pill:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--onair) 55%, var(--seam));
+  background: color-mix(in srgb, var(--onair) 14%, var(--bg));
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.share-pill-text {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.share-pill-stop {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--onair);
+  color: #fff6f4;
+  font: 600 0.78rem var(--font-legend);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.share-pill-stop:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
 }

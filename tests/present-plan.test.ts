@@ -5,12 +5,21 @@ const laptop: ScreenChoice = { id: "0", label: "Built-in", left: 0, top: 0, widt
 const projector: ScreenChoice = { id: "1", label: "Proyector", left: 1512, top: 0, width: 1920, height: 1080, availLeft: 1512, availTop: 0, availWidth: 1920, availHeight: 1080, isPrimary: false, isInternal: false };
 
 describe("presentation plan", () => {
-  it("projects on another screen in a window covering it, keeping the console in this tab", () => {
+  it("projects this tab fullscreen on another screen and opens the presenter view on this one (Google Slides model)", () => {
     const plan = planPresentation({ presenterView: true, fullscreen: true, target: "1", mode: "tab" }, [laptop, projector], "0");
-    expect(plan.projectorWindow).toEqual({ left: 1512, top: 0, width: 1920, height: 1080 });
-    expect(plan.projectInTab).toBe(false);
-    expect(plan.presenterWindow).toBeNull();
+    expect(plan.projectInTab).toBe(true);
+    expect(plan.fullscreen).toBe(true);
+    expect(plan.fullscreenScreen).toBe("1");
+    expect(plan.presenterWindow).toEqual({ left: 0, top: 25, width: 1512, height: 957 });
+    expect(plan.projectorWindow).toBeNull();
+    expect(plan.floatingControls).toBe(false);
     expect(plan.screenLabel).toBe("Proyector");
+  });
+
+  it("always opens the presenter view when projecting on another screen", () => {
+    const plan = planPresentation({ presenterView: false, fullscreen: true, target: "1", mode: "tab" }, [laptop, projector], "0");
+    expect(plan.presenterWindow).not.toBeNull();
+    expect(plan.floatingControls).toBe(false);
   });
 
   it("projects in this tab on the current screen with floating controls", () => {

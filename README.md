@@ -64,33 +64,30 @@ Without a key, chat works in text mode and the console disables sticker modes.
 
 ### Presenting on a projector
 
-Press **Presentar** in the console and pick where the slide goes:
+Press **Presentar** in the console. It works like Google Slides:
 
-- **Monitor externo o Chromecast** (Chrome and Edge, default). Chrome shows its
-  own display picker and renders the slide **fullscreen on that monitor, with no
-  browser window and no extra click** (Presentation API). Connect the monitor in
-  **extended** mode: mirrored displays are not offered. The console stays in its
-  tab with a **Presentando** banner and **Detener**. The presented page runs
-  isolated in Chrome and receives the presenter PIN over the presentation
-  connection, never in the URL.
-
-The options below are the fallback for browsers without that API:
-
-- **Another screen** (projector, external monitor, TV). The browser asks once
-  for permission to see your screens (window management, Chrome and Edge). The
-  slide opens covering that screen; **click it once** to go fullscreen (browsers
-  require that click on the window itself). Your console stays in its tab with a
-  **Presentando en «…»** banner and a **Detener** button that closes the
-  projection.
-- **This screen**. The tab shows only the slide, fullscreen. Tick **Vista de
-  presentador** to keep the console in a separate window, or leave it off to get
-  an auto-hiding control bar on the slide. Esc or **Salir** ends it.
+- **Another screen** (projector, external monitor, TV), the default when one is
+  connected in extended mode. The browser asks once to see your screens (window
+  management permission, Chrome and Edge). This tab then shows only the slide,
+  **fullscreen on the chosen screen**, and the **presenter view** (the console:
+  current and next slide, notes, timer, quiz, chat, controls) opens as a window
+  on your screen, all from one click. The presenter view shows a compact
+  **Proyectando en … · Detener** pill in its header.
+- **This screen**: the tab shows the slide fullscreen. Tick **Vista de
+  presentador** to keep the console in a separate window, or leave it off for an
+  auto-hiding control bar. Esc or **Salir** ends it.
+- **Chromecast u otra pantalla (selector de Chrome)**: Chrome's own picker
+  (Presentation API) renders the slide fullscreen on a Cast device or monitor
+  with no browser window; the console stays in its tab. The presented page
+  receives the presenter PIN over the presentation connection, never the URL.
 - **Ventana aparte**, offered when the browser cannot list screens: a projector
   window to drag to the other screen, then click it for fullscreen.
 
-**Mostrar desde el principio** jumps to the first slide. Allow pop-ups for the
-site so the projector or presenter window can open. The phone remote (**Control
-móvil**) works alongside any of these.
+If the presenter view is closed, the projection offers **Abrir vista de
+presentador** and **Dejar de presentar**; moving the mouse shows **Salir**.
+Ending the session ends the projection. Allow pop-ups for the site so the
+presenter view can open. The phone remote (**Control móvil**) works alongside
+any of these.
 
 ## Creating presentations
 
