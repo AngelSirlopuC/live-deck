@@ -38,6 +38,17 @@ export function summaryToMarkdown(s: SessionSummary): string {
     const right = q.counts[q.correctIndex] ?? 0;
     lines.push("", `${q.total} votos · ${q.total ? Math.round((right / q.total) * 100) : 0}% acertó${q.revealed ? "" : " · respuesta no revelada"}`);
   }
+  lines.push("", "## Preguntas abiertas");
+  if (!s.asks.length) lines.push("", "No se lanzó ninguna pregunta abierta.");
+  for (const a of s.asks) {
+    lines.push("", `### ${esc(a.question)}`, "");
+    if (a.entries.length) {
+      lines.push("| Respuesta | Veces |", "| --- | ---: |");
+      for (const e of a.entries) lines.push(`| ${esc(e.text)} | ${e.count} |`);
+      lines.push("");
+    }
+    lines.push(`${a.total === 1 ? "1 respuesta" : `${a.total} respuestas`} · máx. ${a.maxChars} caracteres`);
+  }
   lines.push("", "## Ranking", "");
   if (!s.leaderboard.length) lines.push("Sin respuestas reveladas.");
   else {

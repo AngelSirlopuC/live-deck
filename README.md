@@ -10,6 +10,13 @@ anything.
   browses back through the slides already shown.
 - **Quizzes.** Live results or secret until reveal, an optional leaderboard,
   votes by tap or keyboard (A–F, 1–6). Anonymous attendees get a creative alias.
+- **Open questions.** Launch a free-text question live from the console or the
+  phone remote ("Lanzar pregunta"), with a character limit from 10 to 100
+  (default 40). Each person sends one answer and can change it until you close
+  it. Answers appear over the slide on every screen, grouped ignoring case,
+  accents and spacing, most repeated first with a `×N` badge. The answer box
+  turns on the browser's spellcheck and autocorrect and recommends using it,
+  so the same word is not split by typos. Every question lands in the summary.
 - **Pointer effects.** Ripple, focus and zoom (focus and zoom combine), mirrored on every screen. Focus and zoom stay armed so you can redraw the region; `Esc` clears everything. The laser (`L`) shows the presenter's cursor live on every screen.
 - **Time limit.** Optional planned duration, set when creating the session or
   by clicking the console timer: green on time, yellow in the last 20% (1 to 5
@@ -230,7 +237,7 @@ service if one server is not enough.
   lockout after repeated failures. Session creation needs `ADMIN_KEY` in
   production.
 - The audience never receives speaker notes or quiz answers before reveal.
-- Chat text is rendered as text, never HTML; sticker images come only from
+- Chat text and open-question answers are rendered as text, never HTML; sticker images come only from
   GIPHY ids resolved on the server, rated PG.
 - Nothing is written to disk. Restarting the server ends all sessions.
 
