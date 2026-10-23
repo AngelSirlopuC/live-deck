@@ -100,6 +100,18 @@ export function sanitizeAssetName(name: string): string {
 export function createEditorRoutes(opts: EditorRouteOptions) {
   const { decks, json } = opts;
 
+  // Saves of one deck run one at a time, so the revision check and the write act as one step.
+  const queues = new Map<string, Promise<unknown>>();
+  const serial = <T>(id: string, task: () => Promise<T>): Promise<T> => {
+    const run = (queues.get(id) ?? Promise.resolve()).then(task, task);
+    const tail = run.catch(() => {});
+    queues.set(id, tail);
+    void tail.then(() => {
+      if (queues.get(id) === tail) queues.delete(id);
+    });
+    return run;
+  };
+
   const authorized = (req: IncomingMessage) => !opts.adminKey || sameSecret(String(req.headers["x-admin-key"] ?? ""), opts.adminKey);
 
   const originAllowed = (req: IncomingMessage) => {
@@ -159,19 +171,21 @@ export function createEditorRoutes(opts: EditorRouteOptions) {
     if (body === undefined) return;
     const { deck, revision } = (body ?? {}) as { deck?: unknown; revision?: unknown };
     if (typeof revision !== "string" || deck === undefined || deck === null) return json(res, 400, { error: "expected { deck, revision }" });
-    const current = await decks.readRaw(id);
-    if (current === null) return json(res, 404, { error: "deck not found" });
-    const currentRevision = sha256(current);
-    if (currentRevision !== revision) {
-      const conflict: ConflictResponse = { error: "conflict", revision: currentRevision };
-      return json(res, 409, conflict);
-    }
-    const parsed = parseDeck(deck);
-    if (!parsed.ok) return json(res, 400, { error: parsed.error });
-    const bytes = serialize(parsed.deck);
-    await decks.writeAtomic(id, bytes);
-    const saved: SaveDeckResponse = { revision: sha256(bytes) };
-    return json(res, 200, saved);
+    return serial(id, async () => {
+      const current = await decks.readRaw(id);
+      if (current === null) return json(res, 404, { error: "deck not found" });
+      const currentRevision = sha256(current);
+      if (currentRevision !== revision) {
+        const conflict: ConflictResponse = { error: "conflict", revision: currentRevision };
+        return json(res, 409, conflict);
+      }
+      const parsed = parseDeck(deck);
+      if (!parsed.ok) return json(res, 400, { error: parsed.error });
+      const bytes = serialize(parsed.deck);
+      await decks.writeAtomic(id, bytes);
+      const saved: SaveDeckResponse = { revision: sha256(bytes) };
+      return json(res, 200, saved);
+    });
   }
 
   async function createDeck(req: IncomingMessage, res: ServerResponse) {

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { createServer, type Server } from "node:http";
-import { cp, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -21,6 +21,8 @@ let decksDir: string;
 beforeEach(async () => {
   decksDir = await mkdtemp(join(tmpdir(), "live-deck-editor-"));
   await cp(join(repoDecks, "demo"), join(decksDir, "demo"), { recursive: true });
+  // Git does not keep empty folders, so a fresh clone may lack demo/assets.
+  await mkdir(join(decksDir, "demo", "assets"), { recursive: true });
   app = createApp({ decksDir, distDir: null, adminKey: KEY, publicBaseUrl: null, trustProxy: false, allowedOrigins: [], lan: () => null });
   server = createServer(app.handle);
   app.attach(server);
@@ -118,6 +120,18 @@ describe("PUT /api/editor/decks/:id", () => {
     const body = (await res.json()) as ConflictResponse;
     expect(body).toEqual({ error: "conflict", revision });
     expect((await readFile(deckFile("demo"))).equals(before)).toBe(true);
+  });
+
+  it("two saves with the same revision: one wins, the other gets 409", async () => {
+    const { deck, revision } = await loadDeck();
+    const [a, b] = await Promise.all([
+      send("PUT", "/api/editor/decks/demo", { deck: { ...deck, title: "A" }, revision }),
+      send("PUT", "/api/editor/decks/demo", { deck: { ...deck, title: "B" }, revision }),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 409]);
+    const winner = a.status === 200 ? a : b;
+    const saved = (await winner.json()) as SaveDeckResponse;
+    expect(saved.revision).toBe(sha(await readFile(deckFile("demo"))));
   });
 
   it("400 on an invalid deck and leaves the file byte-identical", async () => {
