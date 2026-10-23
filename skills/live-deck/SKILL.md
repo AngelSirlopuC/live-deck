@@ -24,10 +24,11 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 
 ## Art direction (before writing slides)
 
-1. Pick exactly one preset (`estudio`, `editorial`, `neon`, `papel`, `brutalista`, `corporativo`) from the topic, the audience and the venue (a projector in a bright room needs light, high-contrast presets; a dark auditorium suits dark ones). Use the decision table in `references/themes.md`.
-2. Write one line in your plan and to the user: `Preset: <name>, because <reason>.`
-3. Set `"theme": { "preset": "<name>" }`. Override `accent` (or other colors, `surface`) only when the user's brand requires it. Do not hand-color cards; use `card: true`.
-4. Plan a layout per slide from the recipes before writing JSON, then check the plan against the composition rules below.
+1. Pick exactly one preset (`estudio`, `editorial`, `neon`, `papel`, `brutalista`, `corporativo`) from the topic, the audience and the venue, and pick its mode: `light` or `dark`. Every preset has both. Use the decision tables in `references/themes.md`. Never default to dark: choose `dark` only for a dark auditorium, an LED wall, an evening or gaming event, or when the user asks for it; an unknown venue gets `light`.
+2. When the user describes a look (brand colors, "minimalista", "estilo revista", "retro") or no preset fits, build a custom theme from the prompt on top of the closest preset: colors, fonts from the allowlist, card, heading, art, pattern and palette. Follow "Custom theme from the prompt" in `references/themes.md`.
+3. Write one line in your plan and to the user: `Preset: <name>, mode: <light|dark>, because <reason>.` (or `Theme: custom from <preset> <mode> — <summary>, because <reason>.`).
+4. Set `"theme": { "preset": "<name>", "mode": "<light|dark>" }` plus any custom fields. Do not hand-color cards; use `card: true`.
+5. Plan a layout per slide from the recipes before writing JSON, then check the plan against the composition rules below.
 
 ## Composition variety
 

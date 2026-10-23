@@ -23,9 +23,17 @@ Colors are hex: `#` + 3–8 hex digits.
 | `accent` | hex | Required without `preset`; optional override with one. |
 | `muted` | hex | Optional. |
 | `surface` | hex | Optional. Overrides the card/surface color (cards, `card: true` text, donut gaps). |
+| `mode` | `"light"` \| `"dark"` | Optional. Every preset has both; without it the preset keeps its original look. Always set it (see `themes.md`, "Light or dark"). |
+| `fonts` | `{ display?, body? }` | Optional. Font names from the allowlist in `themes.md` ("Custom theme from the prompt"); other names are rejected. |
+| `card` | `{ radius?: 0–64, border?: "none" \| "hairline" \| "thick", shadow?: "none" \| "soft" \| "hard" }` | Optional. Changes how `card: true` looks. |
+| `heading` | `{ weight?: 400–900, uppercase?: boolean, tracking?: -0.05–0.2 }` | Optional. Display text treatment. |
+| `art` | `{ kind: "none" \| "glow" \| "gradient", from?, to?, angle?: 0–360 }` | Optional. Background art painted over the ground; `glow` uses the accent. |
+| `pattern` | `"none"` \| `"dots"` \| `"grid"` \| `"lines"` \| `"noise"` | Optional. Ground pattern. |
+| `palette` | hex[] (3–8) | Optional. Chart colors in order; accent first. |
 
 - With a preset, override colors only when the user's brand requires it: `{ "preset": "corporativo", "accent": "#0057b8" }`.
 - Without a preset the old rules hold exactly: `background`, `foreground`, `accent` required, `muted` optional.
+- Every field is data: there is no way to pass CSS. `validate` warns (`warning:`) when text, muted or accent colors lack contrast on the ground.
 
 ## Slide
 
