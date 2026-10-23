@@ -32,11 +32,12 @@ Colors are hex: `#` + 3–8 hex digits.
 | Field | Type | Rules |
 | --- | --- | --- |
 | `id` | string | Required, `[A-Za-z0-9_-]{1,40}`, unique in the deck. |
-| `layout` | `"free"` \| `"quiz"` | Optional, default free. `"quiz"` requires `quiz`, and `quiz` requires `"quiz"`. |
+| `layout` | `"free"` \| `"quiz"` \| `"ask"` | Optional, default free. `"quiz"` requires `quiz`, and `quiz` requires `"quiz"`. `"ask"` requires `ask`, and `ask` requires `"ask"`. |
 | `background` | hex \| Background | Optional, overrides the theme background. See below. |
 | `notes` | string | Optional (always set it), max 5000 chars. Presenter-only; never sent to the audience. |
-| `elements` | Element[] | Required (use `[]` on quiz slides), max 60. Element ids unique per slide. |
+| `elements` | Element[] | Required (use `[]` on quiz and open-question slides), max 60. Element ids unique per slide. |
 | `quiz` | Quiz | Only with `layout: "quiz"`. |
+| `ask` | Ask | Only with `layout: "ask"`. |
 
 ### Slide background object
 
@@ -165,6 +166,18 @@ Built-in decorative SVG shape. It carries no content: never put meaning in decor
 - Full method and examples: `zone-quizzes.md`.
 
 The answer and notes are stripped before the deck reaches the audience.
+
+## Ask (open question)
+
+| Field | Type | Rules |
+| --- | --- | --- |
+| `question` | string | 1–200 chars, not blank. |
+| `maxChars` | integer | Optional, 10–100. Characters per answer; default 40. |
+
+- The slide shows the question and fills in the answers live: equal answers (ignoring case, accents and spacing) group into one entry with `×N`, most repeated first, ties A to Z.
+- Answers open the first time the presenter reaches the slide and stay open until the presenter closes them; going back never reopens a closed question. Each person sends one answer per question and can change it while it is open.
+- The audience's answer box turns on the browser's spellcheck and autocorrect and recommends using it, so a typo does not split a word.
+- Every open question reached appears in the session summary with its grouped answers.
 
 ## Validation messages
 

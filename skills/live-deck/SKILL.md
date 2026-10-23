@@ -31,7 +31,7 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 
 ## Composition variety
 
-- No two consecutive slides with the same layout (recipe). Quiz slides count as a layout.
+- No two consecutive slides with the same layout (recipe). Quiz and open-question slides count as layouts.
 - Alternate dense slides (icon row, chart, two-column) with breathing slides (big number, quote, one-word section break).
 - Use a rich element wherever the content supports it: a real figure becomes `big-number-card` or a `chart`; a list of 3–4 parallel ideas becomes an `icon-row`; a key phrase gets `mark`; openers, section breaks and closings get a slide `background` object or a `decor` accent.
 - Never invent data for a chart or a number; ask or use text instead.
@@ -40,12 +40,12 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 
 ## Workflow
 
-1. Plan the outline: one idea per slide, 5–25 slides for a normal talk. Add 1 quiz every 4–8 slides when the audience can answer something. Do the art direction step and assign a layout to each slide.
+1. Plan the outline: one idea per slide, 5–25 slides for a normal talk. Add 1 quiz every 4–8 slides when the audience can answer something. Add an open-question slide when the user asks for one or when the audience can answer in a word or two (opinions, expectations, a word that sums something up). Do the art direction step and assign a layout to each slide.
 2. Scaffold: `node bin/live-deck.ts new <id> --title "<title>"`. It refuses to overwrite; if the deck exists, edit it instead (ask first if the user did not mean that deck).
 3. Replace the template slides in `decks/<id>/deck.json` with the planned slides.
 4. Validate: `node bin/live-deck.ts validate <id>`.
-5. Fix every printed issue (`path: message`, e.g. `slides.3.elements.1.box: box must stay inside the canvas`) and re-run until it prints `OK <title> (<n> slides, <q> quizzes)`. Treat `warning:` lines as defects too.
-6. Tell the user: deck path, chosen preset and why, slide and quiz count, and the difference between preview and presenting:
+5. Fix every printed issue (`path: message`, e.g. `slides.3.elements.1.box: box must stay inside the canvas`) and re-run until it prints `OK <title> (<n> slides, <q> quizzes)` (plus `, <a> open question(s)` when the deck has any). Treat `warning:` lines as defects too.
+6. Tell the user: deck path, chosen preset and why, slide, quiz and open-question count, and the difference between preview and presenting:
    - Preview at `/preview/<id>` (dev: `http://localhost:5180/preview/<id>`) is a single-viewer rehearsal with no session: the QR shows a placeholder ("El QR aparece al presentar"), there is no audience, quizzes and chat are inactive, and they move with arrows, click or swipe.
    - To present for real, they press "Presentar" on the preview (opens the home page with the deck preselected), set a 4–8 digit PIN and open the console. The join QR, quizzes, chat and effects work only in that live session.
    - For an event on a hosted server, publish it with `npm run publish:deck -- <id>` (needs `LIVE_DECK_PUBLISH_TARGET` in `.env`; add `--dry-run` first). It validates again and copies only that deck. Never publish without the user asking.
@@ -73,6 +73,7 @@ Use this when the user already designed slides in PowerPoint, Keynote, Google Sl
 - Every box is normalized: `x, y, w, h` in 0..1 and `x + w <= 1`, `y + h <= 1`.
 - Font sizes are logical px on a 1920x1080 stage. Body text >= 32, headings 64–110. Never below 24.
 - Quiz slides: `"layout": "quiz"`, `elements: []`, and a `quiz` with 2–6 options (each 1–120 chars), exactly one `correctIndex` (0-based, < options length), `display` `"live"` (bars move while voting) or `"secret"` (hidden until reveal), optional integer `timerSec` 5–600, optional `zones` (one box per option, only on imported designed slides; see `references/zone-quizzes.md`). A `quiz` without `layout: "quiz"` (or vice versa) is invalid.
+- Open-question slides: `"layout": "ask"`, `elements: []`, and an `ask` with `question` (1–200 chars, not blank) and optional integer `maxChars` 10–100 (characters per answer, default 40). The audience answers in a few words from their phone; equal answers group ignoring case, accents and spacing and show most repeated first with `×N`. Answers open when the presenter reaches the slide; the presenter can close them. An `ask` without `layout: "ask"` (or vice versa) is invalid. Keep the question short and answerable in one to three words; use a quiz instead when there is a right answer.
 - Images: `src` is `https://…` or `assets/<file>`; put local files in `decks/<id>/assets/`. Never use `..`. Always set `alt`.
 - Every slide has speaker `notes` (what to say, what to do: reveal, focus, zoom).
 - Set `theme` once at deck level, normally just `{ "preset": "<name>" }`. Without a preset, `background`, `foreground` and `accent` are required. Colors are hex (`#rrggbb`).
@@ -86,6 +87,7 @@ Use this when the user already designed slides in PowerPoint, Keynote, Google Sl
 - Pasted .pptx text: keep slide order and titles, shorten body text to the essential claim, move the rest to `notes`. Images from the pptx need files in `assets/`; if the user cannot provide them, omit them and say so.
 - A .pptx/.key/Canva file whose design the user wants to keep: do not transcribe it; ask for one exported image per slide and follow "Importing designed slides".
 - Questions in the material ("¿Sabías que…?", "Quiz:") become quiz slides. Ask for the correct answer only if it cannot be inferred.
+- Open prompts with no right answer ("¿Qué esperas de hoy?", "Una palabra para…") become open-question slides (`layout: "ask"`).
 
 ## Worked example
 

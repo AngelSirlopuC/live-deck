@@ -64,6 +64,15 @@ Nodes `w: 0.22, h: 0.2` at `y: 0.42`, x 0.07 / 0.39 / 0.71, style `{ "align": "c
 
 The player renders question, options, bars and timer; do not add elements.
 
+## ask (open question)
+
+```json
+{ "id": "pregunta-1", "layout": "ask", "notes": "…", "elements": [],
+  "ask": { "question": "¿Qué palabra describe tu semana?", "maxChars": 30 } }
+```
+
+The player renders the question and the grouped answers (`×N` on repeats); do not add elements. Ask for one to three words, never a sentence.
+
 ## closing
 
 ```json
