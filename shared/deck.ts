@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ICON_NAMES } from "./icons.ts";
+import { FONT_NAMES } from "./fonts.ts";
 import { PRESET_NAMES } from "./themes.ts";
 import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "./ask.ts";
 
@@ -187,14 +188,47 @@ export const SlideSchema = z
 
 // With a preset every colour is an optional override; without one, background,
 // foreground and accent stay required as in the original format.
+// Everything beyond colours is data mapped to tokens by the theme engine
+// (shared/themes.ts): font families from the allowlist, card and heading
+// choices, art and pattern kinds, a chart palette. Decks never carry CSS.
+const ThemeFontsSchema = z.object({ display: z.enum(FONT_NAMES).optional(), body: z.enum(FONT_NAMES).optional() }).strict();
+const ThemeCardSchema = z
+  .object({
+    // Logical pixels on the 1920x1080 stage.
+    radius: z.number().min(0).max(64).optional(),
+    border: z.enum(["none", "hairline", "thick"]).optional(),
+    shadow: z.enum(["none", "soft", "hard"]).optional(),
+  })
+  .strict();
+const ThemeHeadingSchema = z
+  .object({
+    weight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700), z.literal(800), z.literal(900)]).optional(),
+    uppercase: z.boolean().optional(),
+    // em units.
+    tracking: z.number().min(-0.05).max(0.2).optional(),
+  })
+  .strict();
+// glow defaults to the accent; gradient defaults to accent → background.
+const ThemeArtSchema = z
+  .object({ kind: z.enum(["none", "glow", "gradient"]), from: hex.optional(), to: hex.optional(), angle: z.number().min(0).max(360).optional() })
+  .strict();
+
 export const ThemeSchema = z
   .object({
     preset: z.enum(PRESET_NAMES).optional(),
+    // Flips a preset to its other variant; a preset without mode keeps its native look.
+    mode: z.enum(["light", "dark"]).optional(),
     background: hex.optional(),
     foreground: hex.optional(),
     accent: hex.optional(),
     muted: hex.optional(),
     surface: hex.optional(),
+    fonts: ThemeFontsSchema.optional(),
+    card: ThemeCardSchema.optional(),
+    heading: ThemeHeadingSchema.optional(),
+    art: ThemeArtSchema.optional(),
+    pattern: z.enum(["none", "dots", "grid", "lines", "noise"]).optional(),
+    palette: z.array(hex).min(3).max(8).optional(),
   })
   .strict()
   .superRefine((theme, ctx) => {

@@ -1,11 +1,11 @@
 import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
 import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
-import { THEME_PRESETS, contrastRatio, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
+import { contrastRatio, fontStack, resolveThemeSpec, type ThemeSpec } from "../../../shared/themes.ts";
 import { renderAsk } from "./ask-overlay.ts";
 import { renderChart } from "./charts.ts";
 import { renderDecor } from "./decor.ts";
-import { ensurePresetFonts } from "./fonts.ts";
+import { ensureFonts } from "./fonts.ts";
 
 // Slides render on a fixed logical stage and are scaled with a CSS transform,
 // so geometry, font sizes, and effect targets are identical on every screen.
@@ -32,7 +32,7 @@ const px = (n: number) => `${Math.round(n * 100) / 100}px`;
 export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOptions): HTMLElement {
   const slide = deck.slides[index];
   if (!slide) throw new RangeError(`slide ${index} out of range`);
-  const theme = resolveTheme(deck.theme);
+  const theme = resolveThemeSpec(deck.theme);
   const bg = typeof slide.background === "object" ? slide.background : undefined;
 
   const stage = document.createElement("div");
@@ -45,11 +45,16 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   stage.style.setProperty("--theme-fg", theme.colors.foreground);
   stage.style.setProperty("--theme-accent", theme.colors.accent);
   stage.style.setProperty("--theme-muted", theme.colors.muted);
-  if (theme.colors.surface) stage.style.setProperty("--theme-surface", theme.colors.surface);
-  if (theme.preset) applyPreset(stage, theme.preset, theme);
+  stage.dataset.mode = theme.mode;
+  // Plain colour decks (no preset, no custom fields) keep today's minimal variables.
+  if (theme.plain) {
+    if (deck.theme?.surface) stage.style.setProperty("--theme-surface", deck.theme.surface);
+  } else {
+    applyTheme(stage, theme);
+  }
 
-  // A slide background object replaces the preset art; a hex background keeps it.
-  const backdrop = bg ? renderBackground(bg, opts) : theme.preset ? renderPresetArt(theme.preset) : null;
+  // A slide background object replaces the theme art; a hex background keeps it.
+  const backdrop = bg ? renderBackground(bg, opts) : renderThemeArt(theme);
   if (backdrop) stage.append(backdrop);
 
   // Content sits in its own layer so presenter zoom can transform it while the
@@ -65,26 +70,26 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   return stage;
 }
 
-/** Preset tokens on the stage: fonts, card, heading and on-accent text. */
-function applyPreset(stage: HTMLElement, name: PresetName, theme: ResolvedTheme) {
-  const preset = THEME_PRESETS[name];
-  ensurePresetFonts(name);
-  stage.dataset.preset = name;
+/** Theme tokens on the stage: fonts, card, heading, surface and on-accent text. */
+function applyTheme(stage: HTMLElement, theme: ThemeSpec) {
+  ensureFonts(theme.fonts);
+  if (theme.preset) stage.dataset.preset = theme.preset;
   const vars: Record<string, string> = {
-    "--font-display": fontStack(preset.fonts.display),
-    "--font-body": fontStack(preset.fonts.body),
-    "--font-mono": fontStack(preset.fonts.mono),
-    "--card-bg": preset.card.background,
-    "--card-radius": preset.card.radius,
-    "--card-border": preset.card.border,
-    "--card-shadow": preset.card.shadow,
-    "--card-padding": preset.card.padding,
-    "--heading-weight": String(preset.heading.weight),
-    "--heading-tracking": preset.heading.letterSpacing,
-    "--heading-transform": preset.heading.textTransform,
+    "--theme-surface": theme.colors.surface,
+    "--theme-on-accent": theme.colors.onAccent,
+    "--font-display": fontStack(theme.fonts.display),
+    "--font-body": fontStack(theme.fonts.body),
+    "--font-mono": fontStack(theme.fonts.mono),
+    "--card-bg": theme.card.background,
+    "--card-radius": theme.card.radius,
+    "--card-border": theme.card.border,
+    "--card-shadow": theme.card.shadow,
+    "--card-padding": theme.card.padding,
+    "--heading-weight": String(theme.heading.weight),
+    "--heading-tracking": theme.heading.letterSpacing,
+    "--heading-transform": theme.heading.textTransform,
   };
-  if (preset.fonts.accent) vars["--font-accent"] = fontStack(preset.fonts.accent);
-  if (theme.colors.onAccent) vars["--theme-on-accent"] = theme.colors.onAccent;
+  if (theme.fonts.accent) vars["--font-accent"] = fontStack(theme.fonts.accent);
   for (const [k, v] of Object.entries(vars)) stage.style.setProperty(k, v);
 }
 
@@ -94,18 +99,17 @@ function layerDiv(cls: string): HTMLDivElement {
   return div;
 }
 
-function renderPresetArt(name: PresetName): HTMLElement | null {
-  const preset = THEME_PRESETS[name];
-  if (!preset.art && !preset.pattern) return null;
+function renderThemeArt(theme: ThemeSpec): HTMLElement | null {
+  if (!theme.art && !theme.pattern) return null;
   const wrap = layerDiv("stage-bg stage-bg-preset");
-  if (preset.art) {
+  if (theme.art) {
     const art = layerDiv("stage-bg-art");
-    art.style.setProperty("--bg-art", preset.art);
+    art.style.setProperty("--bg-art", theme.art);
     wrap.append(art);
   }
-  if (preset.pattern) {
+  if (theme.pattern) {
     const pattern = layerDiv("stage-bg-pattern");
-    pattern.dataset.pattern = preset.pattern;
+    pattern.dataset.pattern = theme.pattern;
     wrap.append(pattern);
   }
   return wrap;
@@ -171,7 +175,7 @@ function applyText(node: HTMLElement, style: TextStyle | undefined) {
   if (style.tracking !== undefined) node.style.letterSpacing = `${style.tracking}em`;
 }
 
-function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedTheme): HTMLElement {
+function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec): HTMLElement {
   const node = document.createElement("div");
   place(node, el);
   if (el.fragment !== undefined) {

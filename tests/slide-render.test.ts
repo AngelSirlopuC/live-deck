@@ -121,7 +121,7 @@ describe("renderSlide with rich decks", () => {
     const links = document.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]');
     expect(links).toHaveLength(1);
     expect(links[0]!.href).toContain("fonts.googleapis.com/css2");
-    expect(links[0]!.dataset.presetFonts).toBe("neon");
+    expect(links[0]!.dataset.themeFonts).toBe("Space Grotesk|Space Mono|Unbounded");
   });
 
   it("draws gradient, image, pattern and dim background layers", () => {

@@ -141,6 +141,55 @@ describe("rich deck format", () => {
     expect(parseDeck(deck).ok).toBe(true);
   });
 
+  it("accepts mode, curated fonts, card, heading, art, pattern and palette as data", () => {
+    const deck = minimal();
+    deck.theme = {
+      preset: "corporativo",
+      mode: "light",
+      fonts: { display: "Playfair Display", body: "Lora" },
+      card: { radius: 12, border: "thick", shadow: "hard" },
+      heading: { weight: 700, uppercase: true, tracking: 0.05 },
+      art: { kind: "gradient", from: "#102030", to: "#405060", angle: 160 },
+      pattern: "dots",
+      palette: ["#111111", "#222222", "#333333"],
+    };
+    expect(parseDeck(deck).ok).toBe(true);
+    deck.theme = { background: "#ffffff", foreground: "#111111", accent: "#0044cc", mode: "light", fonts: { body: "Lora" }, art: { kind: "glow" } };
+    expect(parseDeck(deck).ok).toBe(true);
+  });
+
+  it("rejects fonts outside the allowlist, out-of-range numbers, wrong palette sizes, extra keys and CSS strings", () => {
+    const bad: Record<string, unknown>[] = [
+      { fonts: { display: "Comic Sans MS" } },
+      { fonts: { display: "Lora", mono: "Lora" } },
+      { card: { radius: 65 } },
+      { card: { radius: -1 } },
+      { card: { border: "2px solid red" } },
+      { card: { shadow: "0 0 10px black" } },
+      { heading: { weight: 450 } },
+      { heading: { tracking: 0.3 } },
+      { heading: { tracking: -0.1 } },
+      { art: { kind: "glow", from: "red" } },
+      { art: { kind: "gradient", angle: 361 } },
+      { art: "radial-gradient(red, blue)" },
+      { art: { kind: "none", css: "url(x)" } },
+      { pattern: "stripes" },
+      { palette: ["#111111", "#222222"] },
+      { palette: Array.from({ length: 9 }, () => "#123456") },
+      { palette: ["#111111", "#222222", "url(x)"] },
+      { mode: "sepia" },
+      { font: "Lora" },
+    ];
+    for (const fields of bad) {
+      const deck = minimal();
+      deck.theme = { preset: "estudio", ...fields };
+      expect(parseDeck(deck).ok, JSON.stringify(fields)).toBe(false);
+    }
+    const noPreset = minimal();
+    noPreset.theme = { mode: "light", fonts: { body: "Lora" } };
+    expect(errorOf(parseDeck(noPreset))).toContain("theme.background");
+  });
+
   it("rejects unknown presets and non-hex surfaces", () => {
     const deck = minimal();
     deck.theme = { preset: "vaporwave" };
