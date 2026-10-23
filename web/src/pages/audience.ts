@@ -383,6 +383,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     const pos = following ? state.position : explorePos;
     view!.show(pos);
     view!.setEffects(following ? state.effects : []);
+    view!.setAsk(following ? state.ask : null);
 
     const shown = deck.slides[pos.slide]!;
     const quizView = state.quizzes[shown.id] ?? null;

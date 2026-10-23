@@ -2,6 +2,8 @@ import type { RenderableDeck } from "../../../shared/deck-core.ts";
 import { effectRect, zoomTransform, type PersistentEffect } from "../../../shared/effects.ts";
 import type { Position } from "../../../shared/nav.ts";
 import type { QuizView } from "../../../shared/protocol.ts";
+import type { AskView } from "../../../shared/ask.ts";
+import { applyAskView } from "./ask-overlay.ts";
 import { applyQuizView, type QuizOverlayOptions } from "./quiz-overlay.ts";
 import { STAGE_HEIGHT, STAGE_WIDTH, fitStage, renderSlide, type RenderOptions } from "./slide.ts";
 
@@ -28,6 +30,7 @@ export class StageView {
   private laserIdle: ReturnType<typeof setTimeout> | undefined;
   private zoom: Zoom = NO_ZOOM;
   private quizState: { view: QuizView | null; opts: QuizOverlayOptions } = { view: null, opts: {} };
+  private ask: AskView | null = null;
 
   constructor(host: HTMLElement, deck: RenderableDeck, extra: Omit<RenderOptions, "step" | "enterStep"> = {}) {
     this.host = host;
@@ -66,6 +69,13 @@ export class StageView {
     if (!sameSlide) this.effects = [];
     this.applyEffect(false);
     applyQuizView(next, this.quizState.view, this.quizState.opts);
+    applyAskView(next, this.ask);
+  }
+
+  /** Shows (or removes) the live free-text question over whatever slide is on screen. */
+  setAsk(view: AskView | null) {
+    this.ask = view;
+    if (this.stage) applyAskView(this.stage, view);
   }
 
   /** Paints the quiz state of the slide currently shown. */

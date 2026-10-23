@@ -750,3 +750,73 @@
 .quiz-zone.has-guide {
   overflow: visible;
 }
+
+/* Free-text question over the slide ------------------------------------------- */
+.stage-ask {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 48px;
+  padding: 96px 120px 72px;
+  background: color-mix(in srgb, var(--theme-bg) 96%, transparent);
+  color: var(--theme-fg);
+}
+
+.stage-ask-question {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1.1;
+  max-width: 28ch;
+  text-wrap: balance;
+}
+
+.stage-ask-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 18px 22px;
+  overflow: hidden;
+}
+
+.stage-ask-entry {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--theme-fg) 22%, transparent);
+  font-size: 44px;
+  line-height: 1.15;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.stage-ask-entry.is-leading {
+  border-color: var(--theme-accent);
+  font-size: 56px;
+}
+
+.stage-ask-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--theme-accent);
+}
+
+.stage-ask-empty {
+  margin: 0;
+  font-size: 40px;
+  color: var(--theme-muted);
+}
+
+.stage-ask-status {
+  margin: 0;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  color: var(--theme-muted);
+}
