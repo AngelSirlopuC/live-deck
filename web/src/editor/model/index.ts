@@ -9,6 +9,7 @@ export {
   DUPLICATE_OFFSET,
   MAX_ELEMENTS,
   MAX_SLIDES,
+  sameValue,
 } from "./document.ts";
 export type { AlignEdge, Axis, Command, EditorDoc, ElementKind, ElementPatch, NewElement, Patch, SlideKind, SlidePatch, ZOrder } from "./document.ts";
 export { ID_RE, isValidId, sanitizeId, uniqueId } from "./ids.ts";

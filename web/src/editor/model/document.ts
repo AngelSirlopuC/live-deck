@@ -205,6 +205,19 @@ function moveSlide(deck: Deck, from: number, to: number): Deck {
   return { ...deck, slides };
 }
 
+/** Structural equality for plain JSON values (key order ignored); undefined keys count as absent. */
+export function sameValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => sameValue(v, b[i]));
+  const ao = a as Record<string, unknown>;
+  const bo = b as Record<string, unknown>;
+  const keys = new Set([...Object.keys(ao), ...Object.keys(bo)]);
+  for (const k of keys) if (!sameValue(ao[k], bo[k])) return false;
+  return true;
+}
+
 /** Shallow merge where a key present with `undefined` deletes; `undefined` result means "empty". */
 function mergePatch<T extends object>(base: T | undefined, patch: Patch<T>): T | undefined {
   const out: Record<string, unknown> = { ...(base ?? {}) };
@@ -235,28 +248,36 @@ function setSlide(deck: Deck, slide: Slide, patch: SlidePatch): Slide {
   }
 
   if ("background" in patch) {
-    changed = true;
     const bg = patch.background;
     const { background: _b, ...rest } = next;
-    next = rest;
     // An object background with nothing left in it is dropped rather than saved invalid.
-    if (typeof bg === "string" || (bg && Object.values(bg).some((v) => v !== undefined))) next.background = bg;
+    const value = typeof bg === "string" || (bg && Object.values(bg).some((v) => v !== undefined)) ? bg : undefined;
+    if (!sameValue(value, slide.background)) {
+      changed = true;
+      next = value === undefined ? rest : { ...rest, background: value };
+    }
   }
   if ("notes" in patch) {
-    changed = true;
-    const { notes: _n, ...rest } = next;
-    next = rest;
-    if (patch.notes !== undefined && patch.notes !== "") next.notes = patch.notes;
+    const value = patch.notes !== undefined && patch.notes !== "" ? patch.notes : undefined;
+    if (value !== slide.notes) {
+      changed = true;
+      const { notes: _n, ...rest } = next;
+      next = value === undefined ? rest : { ...rest, notes: value };
+    }
   }
   if (patch.quiz && layout === "quiz") {
-    changed = true;
     const quiz = mergePatch(next.quiz ?? DEFAULT_QUIZ, patch.quiz) ?? { ...DEFAULT_QUIZ };
-    next = { ...next, quiz };
+    if (!sameValue(quiz, next.quiz)) {
+      changed = true;
+      next = { ...next, quiz };
+    }
   }
   if (patch.ask && layout === "ask") {
-    changed = true;
     const ask = mergePatch(next.ask ?? DEFAULT_ASK, patch.ask) ?? { ...DEFAULT_ASK };
-    next = { ...next, ask };
+    if (!sameValue(ask, next.ask)) {
+      changed = true;
+      next = { ...next, ask };
+    }
   }
   return changed ? next : slide;
 }
@@ -334,6 +355,7 @@ function patchElement(slide: Slide, id: string, patch: ElementPatch): Slide {
     if (style) out.style = style;
     else delete out.style;
   }
+  if (sameValue(out, el)) return slide;
   const elements = slide.elements.slice();
   elements[index] = out as DeckElement;
   return { ...slide, elements };
@@ -413,6 +435,7 @@ function distribute(slide: Slide, ids: readonly string[], axis: Axis): Slide {
 
 function setTheme(deck: Deck, patch: Patch<Theme>): Deck {
   const theme = mergePatch(deck.theme, patch);
+  if (sameValue(theme, deck.theme)) return deck;
   if (theme === undefined) {
     if (deck.theme === undefined) return deck;
     const { theme: _t, ...rest } = deck;

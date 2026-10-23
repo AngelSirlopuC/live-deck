@@ -273,3 +273,33 @@ describe("deck", () => {
     expect(result).toEqual({ ok: true, deck: expect.anything() });
   });
 });
+
+describe("equality guards", () => {
+  it("patchElement with an unchanged value returns the same deck", () => {
+    const d = deck([slide("s1", [text("a", box(0.1, 0.1, 0.2, 0.2), { style: { fontSize: 48 } })])]);
+    expect(applyCommand(d, { type: "patchElement", slide: 0, id: "a", patch: { text: "a" } })).toBe(d);
+    expect(applyCommand(d, { type: "patchElement", slide: 0, id: "a", patch: { style: { fontSize: 48 } } })).toBe(d);
+    expect(applyCommand(d, { type: "patchElement", slide: 0, id: "a", patch: { style: { color: undefined } } })).toBe(d);
+    expect(applyCommand(d, { type: "patchElement", slide: 0, id: "a", patch: { text: "b" } })).not.toBe(d);
+  });
+
+  it("setSlide with unchanged notes, background, quiz or ask returns the same deck", () => {
+    const d = deck([slide("s1", [], { notes: "hola", background: { color: "#000000", dim: 0.3 } })]);
+    expect(applyCommand(d, { type: "setSlide", index: 0, patch: { notes: "hola" } })).toBe(d);
+    expect(applyCommand(d, { type: "setSlide", index: 0, patch: { background: { color: "#000000", dim: 0.3 } } })).toBe(d);
+    expect(applyCommand(d, { type: "setSlide", index: 0, patch: { notes: "" } })).not.toBe(d);
+    const q = applyCommand(deck(), { type: "addSlide", at: 1, kind: "quiz" });
+    const quiz = slideAt(q, 1).quiz!;
+    expect(applyCommand(q, { type: "setSlide", index: 1, patch: { quiz: { question: quiz.question } } })).toBe(q);
+    expect(applyCommand(q, { type: "setSlide", index: 1, patch: { quiz: { question: "Otra" } } })).not.toBe(q);
+    const a = applyCommand(deck(), { type: "addSlide", at: 1, kind: "ask" });
+    expect(applyCommand(a, { type: "setSlide", index: 1, patch: { ask: { question: slideAt(a, 1).ask!.question } } })).toBe(a);
+  });
+
+  it("setTheme with the same colours returns the same deck", () => {
+    const d = deck();
+    expect(applyCommand(d, { type: "setTheme", patch: { accent: "#ff0000" } })).toBe(d);
+    expect(applyCommand(d, { type: "setTheme", patch: { muted: undefined } })).toBe(d);
+    expect(applyCommand(d, { type: "setTheme", patch: { accent: "#00ff00" } })).not.toBe(d);
+  });
+});
