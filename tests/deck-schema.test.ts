@@ -63,7 +63,7 @@ describe("deck schema", () => {
   });
 
   it("rejects an open question that is empty, too long, or with a limit out of 10 to 100", () => {
-    for (const ask of [{ question: "" }, { question: "x".repeat(201) }, { question: "Q", maxChars: 9 }, { question: "Q", maxChars: 101 }, { question: "Q", maxChars: 20.5 }, { question: "Q", extra: 1 }]) {
+    for (const ask of [{ question: "" }, { question: "   " }, { question: "x".repeat(201) }, { question: "Q", maxChars: 9 }, { question: "Q", maxChars: 101 }, { question: "Q", maxChars: 20.5 }, { question: "Q", extra: 1 }]) {
       const deck = minimal();
       deck.slides[0].layout = "ask";
       deck.slides[0].ask = ask;
@@ -232,6 +232,13 @@ describe("publicDeck", () => {
     expect(json).not.toContain("notes");
     expect(pub.slides).toHaveLength(parsed.deck.slides.length);
     expect(pub.slides.find((s) => s.quiz)?.quiz?.options.length).toBeGreaterThan(1);
+  });
+
+  it("keeps open questions so the audience can answer them", () => {
+    const parsed = parseDeck(demo);
+    if (!parsed.ok) throw new Error(parsed.error);
+    const ask = publicDeck(parsed.deck).slides.find((s) => s.layout === "ask");
+    expect(ask?.ask).toEqual({ question: "¿Qué palabra describe tu semana?" });
   });
 });
 

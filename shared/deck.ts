@@ -143,7 +143,7 @@ export const QuizSchema = z
 // Open question: the audience answers in a few words; equal answers group as ×N.
 export const AskSchema = z
   .object({
-    question: z.string().min(1).max(ASK_QUESTION_MAX),
+    question: z.string().trim().min(1).max(ASK_QUESTION_MAX),
     // Characters per answer; defaults to ASK_TEXT_DEFAULT.
     maxChars: z.number().int().min(ASK_TEXT_MIN).max(ASK_TEXT_MAX).optional(),
   })
