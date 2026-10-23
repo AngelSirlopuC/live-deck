@@ -41,7 +41,7 @@ describe("live-deck validate", () => {
   it("accepts the demo deck by path", () => {
     const r = cli("validate", join(demoDir, "deck.json"));
     expect(r.code).toBe(0);
-    expect(r.out).toMatch(/^OK Live Deck — demo \(6 slides, 2 quizzes\)$/m);
+    expect(r.out).toMatch(/^OK Live Deck — demo \(7 slides, 2 quizzes, 1 open question\)$/m);
   });
 
   it("accepts a deck id resolved under DECKS_DIR and a deck directory", () => {
@@ -147,7 +147,7 @@ describe("live-deck list", () => {
     writeDeck("rota", { version: 1, title: "Rota", slides: [] });
     const r = cli("list");
     expect(r.code).toBe(0);
-    expect(r.out).toMatch(/^demo\s+6 slides\s+Live Deck — demo$/m);
+    expect(r.out).toMatch(/^demo\s+7 slides\s+Live Deck — demo$/m);
     expect(r.out).toMatch(/^rota\s+INVALID/m);
   });
 });

@@ -81,6 +81,13 @@ const one = (slide: Partial<Deck["slides"][number]>, theme?: Deck["theme"]): Dec
 });
 
 describe("renderSlide with rich decks", () => {
+  it("lays out an open-question slide with its question and a waiting line, and only there", () => {
+    const stage = renderSlide(one({ layout: "ask", ask: { question: "¿Qué palabra describe tu semana?" } }), 0, { step: 0 });
+    expect(stage.querySelector(".stage-ask-question")!.textContent).toBe("¿Qué palabra describe tu semana?");
+    expect(stage.textContent).toContain("Responde desde tu teléfono");
+    expect(renderSlide(one({}), 0, { step: 0 }).querySelector(".stage-ask")).toBeNull();
+  });
+
   beforeEach(() => document.head.replaceChildren());
 
   it("renders legacy decks without preset layers, font overrides or font links", () => {

@@ -40,6 +40,37 @@ describe("deck schema", () => {
     expect(parseDeck(deck).ok).toBe(false);
   });
 
+  it("accepts an open-question slide with or without a limit", () => {
+    const deck = minimal();
+    deck.slides[0].layout = "ask";
+    deck.slides[0].ask = { question: "¿Qué palabra describe tu semana?" };
+    expect(parseDeck(deck).ok).toBe(true);
+    deck.slides[0].ask.maxChars = 25;
+    expect(parseDeck(deck).ok).toBe(true);
+  });
+
+  it("ties the ask layout to an ask, both ways", () => {
+    const noAsk = minimal();
+    noAsk.slides[0].layout = "ask";
+    const r1 = parseDeck(noAsk);
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) expect(r1.error).toContain("ask layout requires an ask");
+    const noLayout = minimal();
+    noLayout.slides[0].ask = { question: "Q" };
+    const r2 = parseDeck(noLayout);
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(r2.error).toContain("an ask requires layout");
+  });
+
+  it("rejects an open question that is empty, too long, or with a limit out of 10 to 100", () => {
+    for (const ask of [{ question: "" }, { question: "x".repeat(201) }, { question: "Q", maxChars: 9 }, { question: "Q", maxChars: 101 }, { question: "Q", maxChars: 20.5 }, { question: "Q", extra: 1 }]) {
+      const deck = minimal();
+      deck.slides[0].layout = "ask";
+      deck.slides[0].ask = ask;
+      expect(parseDeck(deck).ok).toBe(false);
+    }
+  });
+
   it("rejects duplicate element ids within a slide", () => {
     const deck = minimal();
     deck.slides[0].elements.push({ ...deck.slides[0].elements[0] });

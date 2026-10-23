@@ -106,7 +106,9 @@ function validate(args: string[]): number {
     return 1;
   }
   const quizzes = report.deck.slides.filter((s) => s.quiz).length;
-  process.stdout.write(`OK ${report.deck.title} (${report.deck.slides.length} slides, ${quizzes} quizzes)\n`);
+  const asks = report.deck.slides.filter((s) => s.ask).length;
+  const open = asks ? `, ${asks} open question${asks === 1 ? "" : "s"}` : "";
+  process.stdout.write(`OK ${report.deck.title} (${report.deck.slides.length} slides, ${quizzes} quizzes${open})\n`);
   return 0;
 }
 

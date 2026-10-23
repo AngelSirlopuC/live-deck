@@ -1133,7 +1133,7 @@ select:focus-visible {
   }
 }
 
-/* Free-text question: audience answer box ------------------------------------ */
+/* Open-question slide: audience answer box ------------------------------------ */
 .ask-panel {
   display: grid;
   gap: 10px;
@@ -1189,19 +1189,7 @@ select:focus-visible {
   color: var(--text-muted);
 }
 
-/* Free-text question: presenter controls ------------------------------------- */
-.pa-ask-question {
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.pa-ask-hint {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
+/* Open-question slide: presenter controls ------------------------------------- */
 .pa-ask-top {
   list-style: none;
   margin: 0;

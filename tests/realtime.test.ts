@@ -466,8 +466,8 @@ describe("time limit over the wire", () => {
   });
 });
 
-describe("free-text question", () => {
-  it("launches live, groups answers on every screen, gives each person their answer, and closes", async () => {
+describe("open-question slide", () => {
+  it("opens when the presenter reaches the slide, groups answers on every screen, gives each person their answer, and closes", async () => {
     const s = await createSession();
     const p = await presenter(s);
     const scr = new TestClient();
@@ -479,40 +479,40 @@ describe("free-text question", () => {
     await a.waitFor((m) => m.t === "welcome-audience");
     await b.waitFor((m) => m.t === "welcome-audience");
 
-    p.send({ t: "ask-open", question: "¿Una palabra?", maxChars: 20 });
-    expect(await p.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
-
-    p.send({ t: "start" });
-    p.send({ t: "ask-open", question: "¿Una palabra?", maxChars: 20 });
-    await a.waitFor((m) => m.t === "state" && m.state.ask?.status === "open");
-    a.send({ t: "answer", text: "Rojo" });
-    b.send({ t: "answer", text: "rojo" });
-    await a.waitFor((m) => m.t === "me" && m.me.answer === "Rojo");
-    const shown = await scr.waitFor((m) => m.t === "state" && m.state.ask?.total === 2);
-    expect(shown).toMatchObject({ state: { ask: { question: "¿Una palabra?", maxChars: 20, entries: [{ text: "Rojo", count: 2 }] } } });
-    await a.waitFor((m) => m.t === "state" && m.state.ask?.total === 2);
-
-    p.send({ t: "ask-close" });
-    await a.waitFor((m) => m.t === "state" && m.state.ask?.status === "closed");
-    a.send({ t: "answer", text: "azul" });
+    a.send({ t: "answer", slideId: "pregunta-abierta", text: "Rojo" });
     expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "ask-closed" });
 
-    p.send({ t: "ask-clear" });
-    await b.waitFor((m) => m.t === "state" && m.state.ask === null && m.state.status === "live");
+    p.send({ t: "start" });
+    p.send({ t: "goto", pos: { slide: 5, step: 0 } }); // pregunta-abierta
+    await a.waitFor((m) => m.t === "state" && m.state.asks["pregunta-abierta"]?.status === "open");
+    a.send({ t: "answer", slideId: "pregunta-abierta", text: "Rojo" });
+    b.send({ t: "answer", slideId: "pregunta-abierta", text: "rojo" });
+    await a.waitFor((m) => m.t === "me" && m.me.answers["pregunta-abierta"] === "Rojo");
+    const shown = await scr.waitFor((m) => m.t === "state" && m.state.asks["pregunta-abierta"]?.total === 2);
+    expect(shown).toMatchObject({ state: { asks: { "pregunta-abierta": { question: "¿Qué palabra describe tu semana?", maxChars: 40, entries: [{ text: "Rojo", count: 2 }] } } } });
+    await a.waitFor((m) => m.t === "state" && m.state.asks["pregunta-abierta"]?.total === 2);
+
+    p.send({ t: "ask-close" });
+    await a.waitFor((m) => m.t === "state" && m.state.asks["pregunta-abierta"]?.status === "closed");
+    a.send({ t: "answer", slideId: "pregunta-abierta", text: "azul" });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "ask-closed" });
+
     p.send({ t: "summary" });
     const sum = await p.waitFor((m) => m.t === "summary");
-    expect(sum).toMatchObject({ summary: { asks: [{ question: "¿Una palabra?", total: 2, entries: [{ text: "Rojo", count: 2 }] }] } });
+    expect(sum).toMatchObject({ summary: { asks: [{ question: "¿Qué palabra describe tu semana?", total: 2, entries: [{ text: "Rojo", count: 2 }] }] } });
   });
 
-  it("refuses an empty answer", async () => {
+  it("refuses an empty answer and the old launch commands", async () => {
     const s = await createSession();
     const p = await presenter(s);
     const a = await audience(s, "Ana");
     await a.waitFor((m) => m.t === "welcome-audience");
     p.send({ t: "start" });
-    p.send({ t: "ask-open", question: "Q", maxChars: 20 });
-    await a.waitFor((m) => m.t === "state" && m.state.ask?.status === "open");
-    a.send({ t: "answer", text: "   " });
+    p.send({ t: "goto", pos: { slide: 5, step: 0 } });
+    await a.waitFor((m) => m.t === "state" && m.state.asks["pregunta-abierta"]?.status === "open");
+    a.send({ t: "answer", slideId: "pregunta-abierta", text: "   " });
     expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "ask-empty" });
+    p.send({ t: "ask-open", question: "Q", maxChars: 20 } as any);
+    expect(await p.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
   });
 });

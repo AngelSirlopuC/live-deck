@@ -9,8 +9,8 @@ export interface AskPanelState {
   readOnly: boolean;
 }
 
-/** Answer box for the free-text question the presenter launched live. */
-export function createAskPanel(onSend: (text: string) => void) {
+/** Answer box for the open-question slide on screen. */
+export function createAskPanel(onSend: (slideId: string, text: string) => void) {
   const question = h("p", { class: "ask-panel-question" });
   // Spellcheck and autocorrect on: the keyboard fixes typos before they split a word on screen.
   const input = h("input", {
@@ -40,8 +40,8 @@ export function createAskPanel(onSend: (text: string) => void) {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text || input.disabled) return;
-    onSend(text);
+    if (!text || input.disabled || !current) return;
+    onSend(current.view.slideId, text);
   });
 
   function update(state: AskPanelState | null) {
@@ -49,9 +49,9 @@ export function createAskPanel(onSend: (text: string) => void) {
     el.hidden = !state;
     if (!state) return;
     const { view, mine, readOnly } = state;
-    // A new question starts with an empty box; otherwise keep what is being typed.
-    if (view.id !== askId) {
-      askId = view.id;
+    // Another question starts from its own answer; otherwise keep what is being typed.
+    if (view.slideId !== askId) {
+      askId = view.slideId;
       input.value = mine ?? "";
     }
     const open = view.status === "open" && !readOnly;

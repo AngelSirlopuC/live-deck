@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ICON_NAMES } from "./icons.ts";
 import { PRESET_NAMES } from "./themes.ts";
+import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "./ask.ts";
 
 // Deck format v1. Every geometric value is normalized (0..1) against a 16:9
 // canvas so the same deck renders identically on a projector and a phone, and
@@ -139,6 +140,15 @@ export const QuizSchema = z
     }
   });
 
+// Open question: the audience answers in a few words; equal answers group as ×N.
+export const AskSchema = z
+  .object({
+    question: z.string().min(1).max(ASK_QUESTION_MAX),
+    // Characters per answer; defaults to ASK_TEXT_DEFAULT.
+    maxChars: z.number().int().min(ASK_TEXT_MIN).max(ASK_TEXT_MAX).optional(),
+  })
+  .strict();
+
 // Layers paint bottom to top: color, gradient, image, pattern, then the dim overlay.
 export const SlideBackgroundSchema = z
   .object({
@@ -155,11 +165,12 @@ export const SlideBackgroundSchema = z
 export const SlideSchema = z
   .object({
     id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
-    layout: z.enum(["free", "quiz"]).optional(),
+    layout: z.enum(["free", "quiz", "ask"]).optional(),
     background: z.union([hex, SlideBackgroundSchema]).optional(),
     notes: z.string().max(5000).optional(),
     elements: z.array(ElementSchema).max(60),
     quiz: QuizSchema.optional(),
+    ask: AskSchema.optional(),
   })
   .strict()
   .superRefine((slide, ctx) => {
@@ -170,6 +181,8 @@ export const SlideSchema = z
     }
     if (slide.layout === "quiz" && !slide.quiz) ctx.addIssue({ code: "custom", message: "quiz layout requires a quiz", path: ["quiz"] });
     if (slide.quiz && slide.layout !== "quiz") ctx.addIssue({ code: "custom", message: "a quiz requires layout \"quiz\"", path: ["layout"] });
+    if (slide.layout === "ask" && !slide.ask) ctx.addIssue({ code: "custom", message: "ask layout requires an ask", path: ["ask"] });
+    if (slide.ask && slide.layout !== "ask") ctx.addIssue({ code: "custom", message: "an ask requires layout \"ask\"", path: ["layout"] });
   });
 
 // With a preset every colour is an optional override; without one, background,
@@ -211,6 +224,7 @@ export type Box = z.infer<typeof BoxSchema>;
 export type TextStyle = z.infer<typeof TextStyleSchema>;
 export type DeckElement = z.infer<typeof ElementSchema>;
 export type Quiz = z.infer<typeof QuizSchema>;
+export type Ask = z.infer<typeof AskSchema>;
 export type Slide = z.infer<typeof SlideSchema>;
 export type SlideBackground = z.infer<typeof SlideBackgroundSchema>;
 export type IconElement = z.infer<typeof IconElementSchema>;

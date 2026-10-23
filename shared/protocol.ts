@@ -48,8 +48,8 @@ export interface SessionSnapshot {
   showScore: boolean;
   /** Top of the leaderboard; null for the audience while showScore is off. */
   leaderboard: LeaderboardRow[] | null;
-  /** Free-text question the presenter launched live; null when none is on screen. */
-  ask: AskView | null;
+  /** Open-question slides the presenter has reached, by slide id. */
+  asks: Record<string, AskView>;
   /** Server clock (epoch ms) when this snapshot was built, to align quiz timers. */
   serverNow: number;
   chat: ChatState;
@@ -153,8 +153,8 @@ export interface PersonalState {
   votes: Record<string, number>;
   score: { correct: number; answered: number };
   rank: { rank: number; of: number } | null;
-  /** This person's answer to the free-text question on screen. */
-  answer: string | null;
+  /** This person's open-question answers, by slide id. */
+  answers: Record<string, string>;
 }
 
 /** Reactions available to the audience: a short set meant for talks. */
@@ -214,7 +214,7 @@ export interface SessionSummary {
     revealed: boolean;
   }>;
   leaderboard: LeaderboardRow[];
-  /** Every free-text question asked, in order. */
+  /** Every open question reached, in the order it opened. */
   asks: Array<{ question: string; maxChars: number; entries: AskEntry[]; total: number }>;
   reactions: Array<{ emoji: string; count: number }>;
 }

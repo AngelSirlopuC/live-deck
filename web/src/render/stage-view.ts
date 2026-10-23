@@ -30,7 +30,7 @@ export class StageView {
   private laserIdle: ReturnType<typeof setTimeout> | undefined;
   private zoom: Zoom = NO_ZOOM;
   private quizState: { view: QuizView | null; opts: QuizOverlayOptions } = { view: null, opts: {} };
-  private ask: AskView | null = null;
+  private asks: Record<string, AskView> = {};
 
   constructor(host: HTMLElement, deck: RenderableDeck, extra: Omit<RenderOptions, "step" | "enterStep"> = {}) {
     this.host = host;
@@ -69,13 +69,18 @@ export class StageView {
     if (!sameSlide) this.effects = [];
     this.applyEffect(false);
     applyQuizView(next, this.quizState.view, this.quizState.opts);
-    applyAskView(next, this.ask);
+    applyAskView(next, this.askFor(pos.slide));
   }
 
-  /** Shows (or removes) the live free-text question over whatever slide is on screen. */
-  setAsk(view: AskView | null) {
-    this.ask = view;
-    if (this.stage) applyAskView(this.stage, view);
+  /** Live answers for open-question slides, by slide id; the slide on screen picks its own. */
+  setAsks(asks: Record<string, AskView>) {
+    this.asks = asks;
+    if (this.stage && this.last) applyAskView(this.stage, this.askFor(this.last.slide));
+  }
+
+  private askFor(slide: number): AskView | null {
+    const id = this.deck.slides[slide]?.id;
+    return id ? (this.asks[id] ?? null) : null;
   }
 
   /** Paints the quiz state of the slide currently shown. */
