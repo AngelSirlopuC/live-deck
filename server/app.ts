@@ -7,6 +7,7 @@ import { publicOrigin } from "./base-url.ts";
 import { Giphy } from "./giphy.ts";
 import { WsHub } from "./realtime/ws-hub.ts";
 import { DECK_ID, DeckStore, listDecks } from "./decks.ts";
+import { createEditorRoutes } from "./editor-api.ts";
 import { SessionRegistry } from "./session/registry.ts";
 import { notFound, safeJoin, sendFile, serveSpa } from "./static.ts";
 
@@ -57,6 +58,7 @@ export function createApp(opts: AppOptions) {
   const now = opts.now ?? Date.now;
   const decks = new DeckStore(opts.decksDir);
   const registry = new SessionRegistry();
+  const editor = createEditorRoutes({ decks, adminKey: opts.adminKey, trustProxy: opts.trustProxy, allowedOrigins: opts.allowedOrigins, json });
 
   const baseUrl = (req: IncomingMessage): string =>
     publicOrigin(req.headers, { publicBaseUrl: opts.publicBaseUrl, trustProxy: opts.trustProxy, ...(opts.lan ? { lan: opts.lan } : {}) });
@@ -79,9 +81,13 @@ export function createApp(opts: AppOptions) {
   };
 
   async function handle(req: IncomingMessage, res: ServerResponse) {
-    const path = new URL(req.url ?? "/", "http://x").pathname;
+    const url = new URL(req.url ?? "/", "http://x");
+    const path = url.pathname;
 
     if (path === "/api/health") return json(res, 200, { ok: true, sessions: registry.size });
+
+    // Authenticated editor API: full deck read/write, deck creation and image assets.
+    if (await editor.handle(req, res, url)) return;
 
     if (path === "/api/decks" && req.method === "GET") {
       if (opts.adminKey && !sameSecret(String(req.headers["x-admin-key"] ?? ""), opts.adminKey)) return json(res, 401, { error: "admin key required" });
