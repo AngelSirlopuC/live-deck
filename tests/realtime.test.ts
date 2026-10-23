@@ -465,3 +465,54 @@ describe("time limit over the wire", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("free-text question", () => {
+  it("launches live, groups answers on every screen, gives each person their answer, and closes", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const scr = new TestClient();
+    await scr.open();
+    scr.send({ t: "hello", role: "presenter", token: s.presenterToken, pin: "2468", surface: "screen" });
+    await scr.waitFor((m) => m.t === "welcome-presenter");
+    const a = await audience(s, "Ana");
+    const b = await audience(s, "Beto");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    await b.waitFor((m) => m.t === "welcome-audience");
+
+    p.send({ t: "ask-open", question: "¿Una palabra?", maxChars: 20 });
+    expect(await p.waitFor((m) => m.t === "error")).toMatchObject({ code: "bad-request" });
+
+    p.send({ t: "start" });
+    p.send({ t: "ask-open", question: "¿Una palabra?", maxChars: 20 });
+    await a.waitFor((m) => m.t === "state" && m.state.ask?.status === "open");
+    a.send({ t: "answer", text: "Rojo" });
+    b.send({ t: "answer", text: "rojo" });
+    await a.waitFor((m) => m.t === "me" && m.me.answer === "Rojo");
+    const shown = await scr.waitFor((m) => m.t === "state" && m.state.ask?.total === 2);
+    expect(shown).toMatchObject({ state: { ask: { question: "¿Una palabra?", maxChars: 20, entries: [{ text: "Rojo", count: 2 }] } } });
+    await a.waitFor((m) => m.t === "state" && m.state.ask?.total === 2);
+
+    p.send({ t: "ask-close" });
+    await a.waitFor((m) => m.t === "state" && m.state.ask?.status === "closed");
+    a.send({ t: "answer", text: "azul" });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "ask-closed" });
+
+    p.send({ t: "ask-clear" });
+    await b.waitFor((m) => m.t === "state" && m.state.ask === null && m.state.status === "live");
+    p.send({ t: "summary" });
+    const sum = await p.waitFor((m) => m.t === "summary");
+    expect(sum).toMatchObject({ summary: { asks: [{ question: "¿Una palabra?", total: 2, entries: [{ text: "Rojo", count: 2 }] }] } });
+  });
+
+  it("refuses an empty answer", async () => {
+    const s = await createSession();
+    const p = await presenter(s);
+    const a = await audience(s, "Ana");
+    await a.waitFor((m) => m.t === "welcome-audience");
+    p.send({ t: "start" });
+    p.send({ t: "ask-open", question: "Q", maxChars: 20 });
+    await a.waitFor((m) => m.t === "state" && m.state.ask?.status === "open");
+    a.send({ t: "answer", text: "   " });
+    expect(await a.waitFor((m) => m.t === "error")).toMatchObject({ code: "ask-empty" });
+  });
+});

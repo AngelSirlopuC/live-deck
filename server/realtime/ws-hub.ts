@@ -254,6 +254,22 @@ export class WsHub {
         this.broadcast(entry);
         if (cmd.data.action === "reveal") this.sendPersonal(entry);
         return;
+      case "ask-open":
+        if (!s.openAsk(cmd.data.question, cmd.data.maxChars)) {
+          return send(client.ws, { t: "error", code: "bad-request", message: "Start the session and write a question first." });
+        }
+        // A new question resets everyone's answer.
+        this.broadcast(entry);
+        this.sendPersonal(entry);
+        return;
+      case "ask-close":
+        s.asks.close();
+        break;
+      case "ask-clear":
+        s.asks.clear();
+        this.broadcast(entry);
+        this.sendPersonal(entry);
+        return;
       case "settings":
         s.setShowScore(cmd.data.showScore);
         this.broadcast(entry);
@@ -321,6 +337,14 @@ export class WsHub {
       case "chat":
         void this.postChat(client, cmd.data);
         return;
+      case "answer": {
+        const result = s.answer(client.id, cmd.data.text);
+        if (result === "closed") return send(client.ws, { t: "error", code: "ask-closed", message: "The question is closed." });
+        if (result === "empty") return send(client.ws, { t: "error", code: "ask-empty", message: "Write an answer first." });
+        send(client.ws, { t: "me", me: s.personal(client.id) });
+        this.scheduleBroadcast(client.entry);
+        return;
+      }
       case "vote":
         if (!s.vote(client.id, cmd.data.slideId, cmd.data.option, this.opts.now())) {
           return send(client.ws, { t: "error", code: "bad-request", message: "Voting is closed." });

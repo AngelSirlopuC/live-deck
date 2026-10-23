@@ -40,13 +40,15 @@ export type PostResult = { ok: true; message: ChatMessage } | { ok: false; reaso
 const RATE_BURST = 3;
 const RATE_REFILL_MS = 2_000;
 
-function cleanText(raw: string): string {
+/** Normalizes user text: no control characters, single spaces, trimmed, at most `max` characters. */
+export function cleanText(raw: string, max: number = CHAT_TEXT_MAX): string {
   return raw
     .normalize("NFC")
     .replace(/[\p{Cc}\p{Cf}]/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, CHAT_TEXT_MAX);
+    .slice(0, max)
+    .trimEnd();
 }
 
 /** Session chat: presenter-controlled mode, moderation, rate limits and bounded history. */

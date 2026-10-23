@@ -1,4 +1,5 @@
 import type { Deck, PublicDeck } from "./deck.ts";
+import type { AskEntry, AskView } from "./ask.ts";
 import type { PersistentEffect } from "./effects.ts";
 import type { Position } from "./nav.ts";
 
@@ -47,6 +48,8 @@ export interface SessionSnapshot {
   showScore: boolean;
   /** Top of the leaderboard; null for the audience while showScore is off. */
   leaderboard: LeaderboardRow[] | null;
+  /** Free-text question the presenter launched live; null when none is on screen. */
+  ask: AskView | null;
   /** Server clock (epoch ms) when this snapshot was built, to align quiz timers. */
   serverNow: number;
   chat: ChatState;
@@ -98,7 +101,9 @@ export type ErrorCode =
   | "chat-muted"
   | "chat-rate"
   | "chat-empty"
-  | "chat-sticker";
+  | "chat-sticker"
+  | "ask-closed"
+  | "ask-empty";
 
 export interface CreateSessionRequest {
   deckId: string;
@@ -148,6 +153,8 @@ export interface PersonalState {
   votes: Record<string, number>;
   score: { correct: number; answered: number };
   rank: { rank: number; of: number } | null;
+  /** This person's answer to the free-text question on screen. */
+  answer: string | null;
 }
 
 /** Reactions available to the audience: a short set meant for talks. */
@@ -207,5 +214,7 @@ export interface SessionSummary {
     revealed: boolean;
   }>;
   leaderboard: LeaderboardRow[];
+  /** Every free-text question asked, in order. */
+  asks: Array<{ question: string; maxChars: number; entries: AskEntry[]; total: number }>;
   reactions: Array<{ emoji: string; count: number }>;
 }

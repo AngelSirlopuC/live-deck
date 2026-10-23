@@ -12,6 +12,7 @@ describe("summary markdown", () => {
       peakAudience: 2,
       quizzes: [{ slideId: "q", question: "¿Sí?", options: ["Uno", "Dos"], counts: [1, 3], total: 4, correctIndex: 1, revealed: true }],
       leaderboard: [{ name: "Ana", correct: 1, answered: 1, rank: 1 }],
+      asks: [],
       reactions: [{ emoji: "👏", count: 7 }],
     });
     expect(md).toContain("# Demo \\| test");

@@ -4,6 +4,7 @@ import { effectRect, type PersistentEffect } from "../../shared/effects.ts";
 import { isAfter, nextPosition, prevPosition, type Position } from "../../shared/nav.ts";
 import { ABANDON_AFTER_MS, NAME_MAX, type Identity, type PersonalState, type SessionSnapshot, type SessionStatus } from "../../shared/protocol.ts";
 import { REACTIONS, type PresenterView, type SessionSummary } from "../../shared/protocol.ts";
+import { AskBook, type AnswerResult } from "./ask.ts";
 import { QuizBook, type ViewerRole } from "./quiz.ts";
 import { Chat, ReactionMeter } from "./social.ts";
 import { pickAlias } from "./aliases.ts";
@@ -58,6 +59,7 @@ export class Session {
   private timeLimitMin: number | null = null;
   private readonly quizzes: QuizBook;
   readonly chat = new Chat();
+  readonly asks = new AskBook();
   readonly reactions = new ReactionMeter();
   private view: PresenterView = { showReactions: false, showReactionCounter: false, showChat: false };
   private readonly identities = new Map<string, Identity>();
@@ -111,6 +113,7 @@ export class Session {
       quizzes: this.quizzes.views(role),
       showScore: this.showScore,
       leaderboard: role === "presenter" || this.showScore ? this.quizzes.leaderboard(name, 10) : null,
+      ask: this.asks.view(),
       serverNow: now,
       chat: this.chat.state,
       presenterView: { ...this.view },
@@ -172,12 +175,25 @@ export class Session {
     return this.quizzes.vote(participantId, slideId, option, now);
   }
 
+  /** Launches a free-text question over the slide; only while live. */
+  openAsk(question: string, maxChars: number): boolean {
+    if (this.status !== "live") return false;
+    return this.asks.open(question, maxChars);
+  }
+
+  /** Records a free-text answer; "closed" when answering is not possible right now. */
+  answer(participantId: string, text: string): AnswerResult {
+    if (this.status !== "live" || this.abandoned || !this.identities.has(participantId)) return "closed";
+    return this.asks.answer(participantId, text);
+  }
+
   personal(participantId: string): PersonalState {
     const name = (id: string) => this.identities.get(id)?.name ?? "?";
     return {
       votes: this.quizzes.myVotes(participantId),
       score: this.quizzes.score(participantId),
       rank: this.showScore ? this.quizzes.rankOf(participantId, name) : null,
+      answer: this.asks.mine(participantId),
     };
   }
 
@@ -195,6 +211,7 @@ export class Session {
         return { slideId: r.slideId, question: quiz.question, options: [...quiz.options], counts: r.counts, total: r.total, correctIndex: r.correctIndex, revealed: r.status === "revealed" };
       }),
       leaderboard: this.quizzes.leaderboard(name, Number.MAX_SAFE_INTEGER),
+      asks: this.asks.results(),
       reactions: REACTIONS.map((emoji, i) => ({ emoji, count: this.reactions.totals()[i] ?? 0 })),
     };
   }
