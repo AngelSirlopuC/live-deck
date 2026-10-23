@@ -50,6 +50,8 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
    - To present for real, they press "Presentar" on the preview (opens the home page with the deck preselected), set a 4–8 digit PIN and open the console. The join QR, quizzes, chat and effects work only in that live session.
    - For an event on a hosted server, publish it with `npm run publish:deck -- <id>` (needs `LIVE_DECK_PUBLISH_TARGET` in `.env`; add `--dry-run` first). It validates again and copies only that deck. Never publish without the user asking.
 
+After the deck validates, mention that they can fine-tune it by hand at `/edit/<id>` (dev: `http://localhost:5180/edit/<id>`): move and resize elements, edit text in place, change the theme and save. If they edited it there, read `deck.json` again before changing it, because the file on disk is the source of truth.
+
 `npm run deck -- <command>` is equivalent to `node bin/live-deck.ts <command>`. Requires Node >= 24.
 
 ## Importing designed slides

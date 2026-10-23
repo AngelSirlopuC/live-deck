@@ -27,7 +27,7 @@ Unlike poll tools that sit beside the slides, the slides themselves are the live
 
 - Rooms with a projector; attendees on mixed phones over venue Wi-Fi.
 - Up to ~200 attendees per session in the MVP.
-- Decks are JSON files authored by a Claude skill; a web editor comes later.
+- Decks are JSON files authored by a Claude skill, imported from images, or edited by hand in the browser editor at `/edit/<id>`.
 - Sessions are ephemeral: nothing persists after the presenter ends it except a summary the presenter downloads.
 
 ## Capabilities and Constraints
