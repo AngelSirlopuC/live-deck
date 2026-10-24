@@ -143,7 +143,8 @@ describe("live-deck new", () => {
     expect(v.all).not.toMatch(/warning/);
     // Without --preset the template keeps its plain colours, as before.
     expect(deck.theme).toEqual({ background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" });
-    expect(deck.slides[0].elements.find((e: any) => e.id === "subtitle").style.color).toBe("#9aa3b2");
+    expect(deck.slides[0].elements.find((e: any) => e.id === "subtitle").style.color).toBe("muted");
+    expect(deck.slides[0].elements.find((e: any) => e.id === "qr").style).toEqual({ background: "text", color: "background" });
   });
 
   it("scaffolds with --preset and --mode, letting the preset colour the template", () => {

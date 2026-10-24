@@ -12,9 +12,27 @@ Source of truth: `shared/deck.ts`. Every object is strict: unknown keys fail val
 | `motion` | `"calm"` \| `"lively"` \| `"snappy"` \| `"none"` | Optional, default `calm`. One motion style for the whole deck: how elements enter and how slides change. See "Motion" in `SKILL.md`. |
 | `slides` | Slide[] | Required, 1–200. Slide ids unique. |
 
+## Colors
+
+Two kinds of color value exist:
+
+- **hex**: `#` + 3–8 hex digits (`"#c2410c"`). Theme-level colors (`theme.background`, `foreground`, `accent`, `muted`, `surface`, `palette`, `art.from/to`) are always hex.
+- **theme token**: a role of the current theme. Allowed on every element and slide color field (text `color`/`background`, shape `fill`/`stroke`, icon `color`/`background`, chart `color`, decor `color`, qr `color`/`background`, slide `background` and its `color` and gradient `from`/`to`). A token follows the preset and the mode, so the deck recolors when the theme changes; a hex does not.
+
+| Token | Resolves to | Use it for |
+| --- | --- | --- |
+| `"text"` | theme foreground | body copy, strokes, the QR tile (`background: "text"`) |
+| `"muted"` | theme muted | subtitles, captions, arrows, secondary lines |
+| `"accent"` | theme accent | kickers, big numbers, highlighted tiles, icon backgrounds |
+| `"surface"` | theme surface (card color) | hand-made cards and panels (`card: true` already uses it) |
+| `"background"` | theme background (even on a slide that paints its own ground) | text on an inverted element or slide, the QR modules (`color: "background"`) |
+| `"on-accent"` | text color that reads on the accent | text or icons sitting on an `accent` fill |
+
+Write tokens for every color that belongs to the theme. Write a hex only for a brand color the user gave you, or inside `theme`. Any other string (`"red"`, `"var(--x)"`, `"primary"`) fails validation.
+
 ## Theme
 
-Colors are hex: `#` + 3–8 hex digits.
+Theme colors are hex: `#` + 3–8 hex digits (tokens are for elements and slides, not for the theme itself).
 
 | Field | Type | Rules |
 | --- | --- | --- |
@@ -42,7 +60,7 @@ Colors are hex: `#` + 3–8 hex digits.
 | --- | --- | --- |
 | `id` | string | Required, `[A-Za-z0-9_-]{1,40}`, unique in the deck. |
 | `layout` | `"free"` \| `"quiz"` \| `"ask"` | Optional, default free. `"quiz"` requires `quiz`, and `quiz` requires `"quiz"`. `"ask"` requires `ask`, and `ask` requires `"ask"`. |
-| `background` | hex \| Background | Optional, overrides the theme background. See below. |
+| `background` | hex \| token \| Background | Optional, overrides the theme background. See below. |
 | `notes` | string | Optional (always set it), max 5000 chars. Presenter-only; never sent to the audience. |
 | `elements` | Element[] | Required (use `[]` on quiz and open-question slides), max 60. Element ids unique per slide. |
 | `quiz` | Quiz | Only with `layout: "quiz"`. |
@@ -50,12 +68,12 @@ Colors are hex: `#` + 3–8 hex digits.
 
 ### Slide background object
 
-A hex string still works (`"background": "#0b0d12"`). The object form (all fields optional, strict):
+A color string still works (`"background": "accent"` or `"#0b0d12"`). The object form (all fields optional, strict):
 
 | Field | Type | Rules |
 | --- | --- | --- |
-| `color` | hex | Solid base color. |
-| `gradient` | `{ "from": hex, "to": hex, "angle"?: number }` | Linear gradient; `angle` 0–360 (degrees). |
+| `color` | hex \| token | Solid base color. |
+| `gradient` | `{ "from": hex \| token, "to": hex \| token, "angle"?: number }` | Linear gradient; `angle` 0–360 (degrees). |
 | `image` | asset src | Same rules as image `src` (`https://…` or `assets/<file>`, no `..`). Covers the slide. |
 | `dim` | number 0–0.9 | Darkens the image so text stays readable. Use 0.4–0.6 under text. |
 | `pattern` | `"dots"` \| `"grid"` \| `"lines"` \| `"noise"` | Subtle texture over the color/gradient. |
@@ -85,11 +103,11 @@ Imported slides (`live-deck import`) use exactly this field: `"background": { "i
   - `fontWeight` 400 \| 500 \| 600 \| 700 \| 800
   - `font` `"display"` \| `"body"` \| `"mono"`
   - `italic` boolean
-  - `color` hex
+  - `color` hex or token (see "Colors")
   - `align` `"left"` \| `"center"` \| `"right"`
   - `valign` `"top"` \| `"middle"` \| `"bottom"`
   - `lineHeight` 0.8–3
-  - `background` hex (card fill)
+  - `background` hex or token (hand-made card fill; `"surface"` matches the theme cards)
   - `radius` 0–540 (px)
   - `padding` 0–200 (px)
   - `card` boolean: draws the preset card (surface color, radius, border, shadow). Do not combine with `background` or `radius`; let the preset decide.
@@ -107,12 +125,12 @@ Imported slides (`live-deck import`) use exactly this field: `"background": { "i
 ### shape
 
 - `shape`: `"rect"` \| `"ellipse"` \| `"line"`. A horizontal line uses `h: 0`.
-- `style` (optional): `fill` hex, `stroke` hex, `strokeWidth` 0–40, `radius` 0–540.
+- `style` (optional): `fill` hex or token, `stroke` hex or token, `strokeWidth` 0–40, `radius` 0–540.
 
 ### qr
 
 Renders the session join QR and URL at runtime. No payload.
-- `style` (optional): only `color` and `background` (hex). Use a light background with dark color for scanability.
+- `style` (optional): only `color` and `background` (hex or token). The default is already `background: "text"`, `color: "background"` (a tile in the text color with modules in the ground color), which scans well on both light and dark themes; set `background: "#ffffff"`, `color: "#000000"` only over a photo.
 - Put one on slide 1. Keep it at least 0.25 wide and roughly square on screen (`h ≈ w × 16/9`).
 
 ### icon
@@ -120,7 +138,7 @@ Renders the session join QR and URL at runtime. No payload.
 A curated Lucide icon. The authoritative list is `ICON_NAMES` in `shared/icons.ts` (~80 kebab-case names); any other name fails validation. Check the file when unsure.
 
 - `name`: an `ICON_NAMES` entry, e.g. `"rocket"`.
-- `style` (optional): `color` hex, `background` hex (a filled tile behind the icon), `strokeWidth` 1–3, `radius` px (rounds the background tile).
+- `style` (optional): `color` hex or token, `background` hex or token (a filled tile behind the icon; `"accent"` with `color: "on-accent"` is the usual pair), `strokeWidth` 1–3, `radius` px (rounds the background tile).
 - Default color: the preset accent, or the text color when the accent is too faint on its ground (under 3:1, e.g. yellow on light paper in `brutalista`). Set `color` only to force a specific hue.
 - Keep the box roughly square on screen: `h ≈ w × 16/9` (e.g. `w: 0.08, h: 0.142`).
 
@@ -142,7 +160,7 @@ Simple data chart rendered as SVG. Use it when the content has 2–8 real number
 - `kind`: `"bar"` \| `"donut"`.
 - `data`: array of `{ "label": string (max 40 chars), "value": number >= 0 }`. Bar: 1–8 points, one series. Donut: 2–6 slices.
 - `unit` (optional): string, max 8 chars, appended to values (`"%"`, `" h"`, `"k"`).
-- `style` (optional): only `color` hex (bar color; default accent). Donut uses the preset's categorical palette in fixed order.
+- `style` (optional): only `color` hex or token (bar color; default accent). Donut uses the preset's categorical palette in fixed order.
 - Bar shows value labels on the bars and no legend. Donut shows a legend with values and the total in the center.
 - Give it room: at least `w: 0.4, h: 0.5`.
 
@@ -151,7 +169,7 @@ Simple data chart rendered as SVG. Use it when the content has 2–8 real number
 Built-in decorative SVG shape. It carries no content: never put meaning in decor.
 
 - `shape`: `"blob"` \| `"wave"` \| `"dots"` \| `"rings"` \| `"arc"` \| `"squiggle"` \| `"star"` \| `"grid"`.
-- `style` (optional): `color` hex (default accent), `opacity` 0.05–1.
+- `style` (optional): `color` hex or token (default accent), `opacity` 0.05–1.
 - Place it before text in `elements` so it draws behind; keep it off the text, usually hugging a corner or an edge (boxes cannot leave the canvas). One or two per slide at most.
 
 ## Quiz

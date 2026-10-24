@@ -27,7 +27,7 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 1. Pick exactly one preset (`estudio`, `editorial`, `neon`, `papel`, `brutalista`, `corporativo`) from the topic, the audience and the venue, and pick its mode: `light` or `dark`. Every preset has both. Use the decision tables in `references/themes.md`. Never default to dark: choose `dark` only for a dark auditorium, an LED wall, an evening or gaming event, or when the user asks for it; an unknown venue gets `light`.
 2. When the user describes a look (brand colors, "minimalista", "estilo revista", "retro") or no preset fits, build a custom theme from the prompt on top of the closest preset: colors, fonts from the allowlist, card, heading, art, pattern and palette. Follow "Custom theme from the prompt" in `references/themes.md`.
 3. Write one line in your plan and to the user: `Preset: <name>, mode: <light|dark>, because <reason>.` (or `Theme: custom from <preset> <mode> — <summary>, because <reason>.`).
-4. Set `"theme": { "preset": "<name>", "mode": "<light|dark>" }` plus any custom fields. Do not hand-color cards; use `card: true`.
+4. Set `"theme": { "preset": "<name>", "mode": "<light|dark>" }` plus any custom fields. Do not hand-color cards; use `card: true`. Every other element color is a theme token (`"text"`, `"muted"`, `"accent"`, `"surface"`, `"background"`, `"on-accent"`), so the deck recolors when the preset or mode changes.
 5. Plan a layout per slide from the recipes before writing JSON, then check the plan against the composition rules below.
 
 ## Composition variety
@@ -79,7 +79,8 @@ Use this when the user already designed slides in PowerPoint, Keynote, Google Sl
 - Open-question slides: `"layout": "ask"`, `elements: []`, and an `ask` with `question` (1–200 chars, not blank) and optional integer `maxChars` 10–100 (characters per answer, default 40). The audience answers in a few words from their phone; equal answers group ignoring case, accents and spacing and show most repeated first with `×N`. Answers open when the presenter reaches the slide; the presenter can close them. An `ask` without `layout: "ask"` (or vice versa) is invalid. Keep the question short and answerable in one to three words; use a quiz instead when there is a right answer.
 - Images: `src` is `https://…` or `assets/<file>`; put local files in `decks/<id>/assets/`. Never use `..`. Always set `alt`.
 - Every slide has speaker `notes` (what to say, what to do: reveal, focus, zoom).
-- Set `theme` once at deck level, normally just `{ "preset": "<name>" }`. Without a preset, `background`, `foreground` and `accent` are required. Colors are hex (`#rrggbb`).
+- Set `theme` once at deck level, normally just `{ "preset": "<name>", "mode": "<light|dark>" }`. Without a preset, `background`, `foreground` and `accent` are required. Theme colors are hex (`#rrggbb`).
+- Use theme tokens for colors: element and slide color fields take `"text"`, `"muted"`, `"accent"`, `"surface"`, `"background"` or `"on-accent"` (table in `references/deck-format.md`, "Colors"). Write a hex only for a brand color the user gave you, or inside `theme`. Never copy a preset's hex into an element: it stops following the theme.
 - Only the built-in element types exist: `text`, `image`, `shape`, `qr`, `icon`, `chart`, `decor`. Free HTML or SVG is not allowed (deck content reaches audience phones). Icon names must come from `ICON_NAMES` in `shared/icons.ts`.
 - Reveal content step by step with `fragment: 1..20` (element appears on that step). Keep to <= 6 steps per slide.
 
@@ -123,11 +124,11 @@ Preset: `estudio`, because it is a general tech-safety talk for a mixed audience
   "theme": { "preset": "estudio" },
   "slides": [
     { "id": "portada", "notes": "Saluda y pide que escaneen el QR.",
-      "background": { "gradient": { "from": "#1b1f3a", "to": "#0b0d12", "angle": 135 } },
+      "background": { "gradient": { "from": "surface", "to": "background", "angle": 135 } },
       "elements": [
       { "id": "decor", "type": "decor", "shape": "rings", "box": { "x": 0.0, "y": 0.55, "w": 0.26, "h": 0.45 }, "style": { "opacity": 0.25 } },
       { "id": "titulo", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Contraseñas que nadie adivina", "style": { "fontSize": 96, "fontWeight": 800, "font": "display", "lineHeight": 1.05, "tracking": -0.02 } },
-      { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "#f4f1ea", "color": "#10131a" } }
+      { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "text", "color": "background" } }
     ] },
     { "id": "reglas", "notes": "Cada regla aparece con 'siguiente'.", "elements": [
       { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.1, "w": 0.86, "h": 0.14 }, "text": "Tres reglas", "style": { "fontSize": 80, "fontWeight": 800, "font": "display" } },
@@ -140,7 +141,7 @@ Preset: `estudio`, because it is a general tech-safety talk for a mixed audience
     ] },
     { "id": "quiz-largo", "layout": "quiz", "notes": "Revela tras 30 s.", "elements": [],
       "quiz": { "question": "¿Cuál es más difícil de adivinar?", "options": ["P@ssw0rd!", "caballo-bateria-grapa-correcto"], "correctIndex": 1, "display": "secret", "timerSec": 30 } },
-    { "id": "cierre", "notes": "Agradece y finaliza la sesión.", "background": { "color": "#0b0d12", "pattern": "dots" }, "elements": [
+    { "id": "cierre", "notes": "Agradece y finaliza la sesión.", "background": { "color": "surface", "pattern": "dots" }, "elements": [
       { "id": "decor", "type": "decor", "shape": "blob", "box": { "x": 0.7, "y": 0.55, "w": 0.3, "h": 0.45 }, "style": { "opacity": 0.3 } },
       { "id": "gracias", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.86, "h": 0.26 }, "text": "Gracias", "style": { "fontSize": 180, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle", "mark": true } }
     ] }

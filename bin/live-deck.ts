@@ -128,8 +128,9 @@ function validate(args: string[]): number {
 /** The plain dark colours the template has always shipped; a preset replaces them and colours the subtitle itself. */
 const PLAIN_THEME: Theme = { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" };
 
+// Element colours are theme tokens (shared/theme-colors.ts), so the template follows whatever theme the deck ends up with.
 function template(title: string, theme: Theme = PLAIN_THEME): Deck {
-  const subtitleColor = theme === PLAIN_THEME ? { color: PLAIN_THEME.muted } : {};
+  const subtitleColor = theme === PLAIN_THEME ? { color: "muted" } : {};
   return {
     version: 1,
     title,
@@ -141,7 +142,7 @@ function template(title: string, theme: Theme = PLAIN_THEME): Deck {
         elements: [
           { id: "title", type: "text", box: { x: 0.07, y: 0.22, w: 0.52, h: 0.36 }, text: title, style: { fontSize: 96, fontWeight: 800, font: "display", lineHeight: 1.05 } },
           { id: "subtitle", type: "text", box: { x: 0.07, y: 0.64, w: 0.48, h: 0.12 }, text: "Scan the code to join from your phone.", style: { fontSize: 36, ...subtitleColor, lineHeight: 1.3 } },
-          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 }, style: { background: "#f4f1ea", color: "#10131a" } },
+          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 }, style: { background: "text", color: "background" } },
         ],
       },
       {

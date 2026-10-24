@@ -80,6 +80,7 @@ A projector in a bright room washes out dark backgrounds and thin type: that is 
 
 ## Rules for every preset
 
+- Use theme tokens for colors, never a preset's hex: `"accent"` for kickers and numbers, `"muted"` for captions, `"surface"` for hand-made panels, `"on-accent"` for text on an accent fill, `"text"`/`"background"` for inverted elements and the QR. A hex belongs only inside `theme` or to a brand color the user gave. Tokens are what makes a preset or mode switch recolor the whole deck (table in `deck-format.md`, "Colors").
 - Do not hand-set `background`/`radius` on text cards; use `card: true` so the preset decides.
 - Do not mix presets' looks: one accent, one display font, one card style per deck.
 - Contrast first: text over images needs `dim` >= 0.4; small text never sits on decor.
@@ -105,7 +106,7 @@ When the user describes a look ("colores de mi marca", "estilo revista de moda",
 Steps:
 
 1. Start from the closest preset (it supplies everything you do not set) and pick the mode with the table above. Without a preset, `background`, `foreground` and `accent` are required.
-2. Colors: one accent, a ground, a text color and a muted color. Derive them from the brand or the mood in the prompt. Contrast rules, checked by `validate` as `warning:` lines: text on ground ≥ 4.5:1 (aim for 7:1), muted ≥ 3:1 (aim for 4.5:1), accent ≥ 3:1, every palette color ≥ 3:1 on the ground.
+2. Colors: one accent, a ground, a text color and a muted color (hex, inside `theme`; elements then reference them through tokens). Derive them from the brand or the mood in the prompt. Contrast rules, checked by `validate` as `warning:` lines: text on ground ≥ 4.5:1 (aim for 7:1), muted ≥ 3:1 (aim for 4.5:1), accent ≥ 3:1, every palette color ≥ 3:1 on the ground.
 3. Fonts: pick `display` and `body` only from this list (anything else is rejected):
    - grotesk: Bricolage Grotesque, Instrument Sans, Inter Tight, Space Grotesk, Archivo
    - humanist: Plus Jakarta Sans, Manrope · rounded: Nunito, Fredoka · geometric: Outfit
