@@ -83,9 +83,11 @@ Use this when the user already designed slides in PowerPoint, Keynote, Google Sl
 - Only the built-in element types exist: `text`, `image`, `shape`, `qr`, `icon`, `chart`, `decor`. Free HTML or SVG is not allowed (deck content reaches audience phones). Icon names must come from `ICON_NAMES` in `shared/icons.ts`.
 - Reveal content step by step with `fragment: 1..20` (element appears on that step). Keep to <= 6 steps per slide.
 
+- No more than ~40 words of visible text per slide; move detail into `notes`.
+
 ## Motion (you decide it; people never set animations by hand)
 
-Animations are not authored per element. The player derives each element's entrance from its type (text rises, bars grow, donuts sweep, lines draw, images settle, icons pop, decorations fade) and staggers them in reading order. You make two decisions:
+Animations are not authored per element. The player derives each element's entrance from its type (text rises, bars grow, donuts sweep, lines draw, images settle, icons pop, decorations and the QR fade) and staggers them in reading order. You make two decisions:
 
 1. **Deck motion style**, one line in the plan: `Motion: <style>, because <reason>.`
 
@@ -99,7 +101,6 @@ Animations are not authored per element. The player derives each element's entra
 2. **Steps (`fragment`)**: reveal only when the order carries meaning. Use steps for: lists the speaker comments one by one, a process or timeline, a build-up to a conclusion, a question before its answer, a chart before its takeaway. Do not use steps for: titles, kickers, section breaks, a single idea, decoration, the QR, quiz and open-question slides. Group an icon with its label on the same step. Keep the heading always visible. Order steps in reading order (top to bottom, left to right) unless the argument needs another order.
 
 The editor shows no animation or step controls, so the deck you write is the final word on motion. If the user wants a different feel, change `motion` or the steps yourself.
-- No more than ~40 words of visible text per slide; move detail into `notes`.
 
 ## Converting existing material
 
