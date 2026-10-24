@@ -372,7 +372,8 @@ function renderQuiz(slide: PublicSlide, opts: RenderOptions): HTMLElement {
   wrap.className = "quiz";
   wrap.dataset.optionCount = String(quiz.options.length);
   wrap.dataset.results = quiz.results ?? "ranking";
-  wrap.dataset.view = "grid";
+  // Ranking results read as one vertical list from the start; only "grid" uses two columns. Zones keep their designed spots.
+  wrap.dataset.view = !quiz.zones && wrap.dataset.results === "ranking" ? "ranking" : "grid";
   if (quiz.zones) return renderZoneQuiz(wrap, quiz.zones, quiz.options, opts);
 
   const question = document.createElement("h2");

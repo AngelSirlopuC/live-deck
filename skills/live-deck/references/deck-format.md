@@ -181,7 +181,7 @@ Built-in decorative SVG shape. It carries no content: never put meaning in decor
 | `correctIndex` | integer | 0-based, must be < options length. Exactly one correct answer. |
 | `display` | `"live"` \| `"secret"` | live: votes visible while voting. secret: hidden until the presenter reveals. |
 | `timerSec` | integer | Optional, 5–600. |
-| `results` | `"ranking"` \| `"grid"` | Optional. How visible results show: `"ranking"` (default) re-orders options by votes and highlights first place; `"grid"` keeps the fixed A–F layout. |
+| `results` | `"ranking"` \| `"grid"` | Optional. Layout of the options: `"ranking"` (default) is one vertical list from the start, re-ordered by votes with first place highlighted once results are visible; `"grid"` keeps the fixed A–F layout in two columns. |
 | `zones` | `{ x, y, w, h }[]` | Optional. Zone quiz on a designed image: normalized boxes with the same rules as element boxes (0..1, `x + w <= 1`, `y + h <= 1`), exactly one per option in option order. `zones.length` must equal `options.length` (error path `quiz.zones`). |
 
 ### Zone quizzes (`quiz.zones`)

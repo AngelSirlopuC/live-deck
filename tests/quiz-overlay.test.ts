@@ -73,15 +73,32 @@ describe("ranking view", () => {
     expect(opts[1]!.querySelector(".quiz-rank")!.textContent).toBe("1º");
   });
 
-  it("keeps the A-D grid while results are hidden, and with results: grid", () => {
+  it("results: ranking is one vertical column from the start, before any vote and while results are hidden", () => {
     const stage = renderSlide(rankDeck, 0, { step: 0 });
+    expect(stage.querySelector<HTMLElement>(".quiz")!.dataset.view).toBe("ranking");
     applyQuizView(stage, { slideId: "q", status: "open", counts: null, total: 3, correctIndex: null, endsAt: null });
-    expect(stage.querySelector<HTMLElement>(".quiz")!.dataset.view).toBe("grid");
+    const quiz = stage.querySelector<HTMLElement>(".quiz")!;
+    expect(quiz.dataset.view).toBe("ranking");
+    // No counts yet: keep A, B, C order and show no rank.
+    const opts = [...stage.querySelectorAll<HTMLElement>("[data-option-index]")];
+    expect(opts.map((o) => o.style.order)).toEqual(["", "", ""]);
+    expect(opts.map((o) => o.querySelector(".quiz-rank")!.textContent)).toEqual(["", "", ""]);
+  });
+
+  it("results: grid keeps two columns before and after votes", () => {
     const gridDeck = structuredClone(rankDeck);
     gridDeck.slides[0]!.quiz!.results = "grid";
     const g = renderSlide(gridDeck, 0, { step: 0 });
+    expect(g.querySelector<HTMLElement>(".quiz")!.dataset.view).toBe("grid");
     applyQuizView(g, { slideId: "q", status: "open", counts: [1, 4, 2], total: 7, correctIndex: null, endsAt: null });
     expect(g.querySelector<HTMLElement>(".quiz")!.dataset.view).toBe("grid");
+  });
+
+  it("an empty rank slot takes no space before votes", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const css = readFileSync(join(process.cwd(), "web/src/styles/stage.css"), "utf8");
+    expect(css).toMatch(/\.quiz\[data-view="ranking"\] \.quiz-rank:empty\s*\{[^}]*display:\s*none/);
   });
 });
 

@@ -727,6 +727,10 @@
   display: block;
 }
 
+.quiz[data-view="ranking"] .quiz-rank:empty {
+  display: none;
+}
+
 .quiz[data-view="ranking"][data-option-count="5"] .quiz-option,
 .quiz[data-view="ranking"][data-option-count="6"] .quiz-option {
   padding-block: 8px;
