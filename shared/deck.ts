@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ICON_NAMES } from "./icons.ts";
 import { FONT_NAMES } from "./fonts.ts";
 import { PRESET_NAMES } from "./themes.ts";
+import { MOTION_STYLES } from "./motion.ts";
 import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "./ask.ts";
 
 // Deck format v1. Every geometric value is normalized (0..1) against a 16:9
@@ -243,6 +244,9 @@ export const DeckSchema = z
     version: z.literal(1),
     title: z.string().min(1).max(200),
     theme: ThemeSchema.optional(),
+    // Motion style of the whole deck; the renderer derives every element's
+    // entrance from its type, so no element carries an animation field.
+    motion: z.enum(MOTION_STYLES).optional(),
     slides: z.array(SlideSchema).min(1).max(200),
   })
   .strict()

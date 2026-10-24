@@ -1,6 +1,7 @@
 import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
 import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
+import { DEFAULT_MOTION, groupEntrances, type Entrance } from "../../../shared/motion.ts";
 import { contrastRatio, fontStack, resolveThemeSpec, type ThemeSpec } from "../../../shared/themes.ts";
 import { renderAsk } from "./ask-overlay.ts";
 import { renderChart } from "./charts.ts";
@@ -21,8 +22,10 @@ export interface RenderOptions {
   qrSvg?: string;
   /** Base URL for "assets/…" image sources. */
   assetBase?: string;
-  /** Fragment step that was just revealed; its elements get an enter animation. */
+  /** Fragment step that was just revealed; its elements play their derived entrance. */
   enterStep?: number;
+  /** The slide was just entered; always-visible elements play their derived entrance. */
+  enterSlide?: boolean;
   /** Authoring aid for the preview page: dashed outlines with the option letter on quiz zones. */
   showZones?: boolean;
 }
@@ -46,6 +49,8 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   stage.style.setProperty("--theme-accent", theme.colors.accent);
   stage.style.setProperty("--theme-muted", theme.colors.muted);
   stage.dataset.mode = theme.mode;
+  const motion = deck.motion ?? DEFAULT_MOTION;
+  stage.dataset.motion = motion;
   // Plain colour decks (no preset, no custom fields) keep today's minimal variables.
   if (theme.plain) {
     if (deck.theme?.surface) stage.style.setProperty("--theme-surface", deck.theme.surface);
@@ -61,13 +66,37 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   // effects layer (focus mask, ripples) stays in stage coordinates.
   const layer = document.createElement("div");
   layer.className = "stage-layer";
-  for (const el of slide.elements) layer.append(renderElement(el, opts, theme));
+  const entrances = plannedEntrances(slide.elements, opts, motion);
+  for (const el of slide.elements) layer.append(renderElement(el, opts, theme, entrances.get(el.id)));
   if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide, opts));
   if (slide.layout === "ask" && slide.ask) layer.append(renderAsk(slide.ask.question));
   const fx = document.createElement("div");
   fx.className = "stage-fx";
   stage.append(layer, fx);
   return stage;
+}
+
+/**
+ * Entrances to play on this render: the always-visible elements when the slide
+ * was just entered, and the elements of the step that was just revealed. Each
+ * group staggers on its own, in reading order. Nothing is planned otherwise, so
+ * the editor canvas, thumbnails and print export render a still slide.
+ */
+function plannedEntrances(elements: readonly DeckElement[], opts: RenderOptions, motion: NonNullable<RenderableDeck["motion"]>): Map<string, Entrance> {
+  const plan = new Map<string, Entrance>();
+  if (opts.enterSlide) for (const e of groupEntrances(elements.filter((el) => el.fragment === undefined), motion)) plan.set(...e);
+  if (opts.enterStep !== undefined) for (const e of groupEntrances(elements.filter((el) => el.fragment === opts.enterStep), motion)) plan.set(...e);
+  return plan;
+}
+
+/** Marks a node to play its entrance: one class per kind, timing as custom properties. */
+function applyEntrance(node: HTMLElement, entrance: Entrance) {
+  node.classList.add("enter", `enter-${entrance.kind}`);
+  node.style.setProperty("--enter-delay", `${entrance.delayMs}ms`);
+  node.style.setProperty("--enter-duration", `${entrance.durationMs}ms`);
+  node.style.setProperty("--enter-ease", entrance.ease);
+  // Bars grow one after another from the baseline; the index drives each bar's delay.
+  if (entrance.kind === "grow") node.querySelectorAll<SVGElement>(".chart-bar").forEach((bar, i) => bar.style.setProperty("--bar-index", String(i)));
 }
 
 /** Theme tokens on the stage: fonts, card, heading, surface and on-accent text. */
@@ -175,13 +204,12 @@ function applyText(node: HTMLElement, style: TextStyle | undefined) {
   if (style.tracking !== undefined) node.style.letterSpacing = `${style.tracking}em`;
 }
 
-function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec): HTMLElement {
+function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, entrance?: Entrance): HTMLElement {
   const node = document.createElement("div");
   place(node, el);
   if (el.fragment !== undefined) {
     node.dataset.fragment = String(el.fragment);
     node.hidden = el.fragment > opts.step;
-    if (el.fragment === opts.enterStep) node.classList.add("enter");
   }
 
   switch (el.type) {
@@ -269,6 +297,7 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec): 
       break;
     }
   }
+  if (entrance && !node.hidden) applyEntrance(node, entrance);
   return node;
 }
 

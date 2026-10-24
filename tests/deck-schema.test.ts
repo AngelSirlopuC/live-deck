@@ -341,3 +341,17 @@ describe("zone quizzes", () => {
     expect(JSON.stringify(quiz)).not.toContain("correctIndex");
   });
 });
+
+describe("deck motion", () => {
+  it("accepts the four motion styles, keeps them in the public deck, and rejects anything else", () => {
+    for (const motion of ["calm", "lively", "snappy", "none"]) {
+      const parsed = parseDeck({ ...minimal(), motion });
+      if (!parsed.ok) throw new Error(parsed.error);
+      expect(parsed.deck.motion).toBe(motion);
+      expect(publicDeck(parsed.deck).motion).toBe(motion);
+    }
+    expect(parseDeck(minimal()).ok).toBe(true);
+    for (const motion of ["bouncy", "", 1, null]) expect(parseDeck({ ...minimal(), motion }).ok).toBe(false);
+    expect(parseDeck({ ...minimal(), slides: [{ id: "s", elements: [{ id: "e", type: "text", box: { x: 0, y: 0, w: 1, h: 1 }, text: "x", animation: "pop" }] }] }).ok).toBe(false);
+  });
+});

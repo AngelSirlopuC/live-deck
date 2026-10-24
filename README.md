@@ -182,7 +182,10 @@ creates an empty deck and opens it). The editor works on the same `deck.json`:
   icons, charts, decorations and the join QR.
 - **Inspector**: every field of the selected element, the slide (layout,
   background, notes, quiz and open-question settings) and the design (title,
-  preset, colour overrides with a contrast hint).
+  preset, mode, fonts, card, heading, art, pattern and palette with contrast
+  hints). There are no animation controls: the AI picks the deck's motion
+  style and the step each element appears in; the canvas shows those steps as
+  read-only badges and keeps them when you edit.
 - **Save** with ⌘S. The server validates the deck before writing it and refuses
   to overwrite changes saved from another tab. Undo and redo with ⌘Z / ⇧⌘Z,
   every action with ⌘K, and **Exportar PDF** prints one slide per page.

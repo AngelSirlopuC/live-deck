@@ -20,13 +20,38 @@
   line-height: 1.25;
 }
 
+/* Slide transition, by the deck's motion style (data-motion on the stage).
+   The stage keeps its inline fit transform, so only its opacity animates;
+   lively adds a tiny settle on the content layer instead. */
 .stage-enter {
-  animation: stage-in 260ms ease-out;
+  animation: stage-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stage-enter[data-motion="lively"] {
+  animation-duration: 300ms;
+}
+
+.stage-enter[data-motion="lively"] .stage-layer {
+  animation: layer-in 300ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.stage-enter[data-motion="snappy"] {
+  animation-duration: 160ms;
+}
+
+.stage-enter[data-motion="none"] {
+  animation: none;
 }
 
 @keyframes stage-in {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes layer-in {
+  from {
+    transform: scale(0.985);
   }
 }
 
@@ -40,14 +65,141 @@
   display: none;
 }
 
+/* Entrances. The motion engine (shared/motion.ts) derives one family per
+   element and sets --enter-delay / --enter-duration / --enter-ease inline;
+   every keyframe below moves transform and opacity only. `backwards` holds
+   the first frame through the delay so nothing flashes before it arrives,
+   and the resting state is the plain element, so disabled animations still
+   show everything. */
 .el.enter {
-  animation: fragment-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-duration: var(--enter-duration, 560ms);
+  animation-delay: var(--enter-delay, 0ms);
+  animation-timing-function: var(--enter-ease, cubic-bezier(0.16, 1, 0.3, 1));
+  animation-fill-mode: backwards;
 }
 
-@keyframes fragment-in {
+.el.enter-rise {
+  animation-name: enter-rise;
+}
+
+.el.enter-rise-lg {
+  animation-name: enter-rise-lg;
+}
+
+.el.enter-fade,
+.el.enter-grow,
+.el.enter-sweep {
+  animation-name: enter-fade;
+}
+
+.el.enter-fade-scale {
+  animation-name: enter-fade-scale;
+}
+
+.el.enter-settle {
+  animation-name: enter-settle;
+}
+
+.el.enter-pop {
+  animation-name: enter-pop;
+}
+
+.el.enter-draw {
+  transform-origin: left center;
+  animation-name: enter-draw;
+}
+
+/* Bars grow from the baseline one after another while the labels fade in. */
+.el.enter-grow .chart-bar {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: enter-grow var(--enter-duration, 560ms) var(--enter-ease, cubic-bezier(0.16, 1, 0.3, 1)) calc(var(--enter-delay, 0ms) + var(--bar-index, 0) * 60ms) backwards;
+}
+
+/* The donut ring sweeps a quarter turn into place while the legend fades in. */
+.el.enter-sweep .chart-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: enter-sweep var(--enter-duration, 560ms) var(--enter-ease, cubic-bezier(0.16, 1, 0.3, 1)) var(--enter-delay, 0ms) backwards;
+}
+
+@keyframes enter-rise {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(28px);
+  }
+}
+
+@keyframes enter-rise-lg {
+  from {
+    opacity: 0;
+    transform: translateY(48px);
+  }
+}
+
+@keyframes enter-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes enter-fade-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes enter-settle {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes enter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes enter-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes enter-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes enter-sweep {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg);
+  }
+}
+
+/* Reduced motion: no entrance and no slide transition; everything is simply there. */
+@media (prefers-reduced-motion: reduce) {
+  .stage-enter,
+  .stage-enter[data-motion="lively"] .stage-layer,
+  .el.enter,
+  .el.enter-rise,
+  .el.enter-rise-lg,
+  .el.enter-fade,
+  .el.enter-grow,
+  .el.enter-sweep,
+  .el.enter-fade-scale,
+  .el.enter-settle,
+  .el.enter-pop,
+  .el.enter-draw,
+  .el.enter-grow .chart-bar,
+  .el.enter-sweep .chart-ring {
+    animation: none;
   }
 }
 

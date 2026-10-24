@@ -129,3 +129,12 @@ describe("contrastWarnings", () => {
     expect(paths(empty)).toEqual(["slides.0.elements.0.text"]);
   });
 });
+
+describe("validateDeck motion", () => {
+  it("mirrors the zod motion enum with a Spanish message", () => {
+    for (const motion of ["calm", "lively", "snappy", "none"] as const) expect(validateDeck({ ...deck(), motion })).toEqual([]);
+    const bad = validateDeck({ ...deck(), motion: "bouncy" } as unknown as Deck);
+    expect(bad).toEqual([{ path: "motion", message: "El movimiento es calm, lively, snappy o none." }]);
+    expect(parseDeck({ ...deck(), motion: "bouncy" }).ok).toBe(false);
+  });
+});

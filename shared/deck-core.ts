@@ -24,6 +24,7 @@ export interface PublicDeck {
   version: 1;
   title: string;
   theme?: Theme;
+  motion?: Deck["motion"];
   slides: PublicSlide[];
 }
 /** Anything the renderer can draw: a full deck or its public projection. */
@@ -35,6 +36,7 @@ export function publicDeck(deck: Deck): PublicDeck {
     version: deck.version,
     title: deck.title,
     ...(deck.theme ? { theme: deck.theme } : {}),
+    ...(deck.motion ? { motion: deck.motion } : {}),
     slides: deck.slides.map(({ notes: _notes, quiz, ...slide }) => {
       if (!quiz) return slide;
       const { correctIndex: _answer, ...rest } = quiz;

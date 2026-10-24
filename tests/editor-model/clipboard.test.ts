@@ -29,3 +29,11 @@ describe("clipboard", () => {
     expect(pasteFromClipboard(d, 0, "nope")).toBe(d);
   });
 });
+
+describe("clipboard keeps AI-decided steps", () => {
+  it("pastes an element with its fragment intact", () => {
+    const d = deck([slide("s", [{ ...text("a", box(0.1, 0.1, 0.2, 0.2)), fragment: 3 }])]);
+    const pasted = pasteFromClipboard(d, 0, serializeElements([el(d, 0, "a")]));
+    expect(el(pasted, 0, "a-2").fragment).toBe(3);
+  });
+});

@@ -4,6 +4,7 @@
 import type { Deck, Quiz, Slide, Theme } from "../../../../shared/deck.ts";
 import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "../../../../shared/ask.ts";
 import { FONT_NAMES } from "../../../../shared/fonts.ts";
+import { MOTION_STYLES } from "../../../../shared/motion.ts";
 import { PRESET_NAMES, THEME_MODES } from "../../../../shared/themes.ts";
 
 // Contrast helpers live in shared/themes.ts so the CLI can use them too.
@@ -46,6 +47,7 @@ export function validateDeck(deck: Deck): ValidationIssue[] {
   else if (deck.title.length > 200) add("title", "El título no puede superar 200 caracteres.");
 
   if (deck.theme) validateTheme(deck.theme, add);
+  if (deck.motion !== undefined && !oneOf(MOTION_STYLES, deck.motion)) add("motion", "El movimiento es calm, lively, snappy o none.");
 
   if (deck.slides.length < 1) add("slides", "El deck necesita al menos una diapositiva.");
   else if (deck.slides.length > MAX_SLIDES) add("slides", `Máximo ${MAX_SLIDES} diapositivas.`);

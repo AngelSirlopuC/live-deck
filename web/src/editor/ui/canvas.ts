@@ -149,7 +149,8 @@ export function createCanvas(ctrl: EditorController, opts: CanvasOptions) {
       ...slide.elements
         .filter((e) => e.fragment !== undefined)
         .map((e) => {
-          const b = h("span", { class: "ed-frag", title: `Aparece en el paso ${e.fragment}` }, String(e.fragment));
+          // Read-only: the step was chosen by the AI and has no control in the editor.
+          const b = h("span", { class: "ed-frag", title: `La IA decidió que aparezca en el paso ${e.fragment}` }, String(e.fragment));
           b.style.left = pct(e.box.x);
           b.style.top = pct(e.box.y);
           return b;
