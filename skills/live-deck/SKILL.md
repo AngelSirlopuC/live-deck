@@ -5,7 +5,7 @@ description: Author interactive presentations for Live Deck as deck.json files (
 
 # Live Deck authoring
 
-Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, validate it, fix every error, and hand the user a preview URL.
+Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, validate it, fix every error, and hand the user the preview and editor URLs.
 
 ## Choose the path
 
@@ -46,12 +46,20 @@ Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, v
 3. Replace the template slides in `decks/<id>/deck.json` with the planned slides.
 4. Validate: `node bin/live-deck.ts validate <id>`.
 5. Fix every printed issue (`path: message`, e.g. `slides.3.elements.1.box: box must stay inside the canvas`) and re-run until it prints `OK <title> (<n> slides, <q> quizzes)` (plus `, <a> open question(s)` when the deck has any). Treat `warning:` lines as defects too.
-6. Tell the user: deck path, chosen preset and why, slide, quiz and open-question count, and the difference between preview and presenting:
-   - Preview at `/preview/<id>` (dev: `http://localhost:5180/preview/<id>`) is a single-viewer rehearsal with no session: the QR shows a placeholder ("El QR aparece al presentar"), there is no audience, quizzes and chat are inactive, and they move with arrows, click or swipe.
+6. Tell the user: deck path, chosen preset and mode and why, slide, quiz and open-question count. Always end your message with this block, filled in (never skip it, never shorten it to one link):
+
+   ```
+   Vista previa: http://localhost:5180/preview/<id>
+   Editar:       http://localhost:5180/edit/<id>
+   ```
+
+   - These are the local development URLs; they work while `npm run dev:server` and `npm run dev:web` are running. If they are not running, say so and give both commands.
+   - After a publish to a hosted server (see below), give the same two paths on the server's address instead: the value of `PUBLIC_BASE_URL` in `.env` (for example `https://deck.example.com/preview/<id>`). Without that variable, give the local URLs only and say which address to use once it is hosted.
+   - Explain the difference: **Vista previa** is a single-viewer rehearsal with no session: the QR shows a placeholder ("El QR aparece al presentar"), there is no audience, quizzes and chat are inactive, and they move with arrows, click or swipe. **Editar** opens the visual editor: move and resize elements, edit text in place, change the theme and mode, then press Guardar (the preview shows only saved changes).
    - To present for real, they press "Presentar" on the preview (opens the home page with the deck preselected), set a 4–8 digit PIN and open the console. The join QR, quizzes, chat and effects work only in that live session.
    - For an event on a hosted server, publish it with `npm run publish:deck -- <id>` (needs `LIVE_DECK_PUBLISH_TARGET` in `.env`; add `--dry-run` first). It validates again and copies only that deck. Never publish without the user asking.
 
-After the deck validates, mention that they can fine-tune it by hand at `/edit/<id>` (dev: `http://localhost:5180/edit/<id>`): move and resize elements, edit text in place, change the theme and save. If they edited it there, read `deck.json` again before changing it, because the file on disk is the source of truth.
+If the user edited the deck in the editor, read `deck.json` again before changing it, because the file on disk is the source of truth.
 
 `npm run deck -- <command>` is equivalent to `node bin/live-deck.ts <command>`. Requires Node >= 24.
 
@@ -67,6 +75,7 @@ Use this when the user already designed slides in PowerPoint, Keynote, Google Sl
 6. Validate and fix until it prints `OK`, as in the main workflow.
 7. Ask the user to open `/preview/<id>` and check that the dashed zone outlines (with the option letter) sit on their designed options; adjust the boxes if not. The outlines appear only in the preview, never in a live session.
 8. Tell the user the join QR is already overlaid on slide 1 (bottom-right, white tile); to move or resize it, edit the `qr` element's `box` on slide 1, keeping it at least 0.25 wide and roughly square on screen.
+9. End with the same "Vista previa" / "Editar" link block as step 6 of the Workflow.
 
 ## Hard rules
 
