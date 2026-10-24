@@ -49,6 +49,27 @@ async function panel() {
   return { ctrl, el: p.el };
 }
 
+describe("design panel: preset pick", () => {
+  it("applies the whole preset look: drops colour and style overrides, keeps the mode, and undo brings them back", async () => {
+    const { ctrl, el } = await panel();
+    const plain = { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" };
+    ctrl.dispatch({ type: "setTheme", patch: { preset: undefined, ...plain, fonts: { display: "Oswald" }, card: { radius: 4 }, palette: ["#111111", "#222222", "#333333"] } });
+    ctrl.dispatch({ type: "setTheme", patch: { preset: "estudio", mode: "light" } });
+    el.querySelector<HTMLButtonElement>('[data-preset="papel"]')!.click();
+    expect(ctrl.deck.theme).toEqual({ preset: "papel", mode: "light" });
+    expect(el.querySelector('[data-preset="papel"]')!.getAttribute("aria-checked")).toBe("true");
+    ctrl.undo();
+    expect(ctrl.deck.theme).toMatchObject({ preset: "estudio", mode: "light", ...plain, fonts: { display: "Oswald" } });
+  });
+
+  it("a plain-colour deck switches to the preset's colours", async () => {
+    const { ctrl, el } = await panel();
+    ctrl.dispatch({ type: "setTheme", patch: { preset: undefined, background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45" } });
+    el.querySelector<HTMLButtonElement>('[data-preset="papel"]')!.click();
+    expect(ctrl.deck.theme).toEqual({ preset: "papel" });
+  });
+});
+
 describe("design panel: mode", () => {
   it("writes mode on Claro/Oscuro, removes it on Original, and paints preset cards in the current mode", async () => {
     const { ctrl, el } = await panel();

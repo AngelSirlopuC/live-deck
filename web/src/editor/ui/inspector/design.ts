@@ -48,6 +48,19 @@ const SHADOW_LABEL: Record<(typeof CARD_SHADOWS)[number], string> = { none: "Sin
 const ART_LABEL: Record<(typeof ART_KINDS)[number], string> = { none: "Ninguno", glow: "Resplandor", gradient: "Degradado" };
 const PATTERN_LABEL: Record<(typeof THEME_PATTERNS)[number], string> = { none: "Ninguna", dots: "Puntos", grid: "Rejilla", lines: "Líneas", noise: "Grano" };
 const FROM_PRESET = "Del preset";
+const CLEAR_OVERRIDES = {
+  background: undefined,
+  foreground: undefined,
+  accent: undefined,
+  muted: undefined,
+  surface: undefined,
+  fonts: undefined,
+  card: undefined,
+  heading: undefined,
+  art: undefined,
+  pattern: undefined,
+  palette: undefined,
+} as const;
 
 /** Font families grouped by voice, in allowlist order. */
 export function fontGroups(): { label: string; options: SelectOption[] }[] {
@@ -87,7 +100,8 @@ export function createDesignPanel(ctrl: EditorController) {
       h("span", { class: "ed-preset-swatch", "aria-hidden": "true" }, h("span", { class: "ed-preset-ground" }, h("span", { class: "ed-preset-type" }, "Aa"), h("span", { class: "ed-preset-dot" }))),
       h("span", { class: "ed-preset-name" }, PRESET_LABEL[name]),
     );
-    card.addEventListener("click", () => setTheme({ preset: name }));
+    // Picking a preset applies its whole look: colour and style overrides go, the mode stays (undo restores them).
+    card.addEventListener("click", () => setTheme({ preset: name, ...CLEAR_OVERRIDES }));
     return card;
   });
   const presets = h("div", { class: "ed-presets", role: "radiogroup", "aria-label": "Preset" }, ...presetCards);
