@@ -9,6 +9,7 @@ Source of truth: `shared/deck.ts`. Every object is strict: unknown keys fail val
 | `version` | `1` | Required, literal 1. |
 | `title` | string | Required, 1–200 chars. Shown in lists and the summary. |
 | `theme` | object | Optional. Default `{ background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" }`. Prefer `{ "preset": "<name>" }`. |
+| `motion` | `"calm"` \| `"lively"` \| `"snappy"` \| `"none"` | Optional, default `calm`. One motion style for the whole deck: how elements enter and how slides change. See "Motion" in `SKILL.md`. |
 | `slides` | Slide[] | Required, 1–200. Slide ids unique. |
 
 ## Theme
@@ -74,7 +75,7 @@ Imported slides (`live-deck import`) use exactly this field: `"background": { "i
 | `id` | string | `[A-Za-z0-9_-]{1,40}`, unique in the slide. Effects (ripple, focus, zoom) target it. |
 | `type` | `"text"` \| `"image"` \| `"shape"` \| `"qr"` \| `"icon"` \| `"chart"` \| `"decor"` | Discriminator. No other types: free HTML or SVG is not allowed. |
 | `box` | `{ x, y, w, h }` | Normalized 0..1 on the 16:9 canvas, origin top-left. `x + w <= 1`, `y + h <= 1`. |
-| `fragment` | integer 1–20 | Optional. Element appears at that step; absent = always visible. |
+| `fragment` | integer 1–20 | Optional. Element appears at that step; absent = always visible. You decide the steps; the editor does not let people change them. Each element's entrance animation is derived automatically from its type, never written in the deck. |
 
 ### text
 
