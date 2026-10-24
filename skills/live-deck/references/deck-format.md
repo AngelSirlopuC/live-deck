@@ -26,7 +26,7 @@ Colors are hex: `#` + 3–8 hex digits.
 | `mode` | `"light"` \| `"dark"` | Optional. Every preset has both; without it the preset keeps its original look. Always set it (see `themes.md`, "Light or dark"). |
 | `fonts` | `{ display?, body? }` | Optional. Font names from the allowlist in `themes.md` ("Custom theme from the prompt"); other names are rejected. |
 | `card` | `{ radius?: 0–64, border?: "none" \| "hairline" \| "thick", shadow?: "none" \| "soft" \| "hard" }` | Optional. Changes how `card: true` looks. |
-| `heading` | `{ weight?: 400 | 500 | 600 | 700 | 800 | 900, uppercase?: boolean, tracking?: -0.05–0.2 }` | Optional. Display text treatment. |
+| `heading` | `{ weight?: 400 \| 500 \| 600 \| 700 \| 800 \| 900, uppercase?: boolean, tracking?: -0.05–0.2 }` | Optional. Display text treatment. |
 | `art` | `{ kind: "none" \| "glow" \| "gradient", from?, to?, angle?: 0–360 }` | Optional. Background art painted over the ground; `glow` uses the accent. |
 | `pattern` | `"none"` \| `"dots"` \| `"grid"` \| `"lines"` \| `"noise"` | Optional. Ground pattern. |
 | `palette` | hex[] (3–8) | Optional. Chart colors in order; accent first. |
