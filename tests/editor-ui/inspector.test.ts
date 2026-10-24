@@ -150,6 +150,11 @@ describe("slide inspector", () => {
     expect(ctrl.currentSlide?.quiz?.options[1]).toBe("Bravo");
     panel.el.querySelector<HTMLInputElement>('[aria-label="C es la correcta"]')!.click();
     expect(ctrl.currentSlide?.quiz?.correctIndex).toBe(2);
+    // The highlighted row follows the new correct answer, not only the radio.
+    expect([...panel.el.querySelectorAll(".ed-option")].map((o) => o.classList.contains("is-correct"))).toEqual([false, false, true]);
+    panel.el.querySelector<HTMLInputElement>('[aria-label="A es la correcta"]')!.click();
+    expect([...panel.el.querySelectorAll(".ed-option")].map((o) => o.classList.contains("is-correct"))).toEqual([true, false, false]);
+    panel.el.querySelector<HTMLInputElement>('[aria-label="C es la correcta"]')!.click();
     panel.el.querySelector<HTMLButtonElement>('[aria-label="Quitar opción C"]')!.click();
     expect(ctrl.currentSlide?.quiz?.options).toEqual(["A", "Bravo"]);
     expect(ctrl.currentSlide?.quiz?.correctIndex).toBe(0);
