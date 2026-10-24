@@ -1108,6 +1108,36 @@ select:focus-visible {
   opacity: 0.75;
 }
 
+/* Share of votes, drawn behind the label when results are visible. */
+.vote {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.vote-bar {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: scaleX(var(--share, 0));
+  transform-origin: left center;
+  background: color-mix(in srgb, var(--amber) 22%, transparent);
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vote.is-first .vote-bar {
+  background: color-mix(in srgb, var(--amber) 34%, transparent);
+}
+
+.vote.is-correct .vote-bar {
+  background: color-mix(in srgb, var(--signal) 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-bar {
+    transition: none;
+  }
+}
+
 .vote-key {
   display: grid;
   place-items: center;
