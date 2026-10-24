@@ -13,7 +13,8 @@ export { fontStack, fontsHref };
 
 export const PRESET_NAMES = ["estudio", "editorial", "neon", "papel", "brutalista", "corporativo"] as const;
 export type PresetName = (typeof PRESET_NAMES)[number];
-export type ThemeMode = "light" | "dark";
+export const THEME_MODES = ["light", "dark"] as const;
+export type ThemeMode = (typeof THEME_MODES)[number];
 export type ThemePattern = "dots" | "grid" | "lines" | "noise";
 
 /** @deprecated name kept for existing imports; fonts now come from the allowlist. */
@@ -387,4 +388,33 @@ function mixHex(top: string, bottom: string, amount: number): string {
   const b = rgb(bottom);
   const mix = a.map((c, i) => Math.round(c * amount + b[i]! * (1 - amount)));
   return `#${mix.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Contrast floors the CLI warns about and the editor hints at (S4); the presets' own variants meet stricter ones. */
+export const CONTRAST_FLOORS = { foreground: 4.5, muted: 3, accent: 3 } as const;
+export type ContrastKey = keyof typeof CONTRAST_FLOORS;
+
+export interface ContrastWarning {
+  /** Colour read against the resolved background. */
+  key: ContrastKey;
+  ratio: number;
+  min: number;
+}
+
+/**
+ * Low-contrast pairs of the resolved theme against its background. Native
+ * brutalista keeps its 1.3:1 yellow accent for render parity (icons already
+ * fall back to the foreground there), so that one preset-authored accent is
+ * exempt unless the deck overrides the accent or the background.
+ */
+export function contrastWarnings(theme: Theme | undefined): ContrastWarning[] {
+  const spec = resolveThemeSpec(theme);
+  const nativeBrutalista = spec.preset === "brutalista" && spec.mode === THEME_PRESETS.brutalista.native && !theme?.accent && !theme?.background;
+  const out: ContrastWarning[] = [];
+  for (const key of Object.keys(CONTRAST_FLOORS) as ContrastKey[]) {
+    if (key === "accent" && nativeBrutalista) continue;
+    const ratio = contrastRatio(spec.colors[key], spec.colors.background);
+    if (ratio < CONTRAST_FLOORS[key]) out.push({ key, ratio, min: CONTRAST_FLOORS[key] });
+  }
+  return out;
 }

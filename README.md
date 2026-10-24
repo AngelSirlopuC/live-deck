@@ -189,9 +189,10 @@ The editor needs the admin key when `ADMIN_KEY` is set, like creating a session.
 ### The deck CLI
 
 ```sh
-npm run deck -- new my-talk --title "My talk"     # scaffold a deck
+npm run deck -- new my-talk --title "My talk"     # scaffold a deck (plain dark colours)
+npm run deck -- new my-talk --preset papel --mode dark   # ... on a preset, in its light or dark variant
 npm run deck -- import ./my-slides --id my-talk   # build a deck from slide images
-npm run deck -- validate my-talk                  # schema, assets (incl. backgrounds), QR on slide 1
+npm run deck -- validate my-talk                  # schema, assets (incl. backgrounds), QR on slide 1, low-contrast theme warnings
 npm run deck -- list                              # list decks and flag invalid ones
 ```
 

@@ -1,5 +1,5 @@
 import type { Deck } from "./deck.ts";
-import type { PresetName } from "./themes.ts";
+import type { PresetName, ThemeMode } from "./themes.ts";
 
 // Editor HTTP API (authenticated with x-admin-key like the admin routes).
 // Plain types only: the browser client imports this file, zod stays server-side.
@@ -45,6 +45,8 @@ export interface CreateDeckRequest {
   title: string;
   /** Theme preset; defaults to "estudio". */
   preset?: PresetName;
+  /** Light or dark variant of the preset; omitted keeps the preset's native mode. */
+  mode?: ThemeMode;
 }
 
 /** POST /api/editor/decks → 201 */

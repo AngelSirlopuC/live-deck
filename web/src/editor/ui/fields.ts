@@ -73,16 +73,20 @@ export interface NumberFieldOptions {
   unit?: string;
   /** Empty input is allowed and means "unset". */
   optional?: boolean;
-  placeholder?: string;
+  /** Static text, or a getter re-read on every update (the effective value behind an unset field). */
+  placeholder?: string | (() => string);
 }
+
+const placeholderOf = (p: string | (() => string) | undefined): string | undefined => (typeof p === "function" ? p() : p);
 
 export function numberField(o: NumberFieldOptions): Field {
   const id = uid("num");
-  const control = h("input", { id, type: "number", inputmode: "decimal", min: o.min, max: o.max, step: o.step ?? 1, placeholder: o.placeholder });
+  const control = h("input", { id, type: "number", inputmode: "decimal", min: o.min, max: o.max, step: o.step ?? 1, placeholder: placeholderOf(o.placeholder) });
   control.classList.add("ed-mono");
   const show = () => {
     const v = o.get();
     control.value = v === undefined ? "" : String(v);
+    if (typeof o.placeholder === "function") control.placeholder = o.placeholder();
   };
   show();
   control.addEventListener("input", () => {
@@ -117,16 +121,25 @@ export interface SelectOption {
   label: string;
 }
 
-export interface SelectFieldOptions {
+export interface SelectGroup {
   label: string;
   options: readonly SelectOption[];
+}
+
+export interface SelectFieldOptions {
+  label: string;
+  /** Ungrouped options, listed before any group. */
+  options: readonly SelectOption[];
+  /** Options under `<optgroup>` headings. */
+  groups?: readonly SelectGroup[];
   get: () => string;
   set: (value: string) => void;
 }
 
 export function selectField(o: SelectFieldOptions): Field {
   const id = uid("sel");
-  const control = h("select", { id }, ...o.options.map((opt) => h("option", { value: opt.value }, opt.label)));
+  const option = (opt: SelectOption) => h("option", { value: opt.value }, opt.label);
+  const control = h("select", { id }, ...o.options.map(option), ...(o.groups ?? []).map((g) => h("optgroup", { label: g.label }, ...g.options.map(option))));
   control.value = o.get();
   control.addEventListener("change", () => o.set(control.value));
   const el = h("div", { class: "field ed-field" }, h("label", { for: id, class: "legend" }, o.label), control);
@@ -214,14 +227,15 @@ export interface ColorFieldOptions {
   swatches?: readonly { name: string; value: string }[];
   /** Shows a clear key when the value is optional. */
   optional?: boolean;
-  placeholder?: string;
+  /** Static text, or a getter for the effective colour (shown as placeholder and as the empty picker's swatch). */
+  placeholder?: string | (() => string);
 }
 
 /** Native picker + hex text + theme swatches; all three write the same value. */
 export function colorField(o: ColorFieldOptions): Field {
   const id = uid("color");
   const picker = h("input", { type: "color", class: "ed-color-picker", "aria-label": `${o.label}: selector` });
-  const text = h("input", { id, type: "text", class: "ed-mono ed-color-hex", autocomplete: "off", spellcheck: "false", placeholder: o.placeholder ?? "tema", maxlength: 9 });
+  const text = h("input", { id, type: "text", class: "ed-mono ed-color-hex", autocomplete: "off", spellcheck: "false", placeholder: placeholderOf(o.placeholder) ?? "tema", maxlength: 9 });
   const clear = o.optional ? trusted("button", { type: "button", class: "ed-color-clear", "aria-label": `Quitar ${o.label.toLowerCase()}`, title: "Usar el color del tema" }, edIcon("close")) : null;
   const swatches = (o.swatches ?? []).map((s) => {
     const b = h("button", { type: "button", class: "ed-swatch", title: `${s.name} ${s.value}`, "aria-label": `${o.label}: ${s.name}` });
@@ -236,7 +250,9 @@ export function colorField(o: ColorFieldOptions): Field {
   const paint = () => {
     const v = o.get();
     const hex = toPickerHex(v);
-    picker.value = hex ?? "#000000";
+    const effective = typeof o.placeholder === "function" ? o.placeholder() : undefined;
+    if (effective !== undefined) text.placeholder = effective;
+    picker.value = hex ?? toPickerHex(effective) ?? "#000000";
     picker.classList.toggle("is-empty", !hex);
     if (!focused(text)) text.value = v ?? "";
     if (clear) clear.hidden = v === undefined;

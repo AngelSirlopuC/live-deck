@@ -212,11 +212,23 @@ describe("POST /api/editor/decks", () => {
     expect(JSON.parse(await readFile(deckFile("otro"), "utf8")).theme).toEqual({ preset: "estudio" });
   });
 
-  it("409 when the deck exists, 400 on bad id, title or preset", async () => {
+  it("stores the mode when given", async () => {
+    const res = await send("POST", "/api/editor/decks", { id: "claro", title: "Claro", preset: "corporativo", mode: "light" });
+    expect(res.status).toBe(201);
+    expect(JSON.parse(await readFile(deckFile("claro"), "utf8")).theme).toEqual({ preset: "corporativo", mode: "light" });
+    const only = await send("POST", "/api/editor/decks", { id: "solo-modo", title: "Solo", mode: "dark" });
+    expect(only.status).toBe(201);
+    expect(JSON.parse(await readFile(deckFile("solo-modo"), "utf8")).theme).toEqual({ preset: "estudio", mode: "dark" });
+  });
+
+  it("409 when the deck exists, 400 on bad id, title, preset or mode", async () => {
     expect((await send("POST", "/api/editor/decks", { id: "demo", title: "Dup" })).status).toBe(409);
     expect((await send("POST", "/api/editor/decks", { id: "Bad Id", title: "x" })).status).toBe(400);
     expect((await send("POST", "/api/editor/decks", { id: "ok", title: "" })).status).toBe(400);
     expect((await send("POST", "/api/editor/decks", { id: "ok", title: "x", preset: "nope" })).status).toBe(400);
+    const mode = await send("POST", "/api/editor/decks", { id: "ok", title: "x", mode: "dim" });
+    expect(mode.status).toBe(400);
+    expect(await mode.json()).toEqual({ error: "unknown mode" });
     await expect(stat(join(decksDir, "ok"))).rejects.toThrow();
     expect((await send("POST", "/api/editor/decks", { id: "ok", title: "x" }, { origin: "https://evil.example" })).status).toBe(403);
   });

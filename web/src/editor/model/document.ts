@@ -49,6 +49,15 @@ export interface SlidePatch {
   ask?: Patch<Ask>;
 }
 
+/** Theme patch: top-level keys shallow-merge; `fonts`, `card`, `heading` and `art` merge one level deeper (`palette` replaces). */
+export type ThemePatch = Patch<Omit<Theme, (typeof THEME_NESTED)[number]>> & {
+  fonts?: Patch<NonNullable<Theme["fonts"]>> | undefined;
+  card?: Patch<NonNullable<Theme["card"]>> | undefined;
+  heading?: Patch<NonNullable<Theme["heading"]>> | undefined;
+  art?: Patch<NonNullable<Theme["art"]>> | undefined;
+};
+const THEME_NESTED = ["fonts", "card", "heading", "art"] as const;
+
 /** Element patch: top-level keys shallow-merge; `style` merges one level deeper. */
 export type ElementPatch = { id?: string; box?: Box; fragment?: number | undefined; style?: Record<string, unknown> } & Record<string, unknown>;
 
@@ -67,7 +76,7 @@ export type Command =
   | { type: "align"; slide: number; ids: readonly string[]; edge: AlignEdge }
   | { type: "distribute"; slide: number; ids: readonly string[]; axis: Axis }
   | { type: "pasteElements"; slide: number; elements: readonly DeckElement[]; offset?: number }
-  | { type: "setTheme"; patch: Patch<Theme> }
+  | { type: "setTheme"; patch: ThemePatch }
   | { type: "setTitle"; title: string };
 
 export interface EditorDoc {
@@ -433,8 +442,15 @@ function distribute(slide: Slide, ids: readonly string[], axis: Axis): Slide {
 // ---------------------------------------------------------------------------
 // Deck
 
-function setTheme(deck: Deck, patch: Patch<Theme>): Deck {
-  const theme = mergePatch(deck.theme, patch);
+function setTheme(deck: Deck, patch: ThemePatch): Deck {
+  const flat: Record<string, unknown> = { ...patch };
+  for (const key of THEME_NESTED) {
+    const sub = patch[key];
+    if (sub === undefined || !(key in patch)) continue;
+    // An empty nested object is dropped so a plain deck stays plain (resolveThemeSpec reads the key's presence).
+    flat[key] = mergePatch(deck.theme?.[key] as object | undefined, sub as Patch<object>);
+  }
+  const theme = mergePatch(deck.theme, flat as Patch<Theme>);
   if (sameValue(theme, deck.theme)) return deck;
   if (theme === undefined) {
     if (deck.theme === undefined) return deck;

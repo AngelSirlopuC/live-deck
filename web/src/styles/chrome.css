@@ -304,6 +304,30 @@ select:focus-visible {
   display: none;
 }
 
+/* Preset and mode side by side; the mode switch is the desk's two-position switch. */
+.home-theme-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.home-mode {
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.home-mode .key-switch {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+@media (max-width: 400px) {
+  .home-theme-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .home-links {
   display: grid;
   gap: 6px;

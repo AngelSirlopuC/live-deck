@@ -4,7 +4,6 @@ import { createDesignPanel, contrastHints } from "../../web/src/editor/ui/inspec
 import { createElementPanel } from "../../web/src/editor/ui/inspector/element.ts";
 import { backgroundMode, createSlidePanel } from "../../web/src/editor/ui/inspector/slide.ts";
 import { toPickerHex } from "../../web/src/editor/ui/fields.ts";
-import { resolveTheme } from "../../shared/themes.ts";
 import { loadedController } from "./helpers.ts";
 
 beforeAll(() => {
@@ -166,8 +165,10 @@ describe("design inspector", () => {
   });
 
   it("contrastHints and toPickerHex", () => {
-    expect(contrastHints(resolveTheme({ preset: "estudio" }))).toEqual([]);
-    expect(contrastHints(resolveTheme({ background: "#ffffff", foreground: "#eeeeee", accent: "#ffff00" }))).toHaveLength(2);
+    // contrastHints now takes the deck theme (it needs the preset to apply the native brutalista exemption)
+    // and checks text (4.5:1), muted (3:1) and accent (3:1): the default muted on white fails too.
+    expect(contrastHints({ preset: "estudio" })).toEqual([]);
+    expect(contrastHints({ background: "#ffffff", foreground: "#eeeeee", accent: "#ffff00" })).toHaveLength(3);
     expect(toPickerHex("#abc")).toBe("#aabbcc");
     expect(toPickerHex("#AABBCCDD")).toBe("#aabbcc");
     expect(toPickerHex("red")).toBeNull();

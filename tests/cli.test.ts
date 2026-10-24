@@ -107,6 +107,24 @@ describe("live-deck validate", () => {
     expect(r.code).toBe(1);
     expect(r.all).toMatch(/not found/);
   });
+
+  it("warns but passes when the theme's text, muted or accent read low against the background", () => {
+    const slide = textSlide("s1");
+    slide.elements.push({ id: "qr", type: "qr", box: { x: 0.7, y: 0.1, w: 0.2, h: 0.3 } });
+    const theme = { background: "#ffffff", foreground: "#777777", accent: "#ffff00", muted: "#999999" };
+    const r = cli("validate", writeDeck("palido", { version: 1, title: "Pálido", theme, slides: [slide] }));
+    expect(r.code).toBe(0);
+    expect(r.out).toMatch(/^OK Pálido/m);
+    expect(r.err).toMatch(/^warning: theme\.foreground: contrast 4\.5:1 against the background is below 4\.5:1$/m);
+    expect(r.err).toMatch(/^warning: theme\.muted: contrast 2\.8:1 against the background is below 3:1$/m);
+    expect(r.err).toMatch(/^warning: theme\.accent: contrast 1\.1:1 against the background is below 3:1$/m);
+    // Mode variants and the native brutalista accent (kept for parity) do not warn.
+    for (const t of [{ preset: "brutalista" }, { preset: "corporativo", mode: "light" }, { preset: "papel", mode: "dark" }]) {
+      const v = cli("validate", writeDeck(`ok-${t.preset}`, { version: 1, title: "Ok", theme: t, slides: [slide] }));
+      expect(v.code).toBe(0);
+      expect(v.err).not.toMatch(/warning: theme/);
+    }
+  });
 });
 
 describe("live-deck new", () => {
@@ -123,6 +141,38 @@ describe("live-deck new", () => {
     const v = cli("validate", "mi-charla");
     expect(v.code).toBe(0);
     expect(v.all).not.toMatch(/warning/);
+    // Without --preset the template keeps its plain colours, as before.
+    expect(deck.theme).toEqual({ background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" });
+    expect(deck.slides[0].elements.find((e: any) => e.id === "subtitle").style.color).toBe("#9aa3b2");
+  });
+
+  it("scaffolds with --preset and --mode, letting the preset colour the template", () => {
+    const r = cli("new", "papel-oscuro", "--title", "Papel", "--preset", "papel", "--mode", "dark");
+    expect(r.code).toBe(0);
+    const deck = JSON.parse(readFileSync(join(root, "papel-oscuro", "deck.json"), "utf8"));
+    expect(deck.theme).toEqual({ preset: "papel", mode: "dark" });
+    expect(deck.slides[0].elements.find((e: any) => e.id === "subtitle").style.color).toBeUndefined();
+    const v = cli("validate", "papel-oscuro");
+    expect(v.code).toBe(0);
+    expect(v.all).not.toMatch(/warning/);
+
+    expect(cli("new", "solo-preset", "--preset", "neon").code).toBe(0);
+    expect(JSON.parse(readFileSync(join(root, "solo-preset", "deck.json"), "utf8")).theme).toEqual({ preset: "neon" });
+    // --mode alone flips the default preset.
+    expect(cli("new", "solo-modo", "--mode", "light").code).toBe(0);
+    expect(JSON.parse(readFileSync(join(root, "solo-modo", "deck.json"), "utf8")).theme).toEqual({ preset: "estudio", mode: "light" });
+  });
+
+  it("rejects an unknown preset or mode with exit 2 and writes nothing", () => {
+    const p = cli("new", "malo", "--preset", "vaporwave");
+    expect(p.code).toBe(2);
+    expect(p.err).toMatch(/^unknown preset "vaporwave": use one of estudio, editorial, neon, papel, brutalista, corporativo$/m);
+    const m = cli("new", "malo", "--preset", "papel", "--mode", "dim");
+    expect(m.code).toBe(2);
+    expect(m.err).toMatch(/^unknown mode "dim": use light or dark$/m);
+    expect(cli("new", "malo", "--preset").code).toBe(2);
+    expect(cli("new", "malo", "--mode").code).toBe(2);
+    expect(existsSync(join(root, "malo"))).toBe(false);
   });
 
   it("refuses to overwrite an existing deck", () => {

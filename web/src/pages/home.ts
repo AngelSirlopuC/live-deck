@@ -1,6 +1,8 @@
+import type { CreateDeckRequest } from "../../../shared/editor-api.ts";
 import type { CreateSessionResponse } from "../../../shared/protocol.ts";
 import { TIME_LIMIT_MAX, TIME_LIMIT_MIN } from "../../../shared/pace.ts";
 import { PIN } from "../../../shared/protocol.ts";
+import { PRESET_NAMES, THEME_PRESETS, type PresetName, type ThemeMode } from "../../../shared/themes.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
 
@@ -32,6 +34,9 @@ export function deckIdFrom(title: string): string {
     .slice(0, 63)
     .replace(/-+$/, "");
 }
+
+export const PRESET_LABELS: Record<PresetName, string> = { estudio: "Estudio", editorial: "Editorial", neon: "Neón", papel: "Papel", brutalista: "Brutalista", corporativo: "Corporativo" };
+const MODE_LABELS: Record<ThemeMode, string> = { light: "Claro", dark: "Oscuro" };
 
 const CREATE_ERRORS: Record<number, string> = {
   400: "Revisa el título y el identificador: solo minúsculas, números y guiones.",
@@ -74,11 +79,36 @@ export async function mountHome(root: HTMLElement, go: (url: string) => void = (
     if (!idTouched) idInput.value = deckIdFrom(titleInput.value);
   });
   idInput.addEventListener("input", () => (idTouched = true));
+
+  // Preset + mode: the switch snaps to the preset's native mode, so a plain pick never flips a look by accident.
+  const presetSelect = h("select", { id: "new-preset" }, ...PRESET_NAMES.map((p) => h("option", { value: p }, PRESET_LABELS[p])));
+  const nativeMode = () => THEME_PRESETS[presetSelect.value as PresetName].native;
+  let mode: ThemeMode = nativeMode();
+  const modeKeys = (["light", "dark"] as const).map((m) => {
+    const b = h("button", { type: "button", class: "key key-switch", "data-mode": m, "aria-pressed": "false" }, MODE_LABELS[m]);
+    b.addEventListener("click", () => {
+      mode = m;
+      paintMode();
+    });
+    return b;
+  });
+  const paintMode = () => {
+    for (const b of modeKeys) b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+  };
+  presetSelect.addEventListener("change", () => {
+    mode = nativeMode();
+    paintMode();
+  });
+  paintMode();
+  const modeSwitch = h("div", { class: "switch home-mode", role: "group", "aria-label": "Modo" }, ...modeKeys);
+
   const newForm = h(
     "form",
     { class: "home-form home-new-form", hidden: true },
     h("div", { class: "field" }, h("label", { for: "new-title", class: "legend" }, "Título"), titleInput),
     h("div", { class: "field" }, h("label", { for: "new-id", class: "legend" }, "Identificador"), idInput, h("p", { class: "field-hint" }, "Nombre de la carpeta en decks/. Solo minúsculas, números y guiones.")),
+    h("div", { class: "home-theme-row" }, h("div", { class: "field" }, h("label", { for: "new-preset", class: "legend" }, "Diseño"), presetSelect), h("div", { class: "field" }, h("span", { class: "legend" }, "Modo"), modeSwitch)),
+    h("p", { class: "field-hint" }, "Cada diseño tiene versión clara y oscura; la sala manda: clara para salas con luz, oscura para proyectar a oscuras. Se cambia luego en el editor."),
     newError,
     newSubmit,
   );
@@ -96,11 +126,13 @@ export async function mountHome(root: HTMLElement, go: (url: string) => void = (
       return;
     }
     newSubmit.disabled = true;
+    const preset = presetSelect.value as PresetName;
+    const request: CreateDeckRequest = { id, title, preset, ...(mode !== nativeMode() ? { mode } : {}) };
     try {
       const res = await fetch("/api/editor/decks", {
         method: "POST",
         headers: { "content-type": "application/json", ...(adminKey ? { "x-admin-key": adminKey } : {}) },
-        body: JSON.stringify({ id, title }),
+        body: JSON.stringify(request),
       });
       if (!res.ok) throw new Error(CREATE_ERRORS[res.status] ?? "No se pudo crear la presentación.");
       go(`/edit/${encodeURIComponent(id)}`);
