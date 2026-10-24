@@ -115,7 +115,7 @@ Steps:
 
    Pair a characterful display with a calm body; never two display faces. Mono and hand faces are for display accents, not body text.
 4. `card`: `radius` 0–64 (px on the 1920 canvas), `border` `none` | `hairline` | `thick`, `shadow` `none` | `soft` | `hard` (`thick` + `hard` reads brutalist).
-5. `heading`: `weight` 400–900, `uppercase`, `tracking` −0.05 to 0.2.
+5. `heading`: `weight` 400, 500, 600, 700, 800 or 900, `uppercase`, `tracking` −0.05 to 0.2.
 6. `art`: `{ "kind": "none" }`, `{ "kind": "glow" }` (soft accent light in a corner) or `{ "kind": "gradient", "from": "#…", "to": "#…", "angle": 135 }`. `pattern`: `none`, `dots`, `grid`, `lines` or `noise`.
 7. `palette`: 3–8 chart colors, the accent first.
 
