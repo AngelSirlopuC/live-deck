@@ -3,6 +3,7 @@ import { ICON_NAMES } from "./icons.ts";
 import { FONT_NAMES } from "./fonts.ts";
 import { PRESET_NAMES } from "./themes.ts";
 import { MOTION_STYLES } from "./motion.ts";
+import { THEME_COLOR_TOKENS, isThemeColor } from "./theme-colors.ts";
 import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "./ask.ts";
 
 // Deck format v1. Every geometric value is normalized (0..1) against a 16:9
@@ -11,6 +12,9 @@ import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "./ask.ts";
 
 const unit = z.number().min(0).max(1);
 const hex = z.string().regex(/^#[0-9a-fA-F]{3,8}$/, "expected a hex color like #1a2b3c");
+// Element and slide colours: a hex, or a token naming a role of the current
+// theme so the colour follows the preset and mode. Theme-level colours stay hex.
+const themeColor = z.string().refine(isThemeColor, `expected a hex color like #1a2b3c or a theme token (${THEME_COLOR_TOKENS.join(", ")})`);
 
 const insideCanvas = (b: { x: number; y: number; w: number; h: number }) => b.x + b.w <= 1.0001 && b.y + b.h <= 1.0001;
 export const BoxSchema = z.object({ x: unit, y: unit, w: unit, h: unit }).refine(insideCanvas, "box must stay inside the canvas");
@@ -24,11 +28,11 @@ export const TextStyleSchema = z
     fontWeight: z.union([z.literal(400), z.literal(500), z.literal(600), z.literal(700), z.literal(800)]).optional(),
     font: z.enum(["display", "body", "mono"]).optional(),
     italic: z.boolean().optional(),
-    color: hex.optional(),
+    color: themeColor.optional(),
     align: z.enum(["left", "center", "right"]).optional(),
     valign: z.enum(["top", "middle", "bottom"]).optional(),
     lineHeight: z.number().min(0.8).max(3).optional(),
-    background: hex.optional(),
+    background: themeColor.optional(),
     radius: z.number().min(0).max(540).optional(),
     padding: z.number().min(0).max(200).optional(),
     // Uses the theme surface, radius, border and shadow instead of a hand-set background.
@@ -63,7 +67,7 @@ export const ShapeElementSchema = z
     ...base,
     type: z.literal("shape"),
     shape: z.enum(["rect", "ellipse", "line"]),
-    style: z.object({ fill: hex.optional(), stroke: hex.optional(), strokeWidth: z.number().min(0).max(40).optional(), radius: z.number().min(0).max(540).optional() }).strict().optional(),
+    style: z.object({ fill: themeColor.optional(), stroke: themeColor.optional(), strokeWidth: z.number().min(0).max(40).optional(), radius: z.number().min(0).max(540).optional() }).strict().optional(),
   })
   .strict();
 // Renders the session join QR + URL at runtime; it carries no payload in the deck.
@@ -76,7 +80,7 @@ export const IconElementSchema = z
     type: z.literal("icon"),
     name: z.enum(ICON_NAMES),
     style: z
-      .object({ color: hex.optional(), background: hex.optional(), strokeWidth: z.number().min(1).max(3).optional(), radius: z.number().min(0).max(540).optional() })
+      .object({ color: themeColor.optional(), background: themeColor.optional(), strokeWidth: z.number().min(1).max(3).optional(), radius: z.number().min(0).max(540).optional() })
       .strict()
       .optional(),
   })
@@ -90,7 +94,7 @@ export const ChartElementSchema = z
     kind: z.enum(["bar", "donut"]),
     data: z.array(z.object({ label: z.string().max(40), value: z.number().min(0).finite() }).strict()).min(1).max(8),
     unit: z.string().max(8).optional(),
-    style: z.object({ color: hex.optional() }).strict().optional(),
+    style: z.object({ color: themeColor.optional() }).strict().optional(),
   })
   .strict()
   .superRefine((chart, ctx) => {
@@ -106,7 +110,7 @@ export const DecorElementSchema = z
     ...base,
     type: z.literal("decor"),
     shape: z.enum(["blob", "wave", "dots", "rings", "arc", "squiggle", "star", "grid"]),
-    style: z.object({ color: hex.optional(), opacity: z.number().min(0.05).max(1).optional() }).strict().optional(),
+    style: z.object({ color: themeColor.optional(), opacity: z.number().min(0.05).max(1).optional() }).strict().optional(),
   })
   .strict();
 
@@ -154,8 +158,8 @@ export const AskSchema = z
 // Layers paint bottom to top: color, gradient, image, pattern, then the dim overlay.
 export const SlideBackgroundSchema = z
   .object({
-    color: hex.optional(),
-    gradient: z.object({ from: hex, to: hex, angle: z.number().min(0).max(360).optional() }).strict().optional(),
+    color: themeColor.optional(),
+    gradient: z.object({ from: themeColor, to: themeColor, angle: z.number().min(0).max(360).optional() }).strict().optional(),
     image: assetSrc.optional(),
     // Darkens the layers below so text on top stays readable.
     dim: z.number().min(0).max(0.9).optional(),
@@ -168,7 +172,7 @@ export const SlideSchema = z
   .object({
     id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
     layout: z.enum(["free", "quiz", "ask"]).optional(),
-    background: z.union([hex, SlideBackgroundSchema]).optional(),
+    background: z.union([themeColor, SlideBackgroundSchema]).optional(),
     notes: z.string().max(5000).optional(),
     elements: z.array(ElementSchema).max(60),
     quiz: QuizSchema.optional(),

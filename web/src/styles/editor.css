@@ -795,6 +795,12 @@
   opacity: 0.35;
 }
 
+/* A theme token is active: the hex box is empty and names the token in amber. */
+.ed-color-hex.has-token::placeholder {
+  color: var(--amber);
+  opacity: 1;
+}
+
 .ed-color-clear {
   width: 30px;
   height: 30px;

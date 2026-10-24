@@ -2,6 +2,7 @@ import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
 import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
 import { DEFAULT_MOTION, groupEntrances, type Entrance } from "../../../shared/motion.ts";
+import { resolveColor, resolveColorHex, type ColorSpec } from "../../../shared/theme-colors.ts";
 import { contrastRatio, fontStack, resolveThemeSpec, type ThemeSpec } from "../../../shared/themes.ts";
 import { renderAsk } from "./ask-overlay.ts";
 import { renderChart } from "./charts.ts";
@@ -43,7 +44,11 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   stage.dataset.slideId = slide.id;
   stage.style.width = px(STAGE_WIDTH);
   stage.style.height = px(STAGE_HEIGHT);
-  const ground = typeof slide.background === "string" ? slide.background : (bg?.color ?? theme.colors.background);
+  // The ground defines --theme-bg itself, so a token resolves to its hex here rather than to a variable.
+  const ownGround = typeof slide.background === "string" ? slide.background : bg?.color;
+  const ground = ownGround ? resolveColorHex(ownGround, theme) : theme.colors.background;
+  // Element colours resolve against this: on a slide with its own ground, the `background` token still means the theme background.
+  const paint: ColorSpec = { colors: theme.colors, plain: theme.plain, groundOverridden: ownGround !== undefined };
   stage.style.setProperty("--theme-bg", ground);
   stage.style.setProperty("--theme-fg", theme.colors.foreground);
   stage.style.setProperty("--theme-accent", theme.colors.accent);
@@ -59,7 +64,7 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   }
 
   // A slide background object replaces the theme art; a hex background keeps it.
-  const backdrop = bg ? renderBackground(bg, opts) : renderThemeArt(theme);
+  const backdrop = bg ? renderBackground(bg, opts, paint) : renderThemeArt(theme);
   if (backdrop) stage.append(backdrop);
 
   // Content sits in its own layer so presenter zoom can transform it while the
@@ -67,7 +72,7 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   const layer = document.createElement("div");
   layer.className = "stage-layer";
   const entrances = plannedEntrances(slide.elements, opts, motion);
-  for (const el of slide.elements) layer.append(renderElement(el, opts, theme, entrances.get(el.id)));
+  for (const el of slide.elements) layer.append(renderElement(el, opts, theme, paint, entrances.get(el.id)));
   if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide, opts));
   if (slide.layout === "ask" && slide.ask) layer.append(renderAsk(slide.ask.question));
   const fx = document.createElement("div");
@@ -145,11 +150,11 @@ function renderThemeArt(theme: ThemeSpec): HTMLElement | null {
 }
 
 // Layers paint bottom to top: color (the stage ground), gradient, image, pattern, dim.
-function renderBackground(bg: SlideBackground, opts: RenderOptions): HTMLElement | null {
+function renderBackground(bg: SlideBackground, opts: RenderOptions, paint: ColorSpec): HTMLElement | null {
   const wrap = layerDiv("stage-bg");
   if (bg.gradient) {
     const g = layerDiv("stage-bg-gradient");
-    g.style.setProperty("--bg-gradient", `linear-gradient(${bg.gradient.angle ?? 135}deg, ${bg.gradient.from}, ${bg.gradient.to})`);
+    g.style.setProperty("--bg-gradient", `linear-gradient(${bg.gradient.angle ?? 135}deg, ${resolveColor(bg.gradient.from, paint)}, ${resolveColor(bg.gradient.to, paint)})`);
     wrap.append(g);
   }
   if (bg.image) {
@@ -186,17 +191,19 @@ function place(node: HTMLElement, el: DeckElement) {
   node.style.height = px(el.box.h * STAGE_HEIGHT);
 }
 
-function applyText(node: HTMLElement, style: TextStyle | undefined) {
+// Colour fields hold a hex or a theme token (shared/theme-colors.ts); `color()` maps tokens to the stage variables.
+function applyText(node: HTMLElement, style: TextStyle | undefined, paint: ColorSpec) {
   if (!style) return;
+  const color = (v: string) => resolveColor(v, paint);
   if (style.fontSize) node.style.fontSize = px(style.fontSize);
   if (style.fontWeight) node.style.fontWeight = String(style.fontWeight);
   if (style.font) node.dataset.font = style.font;
   if (style.italic) node.style.fontStyle = "italic";
-  if (style.color) node.style.color = style.color;
+  if (style.color) node.style.color = color(style.color);
   if (style.align) node.style.textAlign = style.align;
   if (style.valign) node.dataset.valign = style.valign;
   if (style.lineHeight) node.style.lineHeight = String(style.lineHeight);
-  if (style.background) node.style.background = style.background;
+  if (style.background) node.style.background = color(style.background);
   if (style.radius !== undefined) node.style.borderRadius = px(style.radius);
   if (style.padding !== undefined) node.style.padding = px(style.padding);
   if (style.card) node.classList.add("card");
@@ -204,13 +211,14 @@ function applyText(node: HTMLElement, style: TextStyle | undefined) {
   if (style.tracking !== undefined) node.style.letterSpacing = `${style.tracking}em`;
 }
 
-function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, entrance?: Entrance): HTMLElement {
+function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, paint: ColorSpec, entrance?: Entrance): HTMLElement {
   const node = document.createElement("div");
   place(node, el);
   if (el.fragment !== undefined) {
     node.dataset.fragment = String(el.fragment);
     node.hidden = el.fragment > opts.step;
   }
+  const color = (v: string) => resolveColor(v, paint);
 
   switch (el.type) {
     case "text": {
@@ -226,7 +234,7 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, e
         inner.textContent = el.text;
       }
       node.append(inner);
-      applyText(node, el.style);
+      applyText(node, el.style, paint);
       break;
     }
     case "image": {
@@ -243,18 +251,18 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, e
       node.dataset.shape = el.shape;
       const s = el.style ?? {};
       if (el.shape === "line") {
-        node.style.borderTop = `${px(s.strokeWidth ?? 4)} solid ${s.stroke ?? "var(--theme-fg)"}`;
+        node.style.borderTop = `${px(s.strokeWidth ?? 4)} solid ${s.stroke ? color(s.stroke) : "var(--theme-fg)"}`;
         node.style.height = "0px";
       } else {
-        node.style.background = s.fill ?? "transparent";
-        if (s.stroke) node.style.border = `${px(s.strokeWidth ?? 2)} solid ${s.stroke}`;
+        node.style.background = s.fill ? color(s.fill) : "transparent";
+        if (s.stroke) node.style.border = `${px(s.strokeWidth ?? 2)} solid ${color(s.stroke)}`;
         node.style.borderRadius = el.shape === "ellipse" ? "50%" : px(s.radius ?? 0);
       }
       break;
     }
     case "qr": {
-      if (el.style?.color) node.style.color = el.style.color;
-      if (el.style?.background) node.style.background = el.style.background;
+      if (el.style?.color) node.style.color = color(el.style.color);
+      if (el.style?.background) node.style.background = color(el.style.background);
       const code = document.createElement("div");
       code.className = "qr-code";
       const caption = document.createElement("div");
@@ -273,9 +281,9 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, e
     case "icon": {
       const s = el.style ?? {};
       // Graphics need 3:1 against their ground; a faint accent (yellow on paper) falls back to the text colour.
-      const ground = s.background ?? theme.colors.background;
-      node.style.color = s.color ?? (contrastRatio(theme.colors.accent, ground) >= 3 ? "var(--theme-accent)" : "var(--theme-fg)");
-      if (s.background) node.style.background = s.background;
+      const ground = s.background ? resolveColorHex(s.background, theme) : theme.colors.background;
+      node.style.color = s.color ? color(s.color) : contrastRatio(theme.colors.accent, ground) >= 3 ? "var(--theme-accent)" : "var(--theme-fg)";
+      if (s.background) node.style.background = color(s.background);
       if (s.radius !== undefined) node.style.borderRadius = px(s.radius);
       if (s.background) {
         node.classList.add("has-background");
@@ -287,13 +295,21 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, e
       break;
     }
     case "chart": {
-      node.append(renderChart(el, { width: el.box.w * STAGE_WIDTH, height: el.box.h * STAGE_HEIGHT, accent: theme.colors.accent, palette: theme.palette }));
+      node.append(
+        renderChart(el, {
+          width: el.box.w * STAGE_WIDTH,
+          height: el.box.h * STAGE_HEIGHT,
+          accent: theme.colors.accent,
+          palette: theme.palette,
+          ...(el.style?.color ? { color: color(el.style.color) } : {}),
+        }),
+      );
       break;
     }
     case "decor": {
       node.setAttribute("aria-hidden", "true");
       if (el.style?.opacity !== undefined) node.style.opacity = String(el.style.opacity);
-      node.append(renderDecor(el.shape, el.style?.color ?? theme.colors.accent, el.box.w * STAGE_WIDTH, el.box.h * STAGE_HEIGHT));
+      node.append(renderDecor(el.shape, el.style?.color ? color(el.style.color) : theme.colors.accent, el.box.w * STAGE_WIDTH, el.box.h * STAGE_HEIGHT));
       break;
     }
   }

@@ -39,6 +39,8 @@ export interface ChartOptions {
   height: number;
   /** Bar colour when the chart has no style.color. */
   accent: string;
+  /** The chart's own bar colour, already resolved to CSS (a hex, or `var(--theme-…)` for a theme token). */
+  color?: string;
   /** Categorical palette in fixed order. */
   palette: readonly string[];
 }
@@ -67,8 +69,15 @@ function barPath(x: number, baseline: number, w: number, h: number): string {
   ].join(" ");
 }
 
-function drawBars(svg: SVGSVGElement, el: ChartElement, { width, height, accent }: ChartOptions) {
-  const color = el.style?.color ?? accent;
+/** A theme variable cannot live in a presentation attribute, so it goes on the style; a hex keeps the attribute. */
+function paint(node: SVGElement, prop: "fill" | "stroke", color: string): SVGElement {
+  if (color.startsWith("var(")) node.style.setProperty(prop, color);
+  else node.setAttribute(prop, color);
+  return node;
+}
+
+function drawBars(svg: SVGSVGElement, el: ChartElement, { width, height, accent, color: own }: ChartOptions) {
+  const color = own ?? accent;
   const n = el.data.length;
   const fontSize = Math.max(18, Math.min(40, height * 0.075, (width / n) * 0.3));
   const top = fontSize * 1.6;
@@ -81,7 +90,7 @@ function drawBars(svg: SVGSVGElement, el: ChartElement, { width, height, accent 
   el.data.forEach((d, i) => {
     const cx = slot * i + slot / 2;
     const h = max > 0 ? (d.value / max) * plot : 0;
-    svg.append(svgEl("path", { class: "chart-bar", d: barPath(cx - barW / 2, baseline, barW, h), fill: color }));
+    svg.append(paint(svgEl("path", { class: "chart-bar", d: barPath(cx - barW / 2, baseline, barW, h) }), "fill", color));
     svg.append(text(formatValue(d.value, el.unit), "chart-value", { x: r2(cx), y: r2(baseline - h - fontSize * 0.45), "text-anchor": "middle", "font-size": r2(fontSize) }));
     svg.append(text(d.label, "chart-label", { x: r2(cx), y: r2(baseline + fontSize * 1.35), "text-anchor": "middle", "font-size": r2(fontSize * 0.85) }));
   });

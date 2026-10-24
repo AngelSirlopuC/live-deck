@@ -2,6 +2,7 @@
 // to break, so the UI can block a save with a clear Spanish message before the
 // server's zod validation. The server (parseDeck) remains the authority.
 import type { Deck, Quiz, Slide, Theme } from "../../../../shared/deck.ts";
+import { THEME_COLOR_TOKENS, isThemeColor } from "../../../../shared/theme-colors.ts";
 import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN } from "../../../../shared/ask.ts";
 import { FONT_NAMES } from "../../../../shared/fonts.ts";
 import { MOTION_STYLES } from "../../../../shared/motion.ts";
@@ -19,6 +20,16 @@ export interface ValidationIssue {
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+const COLOR_MSG = `Usa un color hex como #1a2b3c o un color del tema (${THEME_COLOR_TOKENS.join(", ")}).`;
+// Colour fields of each element type: a hex or a theme token (theme-level colours stay hex).
+const ELEMENT_COLOR_KEYS: Partial<Record<Slide["elements"][number]["type"], readonly string[]>> = {
+  text: ["color", "background"],
+  shape: ["fill", "stroke"],
+  qr: ["color", "background"],
+  icon: ["color", "background"],
+  chart: ["color"],
+  decor: ["color"],
+};
 const EPS = 0.0001;
 const THEME_KEYS = ["background", "foreground", "accent", "muted", "surface"] as const;
 const REQUIRED_THEME_KEYS = ["background", "foreground", "accent"];
@@ -106,6 +117,16 @@ function validateTheme(theme: Theme, add: (path: string, message: string) => voi
 }
 
 function validateSlide(slide: Slide, p: string, add: (path: string, message: string) => void): void {
+  const bg = slide.background;
+  if (typeof bg === "string") {
+    if (!isThemeColor(bg)) add(`${p}.background`, COLOR_MSG);
+  } else if (bg) {
+    if (bg.color !== undefined && !isThemeColor(bg.color)) add(`${p}.background.color`, COLOR_MSG);
+    if (bg.gradient) {
+      if (!isThemeColor(bg.gradient.from)) add(`${p}.background.gradient.from`, COLOR_MSG);
+      if (!isThemeColor(bg.gradient.to)) add(`${p}.background.gradient.to`, COLOR_MSG);
+    }
+  }
   if (slide.elements.length > MAX_ELEMENTS) add(`${p}.elements`, `Máximo ${MAX_ELEMENTS} elementos por diapositiva.`);
   const ids = new Set<string>();
   slide.elements.forEach((el, j) => {
@@ -118,6 +139,11 @@ function validateSlide(slide: Slide, p: string, add: (path: string, message: str
       add(`${q}.box`, "El elemento se sale de la diapositiva.");
     }
     if (el.fragment !== undefined && (!Number.isInteger(el.fragment) || el.fragment < 1 || el.fragment > 20)) add(`${q}.fragment`, "El fragmento va de 1 a 20.");
+    const style = (el as { style?: Record<string, unknown> }).style;
+    for (const key of ELEMENT_COLOR_KEYS[el.type] ?? []) {
+      const value = style?.[key];
+      if (value !== undefined && !isThemeColor(value)) add(`${q}.style.${key}`, COLOR_MSG);
+    }
     if (el.type === "text" && el.text.length > 2000) add(`${q}.text`, "El texto no puede superar 2000 caracteres.");
     if (el.type === "chart") {
       const [min, max] = el.kind === "donut" ? [2, 6] : [1, 8];
