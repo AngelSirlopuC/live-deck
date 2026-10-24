@@ -9,7 +9,7 @@ Boxes are normalized `{ x, y, w, h }` on a 16:9 canvas. Font sizes are logical p
   { "id": "kicker", "type": "text", "box": { "x": 0.07, "y": 0.14, "w": 0.5, "h": 0.06 }, "text": "EVENT · DATE", "style": { "fontSize": 30, "fontWeight": 700, "font": "mono", "color": "accent" } },
   { "id": "title", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Title in up to eight words", "style": { "fontSize": 96, "fontWeight": 800, "font": "display", "lineHeight": 1.05 } },
   { "id": "subtitle", "type": "text", "box": { "x": 0.07, "y": 0.64, "w": 0.48, "h": 0.12 }, "text": "Scan the code to join.", "style": { "fontSize": 36, "color": "muted", "lineHeight": 1.3 } },
-  { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "text", "color": "background" } }
+  { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 } }
 ]
 ```
 
@@ -95,7 +95,7 @@ These assume a `theme.preset`. They set no colors on purpose: the preset supplie
     { "id": "decor", "type": "decor", "shape": "rings", "box": { "x": 0.0, "y": 0.55, "w": 0.26, "h": 0.45 }, "style": { "opacity": 0.25 } },
     { "id": "kicker", "type": "text", "box": { "x": 0.07, "y": 0.14, "w": 0.5, "h": 0.06 }, "text": "Event · date", "style": { "fontSize": 30, "fontWeight": 700, "font": "mono", "uppercase": true, "tracking": 0.12 } },
     { "id": "title", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Title in up to eight words", "style": { "fontSize": 100, "fontWeight": 800, "font": "display", "lineHeight": 1.02, "tracking": -0.02 } },
-    { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "text", "color": "background" } }
+    { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 } }
   ] }
 ```
 

@@ -142,7 +142,7 @@ function template(title: string, theme: Theme = PLAIN_THEME): Deck {
         elements: [
           { id: "title", type: "text", box: { x: 0.07, y: 0.22, w: 0.52, h: 0.36 }, text: title, style: { fontSize: 96, fontWeight: 800, font: "display", lineHeight: 1.05 } },
           { id: "subtitle", type: "text", box: { x: 0.07, y: 0.64, w: 0.48, h: 0.12 }, text: "Scan the code to join from your phone.", style: { fontSize: 36, ...subtitleColor, lineHeight: 1.3 } },
-          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 }, style: { background: "text", color: "background" } },
+          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 } },
         ],
       },
       {

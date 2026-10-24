@@ -372,6 +372,10 @@
   place-items: center;
 }
 
+.qr-code svg path {
+  stroke: var(--qr-ink, #14110d);
+}
+
 .qr-code svg {
   width: auto;
   height: 100%;

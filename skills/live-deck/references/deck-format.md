@@ -130,7 +130,7 @@ Imported slides (`live-deck import`) use exactly this field: `"background": { "i
 ### qr
 
 Renders the session join QR and URL at runtime. No payload.
-- `style` (optional): only `color` and `background` (hex or token). The default is already `background: "text"`, `color: "background"` (a tile in the text color with modules in the ground color), which scans well on both light and dark themes; set `background: "#ffffff"`, `color: "#000000"` only over a photo.
+- `style` (optional): only `color` (the modules) and `background` (the tile), hex or token. Leave both out: the player always draws dark modules on a light tile taken from the theme, so the QR scans in every preset and mode. A pair you set is used only when it is dark-on-light with at least 4:1 contrast; otherwise the player falls back to the theme pair. Set `background: "#ffffff"`, `color: "#000000"` only over a photo.
 - Put one on slide 1. Keep it at least 0.25 wide and roughly square on screen (`h ≈ w × 16/9`).
 
 ### icon

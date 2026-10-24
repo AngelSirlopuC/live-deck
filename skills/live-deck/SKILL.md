@@ -128,7 +128,7 @@ Preset: `estudio`, because it is a general tech-safety talk for a mixed audience
       "elements": [
       { "id": "decor", "type": "decor", "shape": "rings", "box": { "x": 0.0, "y": 0.55, "w": 0.26, "h": 0.45 }, "style": { "opacity": 0.25 } },
       { "id": "titulo", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Contraseñas que nadie adivina", "style": { "fontSize": 96, "fontWeight": 800, "font": "display", "lineHeight": 1.05, "tracking": -0.02 } },
-      { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "text", "color": "background" } }
+      { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 } }
     ] },
     { "id": "reglas", "notes": "Cada regla aparece con 'siguiente'.", "elements": [
       { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.1, "w": 0.86, "h": 0.14 }, "text": "Tres reglas", "style": { "fontSize": 80, "fontWeight": 800, "font": "display" } },

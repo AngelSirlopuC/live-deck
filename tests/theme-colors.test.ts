@@ -146,10 +146,11 @@ describe("renderer: tokens become stage variables, hex stays as written", () => 
     expect(hex.querySelector("path")!.getAttribute("fill")).toBe("#123456");
   });
 
-  it("qr colour and background", () => {
+  it("qr tokens resolve to theme hex so the scan contrast can be guaranteed", () => {
+    // The demo-style dark theme: light text tile with dark ground-coloured modules.
     const n = node(deckWith([{ id: "a", type: "qr", box, style: { color: "background", background: "text" } }]));
-    expect(n.style.color).toBe("var(--theme-bg)");
-    expect(n.style.background).toBe("var(--theme-fg)");
+    expect(n.style.getPropertyValue("--qr-ink")).not.toContain("var(");
+    expect(n.style.background).not.toContain("var(");
   });
 
   it("slide ground tokens resolve to the theme hex on the stage, gradient stops to variables", () => {

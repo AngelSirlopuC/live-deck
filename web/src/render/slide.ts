@@ -3,7 +3,7 @@ import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shar
 import { iconNode } from "../../../shared/icons.ts";
 import { DEFAULT_MOTION, groupEntrances, type Entrance } from "../../../shared/motion.ts";
 import { resolveColor, resolveColorHex, type ColorSpec } from "../../../shared/theme-colors.ts";
-import { contrastRatio, fontStack, resolveThemeSpec, type ThemeSpec } from "../../../shared/themes.ts";
+import { contrastRatio, fontStack, luminance, resolveThemeSpec, type ThemeSpec } from "../../../shared/themes.ts";
 import { renderAsk } from "./ask-overlay.ts";
 import { renderChart } from "./charts.ts";
 import { renderDecor } from "./decor.ts";
@@ -211,6 +211,25 @@ function applyText(node: HTMLElement, style: TextStyle | undefined, paint: Color
   if (style.tracking !== undefined) node.style.letterSpacing = `${style.tracking}em`;
 }
 
+/** Minimum contrast between QR modules and their tile for reliable scanning. */
+const QR_MIN_CONTRAST = 4;
+
+/**
+ * The deck's QR colours when they already scan (dark ink on a lighter tile,
+ * at least 4:1); otherwise the lightest and darkest theme colours, and plain
+ * white and near-black if even those are too close.
+ */
+export function qrColors(style: { color?: string; background?: string } | undefined, theme: ThemeSpec): { tile: string; ink: string } {
+  const scans = (ink: string, tile: string) => luminance(ink) < luminance(tile) && contrastRatio(ink, tile) >= QR_MIN_CONTRAST;
+  const { foreground, background } = theme.colors;
+  const [light, dark] = luminance(foreground) >= luminance(background) ? [foreground, background] : [background, foreground];
+  const tile = style?.background ? resolveColorHex(style.background, theme) : light;
+  const ink = style?.color ? resolveColorHex(style.color, theme) : dark;
+  if (scans(ink, tile)) return { tile, ink };
+  if (scans(dark, light)) return { tile: light, ink: dark };
+  return { tile: "#ffffff", ink: "#14110d" };
+}
+
 function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, paint: ColorSpec, entrance?: Entrance): HTMLElement {
   const node = document.createElement("div");
   place(node, el);
@@ -261,8 +280,11 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, p
       break;
     }
     case "qr": {
-      if (el.style?.color) node.style.color = color(el.style.color);
-      if (el.style?.background) node.style.background = color(el.style.background);
+      // Phones must be able to scan it: dark modules on a light tile, always.
+      const { tile, ink } = qrColors(el.style, theme);
+      node.style.background = tile;
+      node.style.color = ink;
+      node.style.setProperty("--qr-ink", ink);
       const code = document.createElement("div");
       code.className = "qr-code";
       const caption = document.createElement("div");
