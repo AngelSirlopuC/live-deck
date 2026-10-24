@@ -104,16 +104,16 @@ any of these.
 
 ## Creating presentations
 
-There are two ways in. Both end in the same live session.
+There are three ways in. All end in the same live session, and you can mix them: write or import a deck, then fine-tune it in the editor.
 
-| | 1. Write a deck with Claude | 2. Import slides you designed |
-| --- | --- | --- |
-| Best for | Starting from an idea, outline or notes | Slides already made in PowerPoint, Keynote, Google Slides, Canva, Figma… |
-| Design | Six theme presets, icons, charts, decor, backgrounds | Exactly your design (each slide is an image) |
-| Step-by-step reveals, focus/zoom on one element | Yes | No (focus/zoom on an area still works) |
-| Quizzes | Native quiz slides | Native quiz slides, or **zone quizzes** drawn over your designed question |
+| | 1. Write a deck with Claude | 2. Import slides you designed | 3. Edit by hand |
+| --- | --- | --- | --- |
+| Best for | Starting from an idea, outline or notes | Slides already made in PowerPoint, Keynote, Google Slides, Canva, Figma… | Fine-tuning any deck, or building a short one visually |
+| Design | Six theme presets in light and dark, custom themes from your prompt, icons, charts, decor, backgrounds | Exactly your design (each slide is an image) | Same elements and themes as path 1, in the browser at `/edit/<id>` |
+| Step-by-step reveals, focus/zoom on one element | Yes (the skill decides the steps) | No (focus/zoom on an area still works) | Keeps the steps the skill chose |
+| Quizzes | Native quiz slides | Native quiz slides, or **zone quizzes** drawn over your designed question | Add and edit quiz and open-question slides |
 
-### Install the skill (both paths)
+### Install the skill (paths 1 and 2)
 
 ```sh
 npx skills add AngelSirlopuC/live-deck   # Claude Code, Cursor, Codex, Gemini CLI and more
@@ -123,7 +123,32 @@ npx skills add AngelSirlopuC/live-deck   # Claude Code, Cursor, Codex, Gemini CL
 
 Ask: "create a live deck about …". The skill picks a theme preset for the topic,
 audience and room, plans varied layouts, writes `decks/<id>/deck.json`, validates
-it with the CLI and fixes every issue, then gives you the preview link.
+it with the CLI and fixes every issue, then always ends with both links:
+
+```
+Vista previa: http://localhost:5180/preview/<id>
+Editar:       http://localhost:5180/edit/<id>
+```
+
+The links work while `npm run dev:server` and `npm run dev:web` are running.
+For a deck published to a server, the skill uses `PUBLIC_BASE_URL` from `.env`
+instead of `localhost`. **Vista previa** shows the saved deck; **Editar** opens
+the visual editor (press Guardar to save).
+
+#### Skill shortcuts
+
+Type these after `/live-deck` to get an answer without writing anything:
+
+| Shortcut | What you get |
+| --- | --- |
+| `/live-deck preview <id>` | The preview and editor links of that deck |
+| `/live-deck edit <id>` | The editor link (and the preview link) |
+| `/live-deck list` | Every deck with its title, slide count and links; invalid decks show why |
+| `/live-deck validate <id>` | The deck validated, every issue and warning fixed, then the links |
+
+Without an id, or with an unknown one, the skill lists the decks and asks which
+one you mean. Anything else after `/live-deck` is a normal request, such as
+"/live-deck create a deck about…".
 
 What a deck can use (format v1, defined in `shared/deck.ts`):
 
@@ -137,8 +162,16 @@ What a deck can use (format v1, defined in `shared/deck.ts`):
   shapes, curated Lucide icons, bar and donut charts, decorative shapes, and the
   join `qr`.
 - **Slide backgrounds**: colour, gradient, image (with dimming) or pattern.
-- **Fragments** for step-by-step reveals, **speaker notes**, and **quiz slides**
-  (live or secret results, shown as a ranking by default, optional timer).
+- **Colours that follow the theme**: element colours can be `text`, `muted`,
+  `accent`, `surface`, `background` or `on-accent` instead of a hex, so a
+  different preset or mode recolours the whole deck.
+- **Motion chosen for you**: the skill picks one motion style per deck (`calm`,
+  `lively`, `snappy` or `none`) and decides which elements appear step by step.
+  Each element animates by its type (text rises, bars grow, donuts sweep, icons
+  pop) in reading order. Nobody sets animations by hand.
+- **Speaker notes**, **quiz slides** (live or secret results, shown as a ranking
+  by default, optional timer) and **open-question slides** (short free-text
+  answers grouped with ×N on the slide).
 
 Decks are data, never HTML: nothing in a deck can run code on attendees' phones.
 
@@ -209,8 +242,9 @@ npm run deck -- list                              # list decks and flag invalid 
 | `decks/demo` | Every basic element and both quiz modes |
 | `decks/como-crear-una-presentacion` | Path 1: the `brutalista` preset, icons, charts with real data, decor, credits |
 | `decks/importadas-demo` | Path 2: imported designed images, a zone quiz and an interleaved native quiz |
+| `decks/tema-propio` | A custom light theme built from a prompt: colours, fonts, cards and chart palette |
 
-Open any of them at `/preview/<deck-id>`.
+Open any of them at `/preview/<deck-id>`, or edit it at `/edit/<deck-id>`.
 
 ## Self-hosting
 

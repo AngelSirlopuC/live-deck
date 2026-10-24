@@ -1,11 +1,26 @@
 ---
 name: live-deck
-description: Author interactive presentations for Live Deck as deck.json files (format v1) and validate them with the repo CLI. Use when the user asks to "create a live deck", "make a presentation for Live Deck", "convert my outline/notes/pptx into a live deck", "add a quiz slide to my deck", "import my slides from PowerPoint/Keynote/Google Slides/Canva/Figma", or to fix a deck that fails validation.
+description: Author interactive presentations for Live Deck as deck.json files (format v1) and validate them with the repo CLI. Use when the user asks to "create a live deck", "make a presentation for Live Deck", "convert my outline/notes/pptx into a live deck", "add a quiz slide to my deck", "import my slides from PowerPoint/Keynote/Google Slides/Canva/Figma", to fix a deck that fails validation, or to get a deck's preview or editor links (shortcuts `/live-deck preview <id>`, `edit <id>`, `list`, `validate <id>`).
 ---
 
 # Live Deck authoring
 
 Turn an idea, outline, notes or pasted .pptx text into `decks/<id>/deck.json`, validate it, fix every error, and hand the user the preview and editor URLs.
+
+## Shortcuts
+
+When the skill is invoked with one of these as its first word (`/live-deck preview demo`), do only that and stop. Do not plan or write slides; only `validate` may edit the deck, and only to fix what the validator reports.
+
+| Shortcut | Do |
+| --- | --- |
+| `preview <id>` | Check `decks/<id>/deck.json` exists, then reply with the "Vista previa" / "Editar" link block (Workflow step 6). |
+| `edit <id>` | Same check, then reply with the editor link first (`Editar: …/edit/<id>`) and the preview link below it. Remind them to press Guardar. |
+| `list` | Run `node bin/live-deck.ts list` and reply with one row per deck: id, title, slide count, and its preview and editor links. Mark decks the CLI flags as `INVALID` and give the reason instead of links. |
+| `validate <id>` | Run `node bin/live-deck.ts validate <id>`, fix every issue and warning (Workflow step 5), re-run until `OK`, then summarize what you changed and end with the link block. |
+
+- Missing id or unknown deck: run `node bin/live-deck.ts list`, show the available ids and ask which one. Never guess.
+- Links use the same base as Workflow step 6: `http://localhost:5180` locally, or `PUBLIC_BASE_URL` from `.env` for a published deck.
+- Anything else after `/live-deck` is a normal request: follow "Choose the path".
 
 ## Choose the path
 
