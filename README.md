@@ -128,8 +128,11 @@ it with the CLI and fixes every issue, then gives you the preview link.
 What a deck can use (format v1, defined in `shared/deck.ts`):
 
 - **Theme presets**: `estudio`, `editorial`, `neon`, `papel`, `brutalista`,
-  `corporativo`. Each brings its own fonts, colours, background art and card
-  style; colours can be overridden for a brand.
+  `corporativo`, each in a `light` and a `dark` mode. Each brings its own fonts,
+  colours, background art and card style. The skill picks the mode from the
+  room (light unless the venue is dark) and can build a custom theme from your
+  prompt: colours, fonts from a curated list, cards, headings, background art
+  and chart palette, all as data. `validate` warns about low contrast.
 - **Elements**: text (with `card`, `uppercase`, `tracking`, `mark`), images,
   shapes, curated Lucide icons, bar and donut charts, decorative shapes, and the
   join `qr`.
