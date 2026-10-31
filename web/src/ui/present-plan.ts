@@ -1,6 +1,8 @@
 // Where the projection and the controls go, from the chosen options and the
 // screens the browser reports (Window Management API). Pure: no DOM.
 
+import type { PresenterCommand, SessionStatus } from "../../../shared/protocol.ts";
+
 export interface ScreenChoice {
   id: string;
   label: string;
@@ -90,4 +92,12 @@ export function planPresentation(opts: PresentOptions, screens: readonly ScreenC
     presenterWindow: opts.presenterView ? { left: (current?.availLeft ?? 0) + 80, top: (current?.availTop ?? 0) + 80, ...DEFAULT_WINDOW } : null,
     floatingControls: !opts.presenterView,
   };
+}
+
+/**
+ * Commands the "Presentar" button sends. It never starts the session: the
+ * presenter starts it (and the timer) by hand with "Iniciar".
+ */
+export function presentCommands(status: SessionStatus, fromStart: boolean): PresenterCommand[] {
+  return status === "live" && fromStart ? [{ t: "goto", pos: { slide: 0, step: 0 } }] : [];
 }

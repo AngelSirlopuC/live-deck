@@ -64,3 +64,17 @@ describe("presentation api mode", () => {
     expect(plan.presenterWindow).toBeNull();
   });
 });
+
+describe("presentCommands", async () => {
+  const { presentCommands } = await import("../web/src/ui/present-plan.ts");
+
+  it("never starts the session: the presenter starts it, and the timer, by hand", () => {
+    expect(presentCommands("waiting", false)).toEqual([]);
+    expect(presentCommands("waiting", true)).toEqual([]);
+  });
+
+  it("goes back to the first slide on a live session only when asked", () => {
+    expect(presentCommands("live", true)).toEqual([{ t: "goto", pos: { slide: 0, step: 0 } }]);
+    expect(presentCommands("live", false)).toEqual([]);
+  });
+});

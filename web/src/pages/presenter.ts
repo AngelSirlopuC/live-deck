@@ -20,7 +20,7 @@ import type { ChatMessage, SessionSummary } from "../../../shared/protocol.ts";
 import { openShareSheet } from "../ui/share.ts";
 import { createEndPanel } from "../ui/summary.ts";
 import { openPresentDialog } from "../ui/present-dialog.ts";
-import { planPresentation, type PresentPlan, type Rect } from "../ui/present-plan.ts";
+import { planPresentation, presentCommands, type PresentPlan, type Rect } from "../ui/present-plan.ts";
 import { nativeScreen } from "../ui/screens.ts";
 import { receiverMessage, startProjection, type Projection } from "../ui/present-api.ts";
 
@@ -348,9 +348,12 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   const presentPrev = trusted("button", { type: "button", class: "key key-icon", "aria-label": "Anterior" }, icon("prev"));
   const presentNext = trusted("button", { type: "button", class: "key key-icon key-primary", "aria-label": "Siguiente" }, icon("next"));
   const presentExit = trusted("button", { type: "button", class: "key", "aria-label": "Salir del modo presentación" }, `${icon("shrink")}<span>Salir</span>`);
+  // Presenting does not start the session: while it waits, this key starts it (and the timer).
+  const presentStart = trusted("button", { type: "button", class: "key key-onair" }, `${icon("play")}<span>Iniciar</span>`);
   presentPrev.addEventListener("click", () => ctx.send({ t: "prev" }));
   presentNext.addEventListener("click", () => ctx.send({ t: "next" }));
-  const presentNav = h("div", { class: "present-nav" }, presentPrev, presentNext);
+  presentStart.addEventListener("click", () => ctx.send({ t: "start" }));
+  const presentNav = h("div", { class: "present-nav" }, presentStart, presentPrev, presentNext);
   const program = h(
     "section",
     { class: "monitor monitor-program", "aria-label": "Diapositiva actual" },
@@ -465,8 +468,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     const req = await openPresentDialog(`/p/${token}/screen`);
     if (!req) return;
     const plan = planPresentation(req, req.screens, req.currentId);
-    if (ctx.state.status === "waiting") ctx.send({ t: "start" });
-    else if (req.fromStart) ctx.send({ t: "goto", pos: { slide: 0, step: 0 } });
+    for (const cmd of presentCommands(ctx.state.status, req.fromStart)) ctx.send(cmd);
 
     if (plan.useDisplay) {
       // The display page runs isolated in Chrome; it gets the PIN over the
@@ -622,6 +624,9 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       pace.update(s.startedAt, s.timeLimitMin);
       prev.disabled = s.status !== "live";
       next.disabled = s.status !== "live";
+      presentStart.hidden = s.status !== "waiting";
+      presentPrev.disabled = s.status !== "live";
+      presentNext.disabled = s.status !== "live";
       actions.update(s);
     },
     connection(status) {
