@@ -10,6 +10,14 @@ export interface QuizOverlayOptions {
   presenter?: boolean;
 }
 
+/**
+ * Quiz options for the console's own slide. It marks the answer for the presenter,
+ * except while that same slide is projected to the audience (presentation mode).
+ */
+export function consoleQuizOptions(projected: boolean, clockOffset?: number): QuizOverlayOptions {
+  return { presenter: !projected, ...(clockOffset !== undefined ? { clockOffset } : {}) };
+}
+
 export function remainingSeconds(view: QuizView, clockOffset = 0): number | null {
   if (view.status !== "open" || view.endsAt === null) return null;
   return Math.max(0, Math.ceil((view.endsAt - (Date.now() + clockOffset)) / 1000));

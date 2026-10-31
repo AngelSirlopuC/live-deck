@@ -3,6 +3,7 @@ import { nextPosition, type Position } from "../../../shared/nav.ts";
 import { PIN, type PresenterCommand, type PresenterSurface, type SessionSnapshot } from "../../../shared/protocol.ts";
 import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
+import { consoleQuizOptions } from "../render/quiz-overlay.ts";
 import { h, storage, trusted } from "../ui/dom.ts";
 import { icon } from "../ui/icons.ts";
 import { createPaceTimer } from "../ui/pace-timer.ts";
@@ -457,6 +458,8 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     }
     syncFsPrompt();
     programView.refit();
+    // Projected slides never hint the quiz answer; repaint now, not on the next tick.
+    programView.setQuiz(ctx.state.quizzes[ctx.deck.slides[ctx.state.position.slide]!.id] ?? null, consoleQuizOptions(presenting, ctx.clockOffset));
   };
   presentBtn.addEventListener("click", async () => {
     const req = await openPresentDialog(`/p/${token}/screen`);
@@ -566,7 +569,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     if (ctx.state.status !== "ended") pace.update(ctx.state.startedAt, ctx.state.timeLimitMin);
     pq.update(ctx.state, ctx.clockOffset);
     const slide = ctx.deck.slides[ctx.state.position.slide]!;
-    programView.setQuiz(ctx.state.quizzes[slide.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
+    programView.setQuiz(ctx.state.quizzes[slide.id] ?? null, consoleQuizOptions(presenting, ctx.clockOffset));
   }, 1000);
 
   return {
@@ -607,7 +610,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       programView.setEffects(s.effects);
       programView.setAsks(s.asks);
       const current = ctx.deck.slides[s.position.slide]!;
-      programView.setQuiz(s.quizzes[current.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
+      programView.setQuiz(s.quizzes[current.id] ?? null, consoleQuizOptions(presenting, ctx.clockOffset));
       pq.update(s, ctx.clockOffset);
       pask.update(s);
       const upcoming: Position = nextPosition(ctx.deck.slides, s.position);

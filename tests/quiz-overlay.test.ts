@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import type { Deck } from "../shared/deck.ts";
-import { applyQuizView, quizStatusText } from "../web/src/render/quiz-overlay.ts";
+import { applyQuizView, consoleQuizOptions, quizStatusText } from "../web/src/render/quiz-overlay.ts";
 import { renderSlide } from "../web/src/render/slide.ts";
 
 const deck: Deck = {
@@ -35,6 +35,18 @@ describe("quiz overlay", () => {
     const opts = [...stage.querySelectorAll<HTMLElement>("[data-option-index]")];
     expect(opts[2]!.classList.contains("is-correct")).toBe(true);
     expect(opts[0]!.classList.contains("is-wrong")).toBe(true);
+  });
+
+  it("the console marks the answer before reveal only while it is not projected", () => {
+    const open = { slideId: "q", status: "open" as const, counts: [1, 0, 2], total: 3, correctIndex: 2, endsAt: null };
+    const marked = (projected: boolean) => {
+      const stage = renderSlide(deck, 0, { step: 0 });
+      applyQuizView(stage, open, consoleQuizOptions(projected));
+      return [...stage.querySelectorAll<HTMLElement>("[data-option-index]")].map((o) => o.classList.contains("is-answer"));
+    };
+    expect(marked(false)).toEqual([false, false, true]);
+    // Projected to the audience (presentation mode): no hint of the answer until it is revealed.
+    expect(marked(true)).toEqual([false, false, false]);
   });
 
   it("counts down timed quizzes using the server clock", () => {
