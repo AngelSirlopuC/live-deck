@@ -39,7 +39,9 @@ against the background (below 4.5:1, 3:1 and 3:1).
 Publish: copies decks/<id>/ to $LIVE_DECK_PUBLISH_TARGET/<id>/ with rsync,
 e.g. LIVE_DECK_PUBLISH_TARGET=user@host:/opt/live-deck/decks (or a local path).
 Files deleted locally are removed only inside that deck. The server reads decks
-when a session is created, so no restart is needed. Set LIVE_DECK_PUBLIC_URL
+when a session is created, so no restart is needed. If the server saves edits
+to its decks folder, set LIVE_DECK_PUBLISH_RSYNC_PATH to run the remote rsync as
+the container's user, e.g. "setpriv --reuid=1000 --regid=1000 --clear-groups rsync". Set LIVE_DECK_PUBLIC_URL
 (e.g. https://events.example.com) to print the preview link.
 
 Import: takes .png, .jpg, .jpeg and .webp files (up to 200) in natural order
@@ -352,7 +354,19 @@ function publish(args: string[]): number {
     return 1;
   }
   // Trailing slashes: copy the folder's contents into <target>/<id>; --delete stays inside it.
-  const rsyncArgs = ["-a", "--delete", "--exclude", ".DS_Store", ...(dryRun ? ["-n", "-v"] : []), `${join(DECKS_DIR, id)}/`, `${target}/${id}/`];
+  // Optional: run the server's rsync as another user (e.g. the one the container
+  // runs as), so a writable decks mount stays editable after every publish.
+  const rsyncPath = process.env.LIVE_DECK_PUBLISH_RSYNC_PATH?.trim();
+  const rsyncArgs = [
+    "-a",
+    "--delete",
+    "--exclude",
+    ".DS_Store",
+    ...(rsyncPath ? [`--rsync-path=${rsyncPath}`] : []),
+    ...(dryRun ? ["-n", "-v"] : []),
+    `${join(DECKS_DIR, id)}/`,
+    `${target}/${id}/`,
+  ];
   const run = spawnSync("rsync", rsyncArgs, { stdio: "inherit" });
   if (run.error || run.status !== 0) {
     process.stderr.write(`${id}: rsync failed${run.error ? ` (${run.error.message})` : ` with exit code ${run.status}`}\n`);

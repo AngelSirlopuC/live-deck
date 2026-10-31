@@ -277,6 +277,20 @@ It refuses an invalid deck, removes files you deleted only inside that deck,
 and needs no restart: the server reads decks when a session is created. Then
 create the session from the home page with the admin key.
 
+To save edits from the hosted editor, mount the decks folder writable
+(`./decks:/app/decks`, without `:ro`) and give it to the container's user
+(`chown -R 1000:1000 decks`). Then make publish write as that user too, or the
+next publish leaves files the server cannot change:
+
+```sh
+# .env
+LIVE_DECK_PUBLISH_RSYNC_PATH=setpriv --reuid=1000 --regid=1000 --clear-groups rsync
+```
+
+Edits saved on the server stay there: publishing again from your machine
+overwrites them, so copy them back first (`rsync` the other way) if you want
+to keep them.
+
 ## Architecture
 
 ```

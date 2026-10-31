@@ -403,6 +403,29 @@ describe("live-deck publish", () => {
     expect(publish({ LIVE_DECK_PUBLISH_TARGET: target }, "../x").code).toBe(2);
   });
 
+  // A stub rsync on PATH records the arguments publish passes to it.
+  function rsyncArgsWith(env: Record<string, string>): string[] {
+    const bin = mkdtempSync(join(tmpdir(), "live-deck-rsync-"));
+    const log = join(bin, "args.txt");
+    writeFileSync(join(bin, "rsync"), `#!/bin/sh\nfor a in "$@"; do printf '%s\\n' "$a" >> "${log}"; done\n`, { mode: 0o755 });
+    cpSync(demoDir, join(root, "charla"), { recursive: true });
+    const r = publish({ LIVE_DECK_PUBLISH_TARGET: target, PATH: `${bin}:${process.env.PATH}`, ...env }, "charla");
+    expect(r.code).toBe(0);
+    const args = readFileSync(log, "utf8").trim().split("\n");
+    rmSync(bin, { recursive: true, force: true });
+    return args;
+  }
+
+  it("runs the server's rsync through LIVE_DECK_PUBLISH_RSYNC_PATH, so files get the server user's owner", () => {
+    expect(rsyncArgsWith({ LIVE_DECK_PUBLISH_RSYNC_PATH: "setpriv --reuid=1000 --regid=1000 --clear-groups rsync" })).toContain(
+      "--rsync-path=setpriv --reuid=1000 --regid=1000 --clear-groups rsync",
+    );
+  });
+
+  it("passes no --rsync-path when LIVE_DECK_PUBLISH_RSYNC_PATH is unset", () => {
+    expect(rsyncArgsWith({ LIVE_DECK_PUBLISH_RSYNC_PATH: "" }).some((a) => a.startsWith("--rsync-path"))).toBe(false);
+  });
+
   it("copies nothing with --dry-run", () => {
     cpSync(demoDir, join(root, "charla"), { recursive: true });
     const r = publish({ LIVE_DECK_PUBLISH_TARGET: target }, "charla", "--dry-run");
