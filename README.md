@@ -12,9 +12,11 @@ anything.
   votes by tap or keyboard (A–F, 1–6). Anonymous attendees get a creative alias.
 - **Open questions.** A slide of the deck (`layout: "ask"`, set up when the
   deck is created) with a character limit from 10 to 100 (default 40). It opens
-  when you reach the slide; each person sends one answer and can change it until
-  you close it. Answers fill the slide on every screen, grouped ignoring case,
-  accents and spacing, most repeated first with a `×N` badge. The answer box
+  when you reach the slide; each person taps "Escribir respuesta", writes in a
+  modal text area and sends one answer, and can reopen it with "Volver a
+  escribir" until you close the question. Answers fill the slide on every screen,
+  including the audience's phones, grouped ignoring case, accents and spacing,
+  most repeated first with a `×N` badge. The text area
   turns on the browser's spellcheck and autocorrect and recommends using it,
   so the same word is not split by typos. Every question lands in the summary.
 - **Pointer effects.** Ripple, focus and zoom (focus and zoom combine), mirrored on every screen. Focus and zoom stay armed so you can redraw the region; `Esc` clears everything. The laser (`L`) shows the presenter's cursor live on every screen.

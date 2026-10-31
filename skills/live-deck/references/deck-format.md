@@ -203,7 +203,7 @@ The answer and notes are stripped before the deck reaches the audience.
 
 - The slide shows the question and fills in the answers live: equal answers (ignoring case, accents and spacing) group into one entry with `×N`, most repeated first, ties A to Z.
 - Answers open the first time the presenter reaches the slide and stay open until the presenter closes them; going back never reopens a closed question. Each person sends one answer per question and can change it while it is open.
-- The audience's answer box turns on the browser's spellcheck and autocorrect and recommends using it, so a typo does not split a word.
+- The audience writes in a modal text area ("Escribir respuesta", then "Volver a escribir" while the question is open). It turns on the browser's spellcheck and autocorrect and recommends using it, so a typo does not split a word.
 - Every open question reached appears in the session summary with its grouped answers.
 
 ## Validation messages
