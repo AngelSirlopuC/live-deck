@@ -11,7 +11,8 @@ export default defineConfig({
     strictPort: true,
     host: true,
     proxy: {
-      "/api": http,
+      // Keep the browser's Host header: the editor API rejects saves whose Origin does not match it.
+      "/api": { target: http, changeOrigin: false },
       "/decks": http,
       "/ws": { target: `ws://localhost:${serverPort}`, ws: true },
     },
