@@ -165,6 +165,27 @@ the panel on their phone, with keys A–F, or by tapping the option on the slide
 Options keep their designed position. See
 `skills/live-deck/references/zone-quizzes.md`.
 
+### Path 3: edit by hand in the browser
+
+Open `/edit/<id>` (or press **Editar** on the home page; **Nueva presentación**
+creates an empty deck and opens it). The editor works on the same `deck.json`:
+
+- **Slides**: thumbnails to add (blank, quiz, open question), duplicate, delete
+  and drag to reorder; an overview grid (`G`).
+- **Canvas**: the real slide renderer. Click, shift-click or drag a box to
+  select; drag to move with snap guides; eight handles to resize (shift keeps
+  the proportions); arrows nudge; double-click a text to edit it in place.
+- **Insert**: text, shapes, images (upload or pick from the deck's assets),
+  icons, charts, decorations and the join QR.
+- **Inspector**: every field of the selected element, the slide (layout,
+  background, notes, quiz and open-question settings) and the design (title,
+  preset, colour overrides with a contrast hint).
+- **Save** with ⌘S. The server validates the deck before writing it and refuses
+  to overwrite changes saved from another tab. Undo and redo with ⌘Z / ⇧⌘Z,
+  every action with ⌘K, and **Exportar PDF** prints one slide per page.
+
+The editor needs the admin key when `ADMIN_KEY` is set, like creating a session.
+
 ### The deck CLI
 
 ```sh

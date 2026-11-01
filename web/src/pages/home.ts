@@ -21,7 +21,25 @@ async function fetchDecks(adminKey: string | null): Promise<DeckSummary[] | "una
   return (await res.json()) as DeckSummary[];
 }
 
-export async function mountHome(root: HTMLElement) {
+/** Turns a title into a deck id: lowercase, no accents, words joined by dashes. */
+export function deckIdFrom(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 63)
+    .replace(/-+$/, "");
+}
+
+const CREATE_ERRORS: Record<number, string> = {
+  400: "Revisa el título y el identificador: solo minúsculas, números y guiones.",
+  401: "La clave de administración no es válida.",
+  409: "Ya existe una presentación con ese identificador.",
+};
+
+export async function mountHome(root: HTMLElement, go: (url: string) => void = (url) => location.assign(url)) {
   let adminKey = local.read<string>(ADMIN_KEY);
   let decks = await fetchDecks(adminKey).catch(() => [] as DeckSummary[]);
 
@@ -39,7 +57,59 @@ export async function mountHome(root: HTMLElement) {
     if (wanted && list.some((d) => d.id === wanted)) deckSelect.value = wanted;
     deckSelect.disabled = list.length === 0;
     if (!list.length) error.textContent = "No hay presentaciones en la carpeta decks/.";
+    editLink.hidden = list.length === 0;
+    syncEdit();
   };
+  const editLink = trusted("a", { class: "key key-ghost home-edit", href: "/edit/" }, `${icon("slides")}<span>Editar</span>`);
+  const syncEdit = () => editLink.setAttribute("href", `/edit/${encodeURIComponent(deckSelect.value)}`);
+  deckSelect.addEventListener("change", syncEdit);
+  const newButton = h("button", { type: "button", class: "key key-ghost home-new" }, "Nueva presentación");
+
+  const titleInput = h("input", { id: "new-title", required: true, maxlength: 200, autocomplete: "off" });
+  const idInput = h("input", { id: "new-id", required: true, maxlength: 63, pattern: "[a-z0-9][a-z0-9-]*", autocomplete: "off", spellcheck: "false" });
+  const newError = h("p", { class: "form-error", role: "alert" });
+  const newSubmit = h("button", { type: "submit", class: "key key-primary" }, "Crear y editar");
+  let idTouched = false;
+  titleInput.addEventListener("input", () => {
+    if (!idTouched) idInput.value = deckIdFrom(titleInput.value);
+  });
+  idInput.addEventListener("input", () => (idTouched = true));
+  const newForm = h(
+    "form",
+    { class: "home-form home-new-form", hidden: true },
+    h("div", { class: "field" }, h("label", { for: "new-title", class: "legend" }, "Título"), titleInput),
+    h("div", { class: "field" }, h("label", { for: "new-id", class: "legend" }, "Identificador"), idInput, h("p", { class: "field-hint" }, "Nombre de la carpeta en decks/. Solo minúsculas, números y guiones.")),
+    newError,
+    newSubmit,
+  );
+  newButton.addEventListener("click", () => {
+    newForm.hidden = !newForm.hidden;
+    if (!newForm.hidden) titleInput.focus();
+  });
+  newForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    newError.textContent = "";
+    const id = idInput.value.trim();
+    const title = titleInput.value.trim();
+    if (!id || !title) {
+      newError.textContent = "Escribe un título y un identificador.";
+      return;
+    }
+    newSubmit.disabled = true;
+    try {
+      const res = await fetch("/api/editor/decks", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(adminKey ? { "x-admin-key": adminKey } : {}) },
+        body: JSON.stringify({ id, title }),
+      });
+      if (!res.ok) throw new Error(CREATE_ERRORS[res.status] ?? "No se pudo crear la presentación.");
+      go(`/edit/${encodeURIComponent(id)}`);
+    } catch (err) {
+      newError.textContent = err instanceof Error && err.message !== "Failed to fetch" ? err.message : "No se pudo crear la presentación.";
+      newSubmit.disabled = false;
+    }
+  });
+
   keyField.hidden = decks !== "unauthorized";
   if (decks !== "unauthorized") fillDecks(decks);
 
@@ -59,7 +129,7 @@ export async function mountHome(root: HTMLElement) {
     "form",
     { class: "home-form" },
     keyField,
-    h("div", { class: "field" }, h("label", { for: "deck", class: "legend" }, "Presentación"), deckSelect),
+    h("div", { class: "field" }, h("label", { for: "deck", class: "legend" }, "Presentación"), h("div", { class: "home-deck-row" }, deckSelect, editLink)),
     h("div", { class: "field" }, h("label", { for: "pin", class: "legend" }, "PIN del ponente (4 a 8 dígitos)"), pinInput, h("p", { class: "field-hint" }, "Lo pedirá la consola, la pantalla y el control móvil.")),
     h(
       "div",
@@ -109,6 +179,8 @@ export async function mountHome(root: HTMLElement) {
       h("h1", { class: "home-title" }, "Sal al aire con tu presentación"),
       h("p", { class: "home-lead" }, "Crea una sesión, proyecta la pantalla y comparte el código. El público sigue, vota y reacciona desde su celular."),
       form,
+      h("div", { class: "home-deck-actions" }, newButton),
+      newForm,
     ),
   );
 }

@@ -277,6 +277,33 @@ select:focus-visible {
   margin-top: 8px;
 }
 
+.home-deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  padding-top: 14px;
+  border-top: 1px solid var(--seam);
+}
+
+.home-deck-row {
+  display: flex;
+  gap: 8px;
+}
+
+.home-deck-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-deck-row .key {
+  flex: none;
+}
+
+.home-new-form[hidden] {
+  display: none;
+}
+
 .home-links {
   display: grid;
   gap: 6px;

@@ -1,7 +1,9 @@
 import "./styles/base.css";
 import "./styles/stage.css";
 import "./styles/chrome.css";
+import "./styles/editor.css";
 import { mountAudience } from "./pages/audience.ts";
+import { mountEditor } from "./pages/editor.ts";
 import { mountHome } from "./pages/home.ts";
 import { mountPresenter } from "./pages/presenter.ts";
 import { mountPreview } from "./pages/preview.ts";
@@ -16,6 +18,9 @@ switch (route.page) {
     break;
   case "preview":
     void mountPreview(root, route.deckId);
+    break;
+  case "editor":
+    void mountEditor(root, route.deckId);
     break;
   case "presenter":
     mountPresenter(root, route.token, route.surface);

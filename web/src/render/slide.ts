@@ -270,8 +270,8 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedThem
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-/** Lucide icon from the curated set, built with DOM APIs; unknown names render nothing. */
-function renderIcon(name: string, strokeWidth: number): SVGSVGElement | null {
+/** Lucide icon from the curated set, built with DOM APIs; unknown names render nothing. Also used by the editor's icon picker. */
+export function renderIcon(name: string, strokeWidth: number): SVGSVGElement | null {
   const nodes = iconNode(name);
   if (!nodes) return null;
   const svg = document.createElementNS(SVG_NS, "svg");
