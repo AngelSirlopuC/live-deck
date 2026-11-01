@@ -11,6 +11,7 @@ import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
 import { createChatPanel } from "../ui/chat.ts";
 import { createQuizPanel, createScorePanel, optionFromKey } from "../ui/quiz-panel.ts";
+import { createAskPanel } from "../ui/ask-panel.ts";
 import { createReactionBar, floatReactions } from "../ui/reactions.ts";
 import { openShareSheet } from "../ui/share.ts";
 
@@ -158,6 +159,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   const who = h("p", { class: "aud-who" });
   const quizPanel = createQuizPanel((slideId, option) => conn.send({ t: "vote", slideId, option }));
   const scorePanel = createScorePanel();
+  const askPanel = createAskPanel((text) => conn.send({ t: "answer", text }));
   const chat = createChatPanel({
     onSend: (m) => conn.send({ t: "chat", ...m }),
     searchStickers: async (q) => {
@@ -174,7 +176,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   });
   const IDLE_COPY = "Cuando el ponente haga una pregunta, aparecerá aquí.";
   const idle = h("p", { class: "aud-idle" }, `${IDLE_COPY} Para conversar, usa el botón de chat.`);
-  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, who, banner, quizPanel.el, scorePanel.el, idle);
+  const panel = h("section", { class: "aud-panel", "aria-label": "Participación" }, who, banner, askPanel.el, quizPanel.el, scorePanel.el, idle);
 
   // Chat: docked in the side column on wide screens, a sheet one tap away elsewhere.
   const chatDock = h("aside", { class: "aud-chat", hidden: true });
@@ -390,7 +392,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       shown.quiz ? { slideId: shown.id, quiz: shown.quiz, view: quizView, myVote, readOnly: unlockedAll || state.abandoned, clockOffset } : null,
     );
     scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
-    idle.hidden = !quizPanel.el.hidden || !scorePanel.el.hidden;
+    askPanel.update(state.ask ? { view: state.ask, mine: personal?.answer ?? null, readOnly: unlockedAll || state.abandoned } : null);
+    idle.hidden = !quizPanel.el.hidden || !scorePanel.el.hidden || !askPanel.el.hidden;
     reactionBar.setEnabled(state.status === "live");
     const lim = limit();
     posLabel.textContent =
@@ -534,6 +537,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
         case "error":
           if (msg.code === "not-found") local.remove(idKey(code));
           else if (CHAT_ERROR_COPY[msg.code]) chat.error(CHAT_ERROR_COPY[msg.code]!);
+          else if (msg.code === "ask-closed") askPanel.error("La pregunta ya está cerrada.");
+          else if (msg.code === "ask-empty") askPanel.error("Escribe una respuesta primero.");
           else if (msg.code === "bad-request" && quizPanel.state) quizPanel.error("La votación ya está cerrada.");
           else if (msg.code === "rate-limited") quizPanel.error("Vas muy rápido. Espera un momento.");
           break;
