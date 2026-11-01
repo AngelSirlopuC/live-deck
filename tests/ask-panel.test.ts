@@ -3,18 +3,18 @@ import { describe, expect, it } from "vitest";
 import { createAskPanel } from "../web/src/ui/ask-panel.ts";
 import type { AskView } from "../shared/ask.ts";
 
-const view = (over: Partial<AskView> = {}): AskView => ({ id: "a1", question: "¿Una palabra?", maxChars: 20, status: "open", entries: [], total: 0, ...over });
+const view = (over: Partial<AskView> = {}): AskView => ({ slideId: "s1", question: "¿Una palabra?", maxChars: 20, status: "open", entries: [], total: 0, ...over });
 
 function setup() {
   const sent: string[] = [];
-  const panel = createAskPanel((t) => void sent.push(t));
+  const panel = createAskPanel((slideId, t) => void sent.push(`${slideId}:${t}`));
   document.body.replaceChildren(panel.el);
   const input = panel.el.querySelector("input")!;
   const form = panel.el.querySelector("form")!;
   return { panel, sent, input, form };
 }
 
-describe("audience free-text panel", () => {
+describe("audience open-question panel", () => {
   it("is hidden without a question", () => {
     const { panel } = setup();
     panel.update(null);
@@ -42,7 +42,7 @@ describe("audience free-text panel", () => {
     panel.update({ view: view({ total: 3 }), mine: null, readOnly: false });
     expect(input.value).toBe("  Rojo ");
     form.dispatchEvent(new Event("submit", { cancelable: true }));
-    expect(sent).toEqual(["Rojo"]);
+    expect(sent).toEqual(["s1:Rojo"]);
     panel.update({ view: view({ total: 4 }), mine: "Rojo", readOnly: false });
     expect(panel.el.textContent).toContain("Respuesta enviada: «Rojo»");
   });
@@ -64,11 +64,13 @@ describe("audience free-text panel", () => {
     expect(input.disabled).toBe(true);
   });
 
-  it("starts empty for a new question", () => {
+  it("starts from the person's own answer when another question slide shows", () => {
     const { panel, input } = setup();
     panel.update({ view: view(), mine: null, readOnly: false });
     input.value = "algo";
-    panel.update({ view: view({ id: "a2", question: "Otra" }), mine: null, readOnly: false });
+    panel.update({ view: view({ slideId: "s2", question: "Otra" }), mine: null, readOnly: false });
     expect(input.value).toBe("");
+    panel.update({ view: view(), mine: "Rojo", readOnly: false });
+    expect(input.value).toBe("Rojo");
   });
 });

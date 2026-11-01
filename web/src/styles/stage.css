@@ -751,7 +751,7 @@
   overflow: visible;
 }
 
-/* Free-text question over the slide ------------------------------------------- */
+/* Open-question slide: the question and its grouped answers fill the slide ------ */
 .stage-ask {
   position: absolute;
   inset: 0;
@@ -760,7 +760,6 @@
   grid-template-rows: auto 1fr auto;
   gap: 48px;
   padding: 96px 120px 72px;
-  background: color-mix(in srgb, var(--theme-bg) 96%, transparent);
   color: var(--theme-fg);
 }
 

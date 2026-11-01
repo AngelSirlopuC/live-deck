@@ -1,4 +1,4 @@
-// Free-text question the presenter launches live; the audience answers in a few words.
+// Open-question slides: the audience answers in a few words and equal answers group as ×N.
 
 export const ASK_QUESTION_MAX = 200;
 export const ASK_TEXT_MIN = 10;
@@ -12,7 +12,7 @@ export interface AskEntry {
 }
 
 export interface AskView {
-  id: string;
+  slideId: string;
   question: string;
   maxChars: number;
   /** "open" accepts answers; "closed" keeps them on screen. */

@@ -358,7 +358,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   );
   const nextMon = h("section", { class: "monitor monitor-next", "aria-label": "Siguiente" }, h("span", { class: "monitor-label" }, "Siguiente"), nextHost);
   const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
-  const pask = createPresenterAsk(ctx.send);
+  const pask = createPresenterAsk(ctx.deck, ctx.send);
   const pa = createPresenterAudience(ctx.send);
   // Audience settings (scores, reactions) fold away under the chat.
   const audienceSettings = h(
@@ -605,7 +605,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       count.textContent = `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       programView.show(s.position);
       programView.setEffects(s.effects);
-      programView.setAsk(s.ask);
+      programView.setAsks(s.asks);
       const current = ctx.deck.slides[s.position.slide]!;
       programView.setQuiz(s.quizzes[current.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       pq.update(s, ctx.clockOffset);
@@ -718,7 +718,7 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
       }
       view.show(s.position);
       view.setEffects(s.effects);
-      view.setAsk(s.ask);
+      view.setAsks(s.asks);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { clockOffset: ctx.clockOffset });
     },
     connection() {},
@@ -747,7 +747,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   next.addEventListener("click", () => ctx.send({ t: "next" }));
   const actions = sessionActions(ctx);
   const rq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
-  const rask = createPresenterAsk(ctx.send);
+  const rask = createPresenterAsk(ctx.deck, ctx.send);
   const chatUi = createPresenterChat(ctx.send, ctx.stickers);
   const pa = createPresenterAudience(ctx.send);
   let rtool: EffectTool = "ripple";
@@ -850,7 +850,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       pace.update(s.startedAt, s.timeLimitMin);
       view.show(s.position);
       view.setEffects(s.effects);
-      view.setAsk(s.ask);
+      view.setAsks(s.asks);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       rq.update(s, ctx.clockOffset);
       rask.update(s);

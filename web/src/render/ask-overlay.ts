@@ -6,16 +6,26 @@ export const ASK_OVERLAY_MAX = 40;
 
 const people = (n: number) => (n === 1 ? "1 respuesta" : `${n} respuestas`);
 
-/** Paints the live free-text question over the slide, or removes it. Answers are always text, never markup. */
+/** The static part of an open-question slide: the question, an empty answer list and the status line. */
+export function renderAsk(question: string): HTMLElement {
+  return h(
+    "section",
+    { class: "stage-ask", "aria-live": "polite" },
+    h("h2", { class: "stage-ask-question" }, question),
+    h("p", { class: "stage-ask-empty" }, "Esperando respuestas…"),
+    h("p", { class: "stage-ask-status" }, "Responde desde tu teléfono"),
+  );
+}
+
+/** Fills an open-question slide with its grouped answers. Answers are always text, never markup. */
 export function applyAskView(stage: HTMLElement, view: AskView | null) {
-  let box = stage.querySelector<HTMLElement>(".stage-ask");
+  const box = stage.querySelector<HTMLElement>(".stage-ask");
+  if (!box) return;
+  const question = box.querySelector(".stage-ask-question")!;
   if (!view) {
-    box?.remove();
+    delete box.dataset.status;
+    box.replaceChildren(question, h("p", { class: "stage-ask-empty" }, "Esperando respuestas…"), h("p", { class: "stage-ask-status" }, "Responde desde tu teléfono"));
     return;
-  }
-  if (!box) {
-    box = h("section", { class: "stage-ask", "aria-live": "polite" });
-    stage.append(box);
   }
   box.dataset.status = view.status;
   const shown = view.entries.slice(0, ASK_OVERLAY_MAX);
@@ -35,7 +45,7 @@ export function applyAskView(stage: HTMLElement, view: AskView | null) {
   const rest = view.entries.length - shown.length;
   const state = view.status === "open" ? "Abierta · Responde desde tu teléfono" : "Cerrada";
   box.replaceChildren(
-    h("h2", { class: "stage-ask-question" }, view.question),
+    question,
     view.entries.length ? list : h("p", { class: "stage-ask-empty" }, "Esperando respuestas…"),
     h("p", { class: "stage-ask-status" }, `${people(view.total)}${rest > 0 ? ` · +${rest} más` : ""} · ${state}`),
   );

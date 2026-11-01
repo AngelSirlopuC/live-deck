@@ -59,7 +59,7 @@ export class Session {
   private timeLimitMin: number | null = null;
   private readonly quizzes: QuizBook;
   readonly chat = new Chat();
-  readonly asks = new AskBook();
+  private readonly asks: AskBook;
   readonly reactions = new ReactionMeter();
   private view: PresenterView = { showReactions: false, showReactionCounter: false, showChat: false };
   private readonly identities = new Map<string, Identity>();
@@ -73,6 +73,7 @@ export class Session {
     this.createdAt = init.now;
     this.presenterLastSeen = init.now;
     this.quizzes = new QuizBook((slideId) => this.deck.slides.find((s) => s.id === slideId)?.quiz ?? null);
+    this.asks = new AskBook((slideId) => this.deck.slides.find((s) => s.id === slideId)?.ask ?? null);
   }
 
   get isEnded(): boolean {
@@ -113,7 +114,7 @@ export class Session {
       quizzes: this.quizzes.views(role),
       showScore: this.showScore,
       leaderboard: role === "presenter" || this.showScore ? this.quizzes.leaderboard(name, 10) : null,
-      ask: this.asks.view(),
+      asks: this.asks.views(),
       serverNow: now,
       chat: this.chat.state,
       presenterView: { ...this.view },
@@ -127,7 +128,7 @@ export class Session {
     this.status = "live";
     this.startedAt = now;
     this.highWater = { ...this.position };
-    this.quizzes.arrive(this.deck.slides[this.position.slide]!.id, now);
+    this.arrive(this.position.slide, now);
   }
 
   next(now: number = Date.now()) {
@@ -175,16 +176,16 @@ export class Session {
     return this.quizzes.vote(participantId, slideId, option, now);
   }
 
-  /** Launches a free-text question over the slide; only while live. */
-  openAsk(question: string, maxChars: number): boolean {
-    if (this.status !== "live") return false;
-    return this.asks.open(question, maxChars);
+  /** Stops answers to the open question on the current slide. */
+  closeAsk() {
+    if (this.status !== "live") return;
+    this.asks.close(this.deck.slides[this.position.slide]!.id);
   }
 
-  /** Records a free-text answer; "closed" when answering is not possible right now. */
-  answer(participantId: string, text: string): AnswerResult {
+  /** Records an open-question answer; "closed" when answering is not possible right now. */
+  answer(participantId: string, slideId: string, text: string): AnswerResult {
     if (this.status !== "live" || this.abandoned || !this.identities.has(participantId)) return "closed";
-    return this.asks.answer(participantId, text);
+    return this.asks.answer(participantId, slideId, text);
   }
 
   personal(participantId: string): PersonalState {
@@ -193,7 +194,7 @@ export class Session {
       votes: this.quizzes.myVotes(participantId),
       score: this.quizzes.score(participantId),
       rank: this.showScore ? this.quizzes.rankOf(participantId, name) : null,
-      answer: this.asks.mine(participantId),
+      answers: this.asks.myAnswers(participantId),
     };
   }
 
@@ -252,11 +253,18 @@ export class Session {
     return { slide: this.position.slide, at };
   }
 
+  /** Opens the quiz or open question of a slide the first time the presenter reaches it. */
+  private arrive(slide: number, now: number) {
+    const id = this.deck.slides[slide]!.id;
+    this.quizzes.arrive(id, now);
+    this.asks.arrive(id);
+  }
+
   private moveTo(pos: Position, now: number) {
     if (this.status !== "live") return;
     if (pos.slide !== this.position.slide) this.effects = [];
     this.position = pos;
-    this.quizzes.arrive(this.deck.slides[pos.slide]!.id, now);
+    this.arrive(pos.slide, now);
     if (isAfter(pos, this.highWater)) this.highWater = { ...pos };
   }
 

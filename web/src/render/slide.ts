@@ -2,6 +2,7 @@ import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
 import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
 import { THEME_PRESETS, contrastRatio, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
+import { renderAsk } from "./ask-overlay.ts";
 import { renderChart } from "./charts.ts";
 import { renderDecor } from "./decor.ts";
 import { ensurePresetFonts } from "./fonts.ts";
@@ -57,6 +58,7 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   layer.className = "stage-layer";
   for (const el of slide.elements) layer.append(renderElement(el, opts, theme));
   if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide, opts));
+  if (slide.layout === "ask" && slide.ask) layer.append(renderAsk(slide.ask.question));
   const fx = document.createElement("div");
   fx.className = "stage-fx";
   stage.append(layer, fx);

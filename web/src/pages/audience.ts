@@ -159,7 +159,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   const who = h("p", { class: "aud-who" });
   const quizPanel = createQuizPanel((slideId, option) => conn.send({ t: "vote", slideId, option }));
   const scorePanel = createScorePanel();
-  const askPanel = createAskPanel((text) => conn.send({ t: "answer", text }));
+  const askPanel = createAskPanel((slideId, text) => conn.send({ t: "answer", slideId, text }));
   const chat = createChatPanel({
     onSend: (m) => conn.send({ t: "chat", ...m }),
     searchStickers: async (q) => {
@@ -383,7 +383,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
     const pos = following ? state.position : explorePos;
     view!.show(pos);
     view!.setEffects(following ? state.effects : []);
-    view!.setAsk(following ? state.ask : null);
+    view!.setAsks(state.asks);
 
     const shown = deck.slides[pos.slide]!;
     const quizView = state.quizzes[shown.id] ?? null;
@@ -393,7 +393,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       shown.quiz ? { slideId: shown.id, quiz: shown.quiz, view: quizView, myVote, readOnly: unlockedAll || state.abandoned, clockOffset } : null,
     );
     scorePanel.update(state.showScore, personal, state.leaderboard, me.name);
-    askPanel.update(state.ask ? { view: state.ask, mine: personal?.answer ?? null, readOnly: unlockedAll || state.abandoned } : null);
+    const askView = shown.ask ? (state.asks[shown.id] ?? null) : null;
+    askPanel.update(askView ? { view: askView, mine: personal?.answers[shown.id] ?? null, readOnly: unlockedAll || state.abandoned } : null);
     idle.hidden = !quizPanel.el.hidden || !scorePanel.el.hidden || !askPanel.el.hidden;
     reactionBar.setEnabled(state.status === "live");
     const lim = limit();

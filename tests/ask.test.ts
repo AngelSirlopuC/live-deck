@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AskBook } from "../server/session/ask.ts";
+import { AskBook, type AskDef } from "../server/session/ask.ts";
 import { ASK_TEXT_DEFAULT, ASK_TEXT_MAX, ASK_TEXT_MIN, groupAnswers } from "../shared/ask.ts";
 
 describe("free-text grouping", () => {
@@ -17,72 +17,74 @@ describe("free-text grouping", () => {
     expect(groupAnswers(["cafe", "café", "café"])).toEqual([{ text: "café", count: 3 }]);
   });
 
-  it("keeps the limits the presenter can choose from", () => {
+  it("keeps the limits a deck can choose from", () => {
     expect(ASK_TEXT_MIN).toBe(10);
     expect(ASK_TEXT_DEFAULT).toBe(40);
     expect(ASK_TEXT_MAX).toBe(100);
   });
 });
 
-describe("free-text question lifecycle", () => {
-  it("accepts one editable answer per participant while open", () => {
-    const b = new AskBook();
-    b.open("¿Qué color?", 20);
-    expect(b.answer("u1", "rojo")).toBe("ok");
-    expect(b.answer("u1", "azul")).toBe("ok");
-    expect(b.answer("u2", "Azul")).toBe("ok");
-    const v = b.view()!;
-    expect(v.question).toBe("¿Qué color?");
-    expect(v.status).toBe("open");
+const DEFS: Record<string, AskDef> = {
+  color: { question: "¿Qué color?", maxChars: 20 },
+  corta: { question: "Q", maxChars: 10 },
+  libre: { question: "¿Y ahora?" },
+};
+const book = () => new AskBook((id) => DEFS[id] ?? null);
+
+describe("open-question slides", () => {
+  it("opens the first time the presenter reaches the slide, and only for ask slides", () => {
+    const b = book();
+    expect(b.answer("u1", "color", "rojo")).toBe("closed");
+    expect(b.view("color")).toBeNull();
+    b.arrive("portada");
+    b.arrive("color");
+    expect(b.views()).toEqual({ color: { slideId: "color", question: "¿Qué color?", maxChars: 20, status: "open", entries: [], total: 0 } });
+  });
+
+  it("accepts one editable answer per participant and slide while open", () => {
+    const b = book();
+    b.arrive("color");
+    expect(b.answer("u1", "color", "rojo")).toBe("ok");
+    expect(b.answer("u1", "color", "azul")).toBe("ok");
+    expect(b.answer("u2", "color", "Azul")).toBe("ok");
+    const v = b.view("color")!;
     expect(v.total).toBe(2);
     expect(v.entries).toEqual([{ text: "azul", count: 2 }]);
-    expect(b.mine("u1")).toBe("azul");
+    expect(b.myAnswers("u1")).toEqual({ color: "azul" });
   });
 
-  it("cleans answers and cuts them at the chosen limit", () => {
-    const b = new AskBook();
-    b.open("Q", 10);
-    expect(b.answer("u1", "  muy\u0000  largo de verdad  ")).toBe("ok");
-    expect(b.mine("u1")).toBe("muy largo");
-    expect(b.answer("u2", "   ")).toBe("empty");
+  it("cleans answers and cuts them at the slide's limit, default 40", () => {
+    const b = book();
+    b.arrive("corta");
+    b.arrive("libre");
+    expect(b.view("libre")!.maxChars).toBe(ASK_TEXT_DEFAULT);
+    expect(b.answer("u1", "corta", "  muy\u0000  largo de verdad  ")).toBe("ok");
+    expect(b.myAnswers("u1")).toEqual({ corta: "muy largo" });
+    expect(b.answer("u2", "corta", "   ")).toBe("empty");
+    expect(b.answer("u2", "libre", "x".repeat(60))).toBe("ok");
+    expect(b.myAnswers("u2").libre).toHaveLength(ASK_TEXT_DEFAULT);
   });
 
-  it("clamps the limit and cleans the question", () => {
-    const b = new AskBook();
-    b.open("  Hola\n  mundo ", 500);
-    expect(b.view()!.maxChars).toBe(ASK_TEXT_MAX);
-    expect(b.view()!.question).toBe("Hola mundo");
-    b.open("Q", 1);
-    expect(b.view()!.maxChars).toBe(ASK_TEXT_MIN);
-    expect(b.open("   ", 20)).toBe(false);
+  it("stops answers when closed, keeps them, and does not reopen on return", () => {
+    const b = book();
+    b.arrive("color");
+    b.answer("u1", "color", "uno");
+    b.close("color");
+    expect(b.answer("u2", "color", "dos")).toBe("closed");
+    b.arrive("color");
+    expect(b.view("color")).toMatchObject({ status: "closed", entries: [{ text: "uno", count: 1 }] });
   });
 
-  it("stops answers when closed but keeps showing them; clear removes it from screen", () => {
-    const b = new AskBook();
-    expect(b.answer("u1", "x")).toBe("closed");
-    b.open("Q", 20);
-    b.answer("u1", "uno");
-    b.close();
-    expect(b.answer("u2", "dos")).toBe("closed");
-    expect(b.view()!.status).toBe("closed");
-    expect(b.view()!.entries).toEqual([{ text: "uno", count: 1 }]);
-    b.clear();
-    expect(b.view()).toBeNull();
-    expect(b.mine("u1")).toBeNull();
-  });
-
-  it("replaces the active question and keeps every question for the summary", () => {
-    const b = new AskBook();
-    b.open("Primera", 20);
-    b.answer("u1", "a");
-    b.open("Segunda", 30);
-    expect(b.view()!.question).toBe("Segunda");
-    expect(b.view()!.total).toBe(0);
-    expect(b.mine("u1")).toBeNull();
-    b.answer("u1", "b");
+  it("keeps each slide's answers apart and lists them for the summary in the order they opened", () => {
+    const b = book();
+    b.arrive("libre");
+    b.arrive("color");
+    b.answer("u1", "color", "a");
+    b.answer("u1", "libre", "b");
+    expect(b.myAnswers("u1")).toEqual({ color: "a", libre: "b" });
     expect(b.results()).toEqual([
-      { question: "Primera", maxChars: 20, entries: [{ text: "a", count: 1 }], total: 1 },
-      { question: "Segunda", maxChars: 30, entries: [{ text: "b", count: 1 }], total: 1 },
+      { question: "¿Y ahora?", maxChars: 40, entries: [{ text: "b", count: 1 }], total: 1 },
+      { question: "¿Qué color?", maxChars: 20, entries: [{ text: "a", count: 1 }], total: 1 },
     ]);
   });
 });

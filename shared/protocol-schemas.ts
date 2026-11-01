@@ -49,10 +49,8 @@ export const PresenterCommandSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("time-limit"), minutes: timeLimit.nullable() }).strict(),
   z.object({ t: z.literal("laser"), at: z.object({ x: unit, y: unit }).strict().nullable() }).strict(),
   z.object({ t: z.literal("quiz"), action: z.enum(["close", "reveal"]) }).strict(),
-  // Free-text question: the server cleans the question and clamps the limit.
-  z.object({ t: z.literal("ask-open"), question: z.string().max(1000), maxChars: z.number().int().min(1).max(1000) }).strict(),
+  // Open-question slide: stops answers on the current slide.
   z.object({ t: z.literal("ask-close") }).strict(),
-  z.object({ t: z.literal("ask-clear") }).strict(),
   z.object({ t: z.literal("settings"), showScore: z.boolean() }).strict(),
   z.object({ t: z.literal("view"), view: z.object({ showReactions: z.boolean(), showReactionCounter: z.boolean(), showChat: z.boolean() }).partial().strict() }).strict(),
   z.object({ t: z.literal("chat-mode"), mode: z.enum(["off", "text", "sticker", "mixed"]) }).strict(),
@@ -68,7 +66,7 @@ export const AudienceCommandSchema = z.union([
   z.object({ t: z.literal("ping") }).strict(),
   z.object({ t: z.literal("vote"), slideId: z.string().max(40), option: z.number().int().min(0).max(5) }).strict(),
   z.object({ t: z.literal("react"), i: z.number().int().min(0).max(5) }).strict(),
-  z.object({ t: z.literal("answer"), text: z.string().max(1000) }).strict(),
+  z.object({ t: z.literal("answer"), slideId: z.string().max(40), text: z.string().max(1000) }).strict(),
   z.object({ t: z.literal("chat"), text: z.string().max(1000) }).strict(),
   z.object({ t: z.literal("chat"), stickerId: z.string().max(64) }).strict(),
 ]);

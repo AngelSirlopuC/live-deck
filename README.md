@@ -10,10 +10,10 @@ anything.
   browses back through the slides already shown.
 - **Quizzes.** Live results or secret until reveal, an optional leaderboard,
   votes by tap or keyboard (A–F, 1–6). Anonymous attendees get a creative alias.
-- **Open questions.** Launch a free-text question live from the console or the
-  phone remote ("Lanzar pregunta"), with a character limit from 10 to 100
-  (default 40). Each person sends one answer and can change it until you close
-  it. Answers appear over the slide on every screen, grouped ignoring case,
+- **Open questions.** A slide of the deck (`layout: "ask"`, set up when the
+  deck is created) with a character limit from 10 to 100 (default 40). It opens
+  when you reach the slide; each person sends one answer and can change it until
+  you close it. Answers fill the slide on every screen, grouped ignoring case,
   accents and spacing, most repeated first with a `×N` badge. The answer box
   turns on the browser's spellcheck and autocorrect and recommends using it,
   so the same word is not split by typos. Every question lands in the summary.

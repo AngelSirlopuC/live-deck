@@ -1,70 +1,83 @@
-import { ASK_QUESTION_MAX, ASK_TEXT_MAX, ASK_TEXT_MIN, groupAnswers, type AskEntry, type AskView } from "../../shared/ask.ts";
+import { ASK_TEXT_DEFAULT, groupAnswers, type AskEntry, type AskView } from "../../shared/ask.ts";
 import { cleanText } from "./social.ts";
 
-interface Ask {
-  id: string;
+/** What the deck says about an open-question slide. */
+export interface AskDef {
   question: string;
-  maxChars: number;
+  maxChars?: number;
+}
+
+interface Runtime {
   status: "open" | "closed";
   answers: Map<string, string>;
 }
 
 export type AnswerResult = "ok" | "closed" | "empty";
 
-/** Live free-text questions: one on screen at a time, every one kept for the summary. */
+/** Answers for every open-question slide of a session, keyed by slide id. */
 export class AskBook {
-  private readonly asks: Ask[] = [];
-  private current: Ask | null = null;
+  // Map keeps insertion order: the order the questions opened in.
+  private readonly runtimes = new Map<string, Runtime>();
+  private readonly def: (slideId: string) => AskDef | null;
 
-  /** Launches a question, replacing the one on screen; false when the question is empty. */
-  open(question: string, maxChars: number): boolean {
-    const q = cleanText(question, ASK_QUESTION_MAX);
-    if (!q) return false;
-    const ask: Ask = {
-      id: `a${this.asks.length + 1}`,
-      question: q,
-      maxChars: Math.min(ASK_TEXT_MAX, Math.max(ASK_TEXT_MIN, Math.round(maxChars))),
-      status: "open",
-      answers: new Map(),
-    };
-    this.asks.push(ask);
-    this.current = ask;
-    return true;
+  constructor(def: (slideId: string) => AskDef | null) {
+    this.def = def;
   }
 
-  /** Stops taking answers; the results stay on screen. */
-  close() {
-    if (this.current) this.current.status = "closed";
+  private limit(def: AskDef): number {
+    return def.maxChars ?? ASK_TEXT_DEFAULT;
   }
 
-  /** Removes the question from the screen. */
-  clear() {
-    if (this.current) this.current.status = "closed";
-    this.current = null;
+  /** Presenter reached an open-question slide: opens it the first time only. */
+  arrive(slideId: string) {
+    if (!this.def(slideId) || this.runtimes.has(slideId)) return;
+    this.runtimes.set(slideId, { status: "open", answers: new Map() });
   }
 
-  /** Records or replaces a participant's answer to the question on screen. */
-  answer(participantId: string, raw: string): AnswerResult {
-    const ask = this.current;
-    if (!ask || ask.status !== "open") return "closed";
-    const text = cleanText(raw, ask.maxChars);
+  /** Stops taking answers; the answers stay on screen. */
+  close(slideId: string) {
+    const rt = this.runtimes.get(slideId);
+    if (rt) rt.status = "closed";
+  }
+
+  /** Records or replaces a participant's answer on one slide. */
+  answer(participantId: string, slideId: string, raw: string): AnswerResult {
+    const def = this.def(slideId);
+    const rt = this.runtimes.get(slideId);
+    if (!def || !rt || rt.status !== "open") return "closed";
+    const text = cleanText(raw, this.limit(def));
     if (!text) return "empty";
-    ask.answers.set(participantId, text);
+    rt.answers.set(participantId, text);
     return "ok";
   }
 
-  view(): AskView | null {
-    const ask = this.current;
-    if (!ask) return null;
-    return { id: ask.id, question: ask.question, maxChars: ask.maxChars, status: ask.status, entries: groupAnswers(ask.answers.values()), total: ask.answers.size };
+  view(slideId: string): AskView | null {
+    const def = this.def(slideId);
+    const rt = this.runtimes.get(slideId);
+    if (!def || !rt) return null;
+    return { slideId, question: def.question, maxChars: this.limit(def), status: rt.status, entries: groupAnswers(rt.answers.values()), total: rt.answers.size };
   }
 
-  /** The participant's answer to the question on screen. */
-  mine(participantId: string): string | null {
-    return this.current?.answers.get(participantId) ?? null;
+  views(): Record<string, AskView> {
+    const out: Record<string, AskView> = {};
+    for (const id of this.runtimes.keys()) out[id] = this.view(id)!;
+    return out;
+  }
+
+  /** The participant's answer on every slide they answered. */
+  myAnswers(participantId: string): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const [id, rt] of this.runtimes) {
+      const a = rt.answers.get(participantId);
+      if (a !== undefined) out[id] = a;
+    }
+    return out;
   }
 
   results(): Array<{ question: string; maxChars: number; entries: AskEntry[]; total: number }> {
-    return this.asks.map((a) => ({ question: a.question, maxChars: a.maxChars, entries: groupAnswers(a.answers.values()), total: a.answers.size }));
+    return [...this.runtimes.keys()].map((id) => {
+      const v = this.view(id)!;
+      return { question: v.question, maxChars: v.maxChars, entries: v.entries, total: v.total };
+    });
   }
 }

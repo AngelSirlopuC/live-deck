@@ -63,6 +63,15 @@
       }
     },
     {
+      "id": "pregunta-abierta",
+      "layout": "ask",
+      "notes": "Las respuestas iguales se agrupan con ×N. Pide que activen la autocorrección del teclado.",
+      "elements": [],
+      "ask": {
+        "question": "¿Qué palabra describe tu semana?"
+      }
+    },
+    {
       "id": "cierre",
       "notes": "Agradece y finaliza la sesión para descargar el resumen.",
       "elements": [

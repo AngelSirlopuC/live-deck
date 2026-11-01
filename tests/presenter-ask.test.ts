@@ -1,78 +1,47 @@
 // @vitest-environment jsdom
-import { beforeAll, describe, expect, it } from "vitest";
-import { createPresenterAsk } from "../web/src/ui/presenter-ask.ts";
+import { describe, expect, it } from "vitest";
 import type { AskView } from "../shared/ask.ts";
+import type { Deck } from "../shared/deck.ts";
+import { createPresenterAsk } from "../web/src/ui/presenter-ask.ts";
 
-beforeAll(() => {
-  // jsdom has <dialog> without the modal methods.
-  HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
-    this.open = true;
-  };
-  HTMLDialogElement.prototype.close ??= function (this: HTMLDialogElement) {
-    this.open = false;
-  };
-});
-
-const live = (ask: AskView | null) => ({ status: "live", ask }) as any;
-const view = (over: Partial<AskView> = {}): AskView => ({ id: "a1", question: "¿Color?", maxChars: 40, status: "open", entries: [], total: 0, ...over });
+const deck: Deck = {
+  version: 1,
+  title: "T",
+  slides: [
+    { id: "intro", elements: [] },
+    { id: "color", layout: "ask", elements: [], ask: { question: "¿Color?", maxChars: 20 } },
+  ],
+};
+const view = (over: Partial<AskView> = {}): AskView => ({ slideId: "color", question: "¿Color?", maxChars: 20, status: "open", entries: [], total: 0, ...over });
+const at = (slide: number, asks: Record<string, AskView> = {}) => ({ position: { slide, step: 0 }, asks }) as any;
 const button = (root: ParentNode, label: string) => [...root.querySelectorAll("button")].find((b) => b.textContent === label)!;
 
 function setup() {
   const sent: unknown[] = [];
-  const pa = createPresenterAsk((c) => void sent.push(c));
+  const pa = createPresenterAsk(deck, (c) => void sent.push(c));
   document.body.replaceChildren(pa.el);
   return { pa, sent };
 }
 
-describe("presenter free-text controls", () => {
-  it("launches a question with the chosen limit from the sheet, default 40", async () => {
-    const { pa, sent } = setup();
-    pa.update(live(null));
-    button(pa.el, "Lanzar pregunta").click();
-    const dialog = document.querySelector("dialog")!;
-    const q = dialog.querySelector("textarea")!;
-    const limit = dialog.querySelector<HTMLInputElement>("input[type=number]")!;
-    expect(limit.value).toBe("40");
-    expect(q.maxLength).toBe(200);
-    q.value = "¿Qué esperas de hoy?";
-    limit.value = "25";
-    dialog.querySelector("form")!.dispatchEvent(new Event("submit", { cancelable: true }));
-    await Promise.resolve();
-    expect(sent).toEqual([{ t: "ask-open", question: "¿Qué esperas de hoy?", maxChars: 25 }]);
-    expect(document.querySelector("dialog")).toBeNull();
-  });
-
-  it("rejects an empty question or a limit out of range in the sheet", () => {
-    const { pa, sent } = setup();
-    pa.update(live(null));
-    button(pa.el, "Lanzar pregunta").click();
-    const dialog = document.querySelector("dialog")!;
-    const form = dialog.querySelector("form")!;
-    form.dispatchEvent(new Event("submit", { cancelable: true }));
-    expect(dialog.textContent).toContain("Escribe la pregunta");
-    dialog.querySelector("textarea")!.value = "Q";
-    dialog.querySelector<HTMLInputElement>("input[type=number]")!.value = "5";
-    form.dispatchEvent(new Event("submit", { cancelable: true }));
-    expect(dialog.textContent).toContain("de 10 a 100");
-    expect(sent).toEqual([]);
-  });
-
-  it("needs the session to be live", () => {
+describe("presenter open-question controls", () => {
+  it("shows only on an open-question slide and has no way to launch a question", () => {
     const { pa } = setup();
-    pa.update({ status: "waiting", ask: null } as any);
-    expect(button(pa.el, "Lanzar pregunta").disabled).toBe(true);
+    pa.update(at(0));
+    expect(pa.el.hidden).toBe(true);
+    pa.update(at(1));
+    expect(pa.el.hidden).toBe(false);
+    expect(pa.el.textContent).toContain("Las respuestas se abren al iniciar");
+    expect(pa.el.textContent).not.toContain("Lanzar");
   });
 
-  it("shows the running question and closes or removes it", () => {
+  it("follows the answers and closes them", () => {
     const { pa, sent } = setup();
-    pa.update(live(view({ total: 3, entries: [{ text: "Rojo", count: 2 }, { text: "azul", count: 1 }] })));
-    expect(pa.el.textContent).toContain("¿Color?");
+    pa.update(at(1, { color: view({ total: 3, entries: [{ text: "Rojo", count: 2 }, { text: "azul", count: 1 }] }) }));
     expect(pa.el.textContent).toContain("3 respuestas");
     expect(pa.el.textContent).toContain("Rojo×2");
     button(pa.el, "Cerrar respuestas").click();
-    button(pa.el, "Quitar de pantalla").click();
-    expect(sent).toEqual([{ t: "ask-close" }, { t: "ask-clear" }]);
-    pa.update(live(view({ status: "closed" })));
-    expect(button(pa.el, "Cerrar respuestas").hidden).toBe(true);
+    expect(sent).toEqual([{ t: "ask-close" }]);
+    pa.update(at(1, { color: view({ status: "closed" }) }));
+    expect(button(pa.el, "Cerrar respuestas").disabled).toBe(true);
   });
 });
