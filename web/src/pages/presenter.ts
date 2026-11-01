@@ -13,6 +13,7 @@ import { bindDeckKeys, bindSwipe, isTextEntry } from "../ui/input.ts";
 import { qrSvg } from "../ui/qr.ts";
 import { createPresenterAudience, createPresenterChat } from "../ui/presenter-audience.ts";
 import { createPresenterQuiz } from "../ui/presenter-quiz.ts";
+import { createPresenterAsk } from "../ui/presenter-ask.ts";
 import { createReactionCounter, floatReactions } from "../ui/reactions.ts";
 import type { ChatMessage, SessionSummary } from "../../../shared/protocol.ts";
 import { openShareSheet } from "../ui/share.ts";
@@ -357,6 +358,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
   );
   const nextMon = h("section", { class: "monitor monitor-next", "aria-label": "Siguiente" }, h("span", { class: "monitor-label" }, "Siguiente"), nextHost);
   const pq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
+  const pask = createPresenterAsk(ctx.send);
   const pa = createPresenterAudience(ctx.send);
   // Audience settings (scores, reactions) fold away under the chat.
   const audienceSettings = h(
@@ -365,7 +367,7 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
     h("summary", {}, "Puntaje y reacciones"),
     h("div", { class: "console-settings-body" }, pq.boardEl, pa.el),
   );
-  const side = h("aside", { class: "console-side" }, nextMon, pq.quizEl, chatUi.el, audienceSettings);
+  const side = h("aside", { class: "console-side" }, nextMon, pq.quizEl, pask.el, chatUi.el, audienceSettings);
 
   const programFloaters = h("div", { class: "floaters", "aria-hidden": "true" });
   // Inside the host so the stage clipping also clips the floaters.
@@ -603,9 +605,11 @@ function consoleUi(root: HTMLElement, ctx: PresenterContext, token: string): Pre
       count.textContent = `${s.audienceCount} ${s.audienceCount === 1 ? "persona" : "personas"}`;
       programView.show(s.position);
       programView.setEffects(s.effects);
+      programView.setAsk(s.ask);
       const current = ctx.deck.slides[s.position.slide]!;
       programView.setQuiz(s.quizzes[current.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       pq.update(s, ctx.clockOffset);
+      pask.update(s);
       const upcoming: Position = nextPosition(ctx.deck.slides, s.position);
       const atEnd = upcoming.slide === s.position.slide && upcoming.step === s.position.step;
       nextHost.hidden = atEnd;
@@ -714,6 +718,7 @@ function screenUi(root: HTMLElement, ctx: PresenterContext): PresenterUi {
       }
       view.show(s.position);
       view.setEffects(s.effects);
+      view.setAsk(s.ask);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { clockOffset: ctx.clockOffset });
     },
     connection() {},
@@ -742,6 +747,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   next.addEventListener("click", () => ctx.send({ t: "next" }));
   const actions = sessionActions(ctx);
   const rq = createPresenterQuiz(ctx.deck, ctx.send, { leaderboard: true });
+  const rask = createPresenterAsk(ctx.send);
   const chatUi = createPresenterChat(ctx.send, ctx.stickers);
   const pa = createPresenterAudience(ctx.send);
   let rtool: EffectTool = "ripple";
@@ -773,7 +779,7 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
   });
 
   // Everything the console offers, in three tabs sized for a phone.
-  const controlPanel = h("div", { class: "remote-panel" }, h("div", { class: "fx-tools remote-tools", role: "toolbar", "aria-label": "Efectos" }, ...rtools, rclear), rq.quizEl, notes);
+  const controlPanel = h("div", { class: "remote-panel" }, h("div", { class: "fx-tools remote-tools", role: "toolbar", "aria-label": "Efectos" }, ...rtools, rclear), rq.quizEl, rask.el, notes);
   const chatPanel = h("div", { class: "remote-panel remote-chat" }, chatUi.el);
   const limitBtn = h("button", { type: "button", class: "key remote-limit" }, "Límite de tiempo");
   limitBtn.addEventListener("click", () => timer.click());
@@ -844,8 +850,10 @@ function remoteUi(root: HTMLElement, ctx: PresenterContext, _token: string): Pre
       pace.update(s.startedAt, s.timeLimitMin);
       view.show(s.position);
       view.setEffects(s.effects);
+      view.setAsk(s.ask);
       view.setQuiz(s.quizzes[ctx.deck.slides[s.position.slide]!.id] ?? null, { presenter: true, clockOffset: ctx.clockOffset });
       rq.update(s, ctx.clockOffset);
+      rask.update(s);
       notes.textContent = ctx.deck.slides[s.position.slide]?.notes ?? "Sin notas.";
       prev.disabled = s.status !== "live";
       next.disabled = s.status !== "live";
