@@ -304,6 +304,30 @@ select:focus-visible {
   display: none;
 }
 
+/* Preset and mode side by side; the mode switch is the desk's two-position switch. */
+.home-theme-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.home-mode {
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.home-mode .key-switch {
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+@media (max-width: 400px) {
+  .home-theme-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .home-links {
   display: grid;
   gap: 6px;
@@ -477,29 +501,6 @@ select:focus-visible {
   line-height: 1.45;
 }
 
-.arcade {
-  display: grid;
-  gap: 6px;
-}
-
-.arcade-canvas {
-  width: 100%;
-  aspect-ratio: 640 / 220;
-  border-radius: 12px;
-  border: 1px solid var(--seam);
-  background: linear-gradient(180deg, #19140f, #110e0a);
-  touch-action: manipulation;
-  cursor: pointer;
-}
-
-.arcade-best {
-  margin: 0;
-  min-height: 1.2em;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
 .aud-waiting-share {
   display: flex;
   align-items: center;
@@ -577,7 +578,7 @@ select:focus-visible {
     position: absolute;
     inset: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
     align-content: center;
     background: var(--desk);
   }
@@ -1084,6 +1085,36 @@ select:focus-visible {
   opacity: 0.75;
 }
 
+/* Share of votes, drawn behind the label when results are visible. */
+.vote {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.vote-bar {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: scaleX(var(--share, 0));
+  transform-origin: left center;
+  background: color-mix(in srgb, var(--amber) 22%, transparent);
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vote.is-first .vote-bar {
+  background: color-mix(in srgb, var(--amber) 34%, transparent);
+}
+
+.vote.is-correct .vote-bar {
+  background: color-mix(in srgb, var(--signal) 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-bar {
+    transition: none;
+  }
+}
+
 .vote-key {
   display: grid;
   place-items: center;
@@ -1178,15 +1209,47 @@ select:focus-visible {
   line-height: 1.3;
 }
 
-.ask-panel-form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
+.ask-panel-write {
+  justify-self: start;
+  min-height: 48px;
 }
 
-.ask-panel-input {
-  min-height: 48px;
-  min-width: 0;
+/* Modal to write (or rewrite) the open-question answer. */
+.ask-sheet-form {
+  display: grid;
+  gap: 10px;
+}
+
+.ask-sheet h2 {
+  padding-right: 0;
+}
+
+/* Same look as the form inputs above (they only cover input and select). */
+.ask-sheet-input {
+  width: 100%;
+  min-height: 112px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--seam);
+  background: #0f0c09;
+  color: var(--text);
+  font: 500 1.1rem / 1.4 var(--font-body);
+  caret-color: var(--amber);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.5);
+  resize: vertical;
+}
+
+.ask-sheet-input::placeholder {
+  color: #7d715b;
+}
+
+.ask-sheet-input:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.ask-sheet .sheet-actions {
+  margin-top: 6px;
 }
 
 .ask-panel-count {
@@ -2286,8 +2349,8 @@ select:focus-visible {
 /* Mobile adaptation pass                                                 */
 /* ===================================================================== */
 
-/* No column may grow past the viewport: long titles, the reaction row and the
-   arcade used to push a 320 px phone 28 px sideways. */
+/* No column may grow past the viewport: long titles and the reaction row
+   used to push a 320 px phone 28 px sideways. */
 .aud {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -2365,7 +2428,7 @@ select:focus-visible {
   display: none;
 }
 
-/* Waiting room: info card + arcade cabinet. */
+/* Waiting room: info card. */
 .aud-waiting {
   gap: 18px;
 }
@@ -2379,70 +2442,10 @@ select:focus-visible {
   margin-top: 4px;
 }
 
-.arcade {
-  display: grid;
-  gap: 10px;
-  justify-items: center;
-}
-
-.arcade-picker {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 6px;
-  width: 100%;
-  padding: 5px;
-  border-radius: 14px;
-  background: #0f0c09;
-  border: 1px solid var(--seam);
-}
-
-.arcade-pick {
-  min-height: 42px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-legend);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.arcade-pick[aria-pressed="true"] {
-  background: linear-gradient(180deg, #ffc76d, var(--amber));
-  border-color: #c98a2a;
-  color: var(--amber-ink);
-}
-
-.arcade-screen {
-  display: grid;
-  place-items: center;
-  width: 100%;
-}
-
-.arcade-canvas {
-  display: block;
-  width: min(100%, calc(58dvh * 360 / 540));
-  height: auto;
-  border-radius: 16px;
-  border: 1px solid var(--seam);
-  box-shadow: 0 12px 30px -16px rgb(0 0 0 / 0.8);
-  touch-action: manipulation;
-  cursor: pointer;
-  background: #17120d;
-}
-
-.arcade-best {
-  text-align: center;
-  font-family: var(--font-body);
-}
-
-/* Landscape phone waiting room: info left, cabinet right, no page scroll. */
+/* Landscape phone waiting room: info card, no page scroll. */
 @media (orientation: landscape) and (max-height: 560px) {
   .aud-waiting {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 20px;
     padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
@@ -2456,14 +2459,6 @@ select:focus-visible {
   }
   .aud-waiting-qr {
     width: 72px;
-  }
-  .arcade {
-    height: 100%;
-    align-content: center;
-  }
-  .arcade-canvas {
-    width: auto;
-    height: calc(100dvh - 110px);
   }
   .stage-expand {
     display: none;
@@ -2514,10 +2509,10 @@ select:focus-visible {
   }
   .aud-waiting {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
     gap: 32px;
-    max-width: 980px;
+    max-width: 720px;
   }
 }
 
@@ -3454,7 +3449,7 @@ select:focus-visible {
 }
 
 /* Landscape phone, waiting: there is no slide to uncover, so the bar stays put
-   above the waiting screen instead of fading in under the arcade picker. */
+   above the waiting screen instead of fading in over it. */
 @media (orientation: landscape) and (max-height: 560px) {
   .aud[data-status="waiting"] {
     display: flex;
@@ -3472,14 +3467,10 @@ select:focus-visible {
     inset: auto;
     flex: 1 1 auto;
     min-height: 0;
-    /* Short phones: start at the top and scroll rather than clip the arcade picker. */
+    /* Short phones: start at the top and scroll rather than clip the card. */
     align-content: safe center;
     align-items: safe center;
     overflow-y: auto;
-  }
-  /* The bar now takes its own row: leave room for it, the picker and the record line. */
-  .aud[data-status="waiting"] .arcade-canvas {
-    height: max(150px, calc(100dvh - 190px));
   }
 }
 

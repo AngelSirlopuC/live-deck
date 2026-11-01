@@ -1,6 +1,7 @@
 // Inspector field builders. Each field owns one control and knows how to
 // refresh itself from the model without touching a control the user is
 // typing in, so the inspector never rebuilds under the cursor.
+import { isThemeColorToken } from "../../../../shared/theme-colors.ts";
 import { h, trusted } from "../../ui/dom.ts";
 import { edIcon, type EdIconName } from "./icons.ts";
 
@@ -73,16 +74,20 @@ export interface NumberFieldOptions {
   unit?: string;
   /** Empty input is allowed and means "unset". */
   optional?: boolean;
-  placeholder?: string;
+  /** Static text, or a getter re-read on every update (the effective value behind an unset field). */
+  placeholder?: string | (() => string);
 }
+
+const placeholderOf = (p: string | (() => string) | undefined): string | undefined => (typeof p === "function" ? p() : p);
 
 export function numberField(o: NumberFieldOptions): Field {
   const id = uid("num");
-  const control = h("input", { id, type: "number", inputmode: "decimal", min: o.min, max: o.max, step: o.step ?? 1, placeholder: o.placeholder });
+  const control = h("input", { id, type: "number", inputmode: "decimal", min: o.min, max: o.max, step: o.step ?? 1, placeholder: placeholderOf(o.placeholder) });
   control.classList.add("ed-mono");
   const show = () => {
     const v = o.get();
     control.value = v === undefined ? "" : String(v);
+    if (typeof o.placeholder === "function") control.placeholder = o.placeholder();
   };
   show();
   control.addEventListener("input", () => {
@@ -117,16 +122,25 @@ export interface SelectOption {
   label: string;
 }
 
-export interface SelectFieldOptions {
+export interface SelectGroup {
   label: string;
   options: readonly SelectOption[];
+}
+
+export interface SelectFieldOptions {
+  label: string;
+  /** Ungrouped options, listed before any group. */
+  options: readonly SelectOption[];
+  /** Options under `<optgroup>` headings. */
+  groups?: readonly SelectGroup[];
   get: () => string;
   set: (value: string) => void;
 }
 
 export function selectField(o: SelectFieldOptions): Field {
   const id = uid("sel");
-  const control = h("select", { id }, ...o.options.map((opt) => h("option", { value: opt.value }, opt.label)));
+  const option = (opt: SelectOption) => h("option", { value: opt.value }, opt.label);
+  const control = h("select", { id }, ...o.options.map(option), ...(o.groups ?? []).map((g) => h("optgroup", { label: g.label }, ...g.options.map(option))));
   control.value = o.get();
   control.addEventListener("change", () => o.set(control.value));
   const el = h("div", { class: "field ed-field" }, h("label", { for: id, class: "legend" }, o.label), control);
@@ -204,6 +218,14 @@ export function toPickerHex(value: string | undefined): string | null {
 
 export const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
 
+export interface ColorSwatch {
+  name: string;
+  /** Resolved hex, shown as the swatch and as the preview of an active token. */
+  value: string;
+  /** Theme token the swatch writes; without one the swatch writes its hex. */
+  token?: string;
+}
+
 export interface ColorFieldOptions {
   label: string;
   get: () => string | undefined;
@@ -211,23 +233,32 @@ export interface ColorFieldOptions {
   set: (value: string | undefined) => void;
   commit?: () => void;
   /** Theme colours offered as one-click swatches. */
-  swatches?: readonly { name: string; value: string }[];
+  swatches?: readonly ColorSwatch[];
   /** Shows a clear key when the value is optional. */
   optional?: boolean;
-  placeholder?: string;
+  /** Static text, or a getter for the effective colour (shown as placeholder and as the empty picker's swatch). */
+  placeholder?: string | (() => string);
 }
 
-/** Native picker + hex text + theme swatches; all three write the same value. */
+/**
+ * Native picker + hex text + theme swatches; all three write the same field. A
+ * swatch with a token writes the token: the field then shows that swatch
+ * pressed, the resolved colour in the picker and the hex box empty with the
+ * token as its placeholder; typing a hex replaces the token.
+ */
 export function colorField(o: ColorFieldOptions): Field {
   const id = uid("color");
   const picker = h("input", { type: "color", class: "ed-color-picker", "aria-label": `${o.label}: selector` });
-  const text = h("input", { id, type: "text", class: "ed-mono ed-color-hex", autocomplete: "off", spellcheck: "false", placeholder: o.placeholder ?? "tema", maxlength: 9 });
+  const basePlaceholder = placeholderOf(o.placeholder) ?? "tema";
+  const text = h("input", { id, type: "text", class: "ed-mono ed-color-hex", autocomplete: "off", spellcheck: "false", placeholder: basePlaceholder, maxlength: 9 });
   const clear = o.optional ? trusted("button", { type: "button", class: "ed-color-clear", "aria-label": `Quitar ${o.label.toLowerCase()}`, title: "Usar el color del tema" }, edIcon("close")) : null;
-  const swatches = (o.swatches ?? []).map((s) => {
-    const b = h("button", { type: "button", class: "ed-swatch", title: `${s.name} ${s.value}`, "aria-label": `${o.label}: ${s.name}` });
+  const list = o.swatches ?? [];
+  const swatches = list.map((s) => {
+    const b = h("button", { type: "button", class: "ed-swatch", title: s.token ? `${s.name} (${s.token}) ${s.value}` : `${s.name} ${s.value}`, "aria-label": `${o.label}: ${s.name}` });
     b.style.setProperty("--swatch", s.value);
+    if (s.token) b.dataset.token = s.token;
     b.addEventListener("click", () => {
-      o.set(s.value);
+      o.set(s.token ?? s.value);
       o.commit?.();
       paint();
     });
@@ -236,11 +267,18 @@ export function colorField(o: ColorFieldOptions): Field {
   const paint = () => {
     const v = o.get();
     const hex = toPickerHex(v);
-    picker.value = hex ?? "#000000";
-    picker.classList.toggle("is-empty", !hex);
-    if (!focused(text)) text.value = v ?? "";
+    const token = isThemeColorToken(v) ? list.find((s) => s.token === v) : undefined;
+    const effective = typeof o.placeholder === "function" ? o.placeholder() : undefined;
+    text.placeholder = token ? `${token.name} · ${token.value}` : (effective ?? basePlaceholder);
+    text.classList.toggle("has-token", !!token);
+    picker.value = hex ?? (token ? toPickerHex(token.value) : null) ?? toPickerHex(effective) ?? "#000000";
+    picker.classList.toggle("is-empty", !hex && !token);
+    if (!focused(text)) text.value = token ? "" : (v ?? "");
     if (clear) clear.hidden = v === undefined;
-    for (const s of swatches) s.setAttribute("aria-pressed", String(s.title.endsWith(v ?? "\u0000")));
+    swatches.forEach((b, i) => {
+      const s = list[i]!;
+      b.setAttribute("aria-pressed", String(s.token ? s.token === v : s.value === v));
+    });
   };
   paint();
   picker.addEventListener("input", () => {

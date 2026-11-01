@@ -1,0 +1,6620 @@
+{
+  "version": 1,
+  "title": "Programar con IA en el Perú sin romper la ley",
+  "theme": {
+    "preset": "neon",
+    "mode": "dark",
+    "accent": "#f52929",
+    "fonts": {
+      "display": "Inter Tight",
+      "body": "Instrument Sans"
+    },
+    "pattern": "dots"
+  },
+  "motion": "calm",
+  "slides": [
+    {
+      "id": "portada",
+      "background": {
+        "gradient": {
+          "from": "surface",
+          "to": "background",
+          "angle": 135
+        },
+        "pattern": "dots"
+      },
+      "notes": "Bienvenida. Pide que escaneen el QR: van a votar durante toda la charla. Presenta el tema en una frase: qué dice la ley peruana de IA y qué significa para quien escribe código.",
+      "elements": [
+        {
+          "id": "decor",
+          "box": {
+            "x": 0,
+            "y": 0.55,
+            "w": 0.26,
+            "h": 0.45
+          },
+          "type": "decor",
+          "shape": "rings",
+          "style": {
+            "opacity": 0.25
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.14,
+            "w": 0.55,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Ley 31814 · D.S. 115-2025-PCM · Ley 29733",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.08
+          }
+        },
+        {
+          "id": "title",
+          "box": {
+            "x": 0.07,
+            "y": 0.22,
+            "w": 0.52,
+            "h": 0.4
+          },
+          "type": "text",
+          "text": "Programar con IA en el Perú sin romper la ley",
+          "style": {
+            "fontSize": 96,
+            "fontWeight": 800,
+            "font": "display",
+            "lineHeight": 1.05,
+            "tracking": -0.02
+          }
+        },
+        {
+          "id": "subtitle",
+          "box": {
+            "x": 0.07,
+            "y": 0.68,
+            "w": 0.5,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Escanea el código: vas a votar durante la charla.",
+          "style": {
+            "fontSize": 36,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "qr",
+          "box": {
+            "x": 0.64,
+            "y": 0.16,
+            "w": 0.29,
+            "h": 0.68
+          },
+          "type": "qr"
+        }
+      ]
+    },
+    {
+      "id": "sobre-mi",
+      "notes": "Preséntate en 30 segundos: quién eres, a qué te dedicas y por qué te importa este tema (construyes productos con IA generativa y visión por computadora, así que esta ley te toca a ti también). Invita a conectar en LinkedIn: linkedin.com/in/angelsirlopu.",
+      "elements": [
+        {
+          "id": "photo",
+          "box": {
+            "x": 0.07,
+            "y": 0.22,
+            "w": 0.22,
+            "h": 0.391
+          },
+          "type": "image",
+          "src": "assets/angel-sirlopu.jpg",
+          "alt": "Foto de Angel Sirlopu",
+          "fit": "cover",
+          "style": {
+            "radius": 540
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.34,
+            "y": 0.2,
+            "w": 0.59,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Quién te habla",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "name",
+          "box": {
+            "x": 0.34,
+            "y": 0.27,
+            "w": 0.59,
+            "h": 0.15
+          },
+          "type": "text",
+          "text": "Angel Sirlopu",
+          "style": {
+            "fontSize": 104,
+            "fontWeight": 800,
+            "font": "display",
+            "tracking": -0.02
+          }
+        },
+        {
+          "id": "headline",
+          "box": {
+            "x": 0.34,
+            "y": 0.4155,
+            "w": 0.59,
+            "h": 0.2345
+          },
+          "type": "text",
+          "text": "- +12 años experiencia en desarrollo de software\n- Br. Computación e Informática de la UNPRG.\n- Maestría en Inteligencia Artificial en  la UPC.\n- Gestor de Proyectos de Tecnología en la ONPE. \n- Experiencia previa en SUNARP, OECE, SBN y COFOPRI.",
+          "style": {
+            "fontSize": 36,
+            "color": "muted",
+            "lineHeight": 1.35
+          }
+        },
+        {
+          "id": "rule",
+          "box": {
+            "x": 0.34,
+            "y": 0.69,
+            "w": 0.2,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "accent",
+            "strokeWidth": 6
+          }
+        },
+        {
+          "id": "li-icon",
+          "box": {
+            "x": 0.34,
+            "y": 0.74,
+            "w": 0.04,
+            "h": 0.071
+          },
+          "type": "icon",
+          "name": "link"
+        },
+        {
+          "id": "li-url",
+          "box": {
+            "x": 0.39,
+            "y": 0.73,
+            "w": 0.54,
+            "h": 0.09
+          },
+          "type": "text",
+          "text": "linkedin.com/in/angelsirlopu",
+          "style": {
+            "fontSize": 44,
+            "font": "mono",
+            "valign": "middle"
+          }
+        }
+      ]
+    },
+    {
+      "id": "gancho",
+      "notes": "28 de marzo de 2023. El Poder Judicial anuncia, como un logro, una sentencia dictada con ayuda de ChatGPT. Un juzgado de San Juan de Miraflores resolvía la apelación de un padre sobre la pensión de su hija: tomó los gastos de la niña y los ingresos de ambos padres, y con ChatGPT calculó la proporción, alrededor del 20 % de los ingresos del padre. No lo presentes como un error judicial: no hay evidencia de que el cálculo estuviera mal. Fuente: nota de prensa oficial de la CSJ de Lima Sur (gob.pe).",
+      "elements": [
+        {
+          "id": "decor",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.16,
+            "h": 0.12
+          },
+          "type": "decor",
+          "shape": "squiggle",
+          "style": {
+            "opacity": 0.6
+          }
+        },
+        {
+          "id": "quote",
+          "box": {
+            "x": 0.07,
+            "y": 0.26,
+            "w": 0.8,
+            "h": 0.32
+          },
+          "type": "text",
+          "text": "Una sentencia peruana, calculada con ChatGPT",
+          "style": {
+            "fontSize": 88,
+            "fontWeight": 700,
+            "font": "display",
+            "lineHeight": 1.1,
+            "tracking": -0.02,
+            "mark": true
+          }
+        },
+        {
+          "id": "fact",
+          "box": {
+            "x": 0.07,
+            "y": 0.62,
+            "w": 0.8,
+            "h": 0.1
+          },
+          "type": "text",
+          "text": "Pensión de alimentos confirmada: ≈ 20 % de los ingresos del padre.",
+          "style": {
+            "fontSize": 40,
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "source",
+          "box": {
+            "x": 0.07,
+            "y": 0.76,
+            "w": 0.8,
+            "h": 0.08
+          },
+          "type": "text",
+          "text": "Corte Superior de Justicia de Lima Sur · 28 de marzo de 2023",
+          "style": {
+            "fontSize": 32,
+            "font": "mono",
+            "color": "muted"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tres-preguntas",
+      "notes": "No se trata de si el número estaba bien o mal. Se trata de tres preguntas que nadie hizo en voz alta. Muestra una por una. Cierra: ahora imaginen que ese cálculo no lo hace un juez con ChatGPT abierto en el navegador, sino un sistema que ustedes programaron para el Estado. Ese día, la pregunta les llega a ustedes.",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "Tres preguntas que nadie hizo",
+          "style": {
+            "fontSize": 80,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "i1",
+          "box": {
+            "x": 0.16,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "search"
+        },
+        {
+          "id": "l1",
+          "box": {
+            "x": 0.07,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.22
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "¿Quién verificó el cálculo?",
+          "style": {
+            "fontSize": 40,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i2",
+          "box": {
+            "x": 0.46,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "database"
+        },
+        {
+          "id": "l2",
+          "box": {
+            "x": 0.37,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.22
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "¿Dónde quedaron los datos de la familia?",
+          "style": {
+            "fontSize": 40,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i3",
+          "box": {
+            "x": 0.76,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "help-circle"
+        },
+        {
+          "id": "l3",
+          "box": {
+            "x": 0.67,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.22
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Si salía mal, ¿quién respondía?",
+          "style": {
+            "fontSize": 40,
+            "align": "center",
+            "lineHeight": 1.25,
+            "mark": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "rompehielos",
+      "layout": "quiz",
+      "notes": "Rompehielos. No des la respuesta todavía: guarden su respuesta. En diez minutos vemos que la ley define roles concretos (desarrollador, implementador, usuario) y que cada uno tiene obligaciones distintas. Lo retomas en la lámina de roles.",
+      "elements": [],
+      "quiz": {
+        "question": "Si el cálculo de ChatGPT salía mal, ¿quién debía responder?",
+        "options": [
+          "El juez",
+          "Corte superior de Justicia",
+          "ChatGPT",
+          "Ninguno",
+          "Todos"
+        ],
+        "correctIndex": 4,
+        "display": "live"
+      }
+    },
+    {
+      "id": "mapa",
+      "notes": "Tres piezas. Si solo te llevas una lámina, que sea esta. La Ley 31814 es de promoción, no de prohibición. El reglamento (publicado el 9 de septiembre de 2025, vigente desde enero de 2026) trae las reglas operativas. La Ley 29733 y su nuevo reglamento (D.S. 016-2024-JUS) ya te aplican, sin plazos pendientes. Autoridad: PCM a través de la SGTD (art. 4 de la Ley; art. 8 del Reglamento). Datos personales: ANPDP. Cualquier persona puede reportar tu sistema en gob.pe/iaperu (art. 36.1).",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.07,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Tres normas, un mapa",
+          "style": {
+            "fontSize": 72,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "ic0",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.05,
+            "h": 0.0889
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "rocket",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "tg0",
+          "box": {
+            "x": 0.135,
+            "y": 0.255,
+            "w": 0.18,
+            "h": 0.055
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Promoción",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "valign": "middle",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "nm0",
+          "box": {
+            "x": 0.07,
+            "y": 0.36,
+            "w": 0.26,
+            "h": 0.11
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "31814",
+          "style": {
+            "fontSize": 84,
+            "fontWeight": 800,
+            "font": "display",
+            "valign": "bottom",
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "kd0",
+          "box": {
+            "x": 0.07,
+            "y": 0.48,
+            "w": 0.26,
+            "h": 0.06
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Ley de IA · julio 2023",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted"
+          }
+        },
+        {
+          "id": "ds0",
+          "box": {
+            "x": 0.07,
+            "y": 0.56,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Promueve el uso de la IA. Principios, no prohibiciones.",
+          "style": {
+            "fontSize": 32,
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "sep1",
+          "box": {
+            "x": 0.35,
+            "y": 0.24,
+            "w": 0,
+            "h": 0.52
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ic1",
+          "box": {
+            "x": 0.37,
+            "y": 0.24,
+            "w": 0.05,
+            "h": 0.0889
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "shield-check",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "tg1",
+          "box": {
+            "x": 0.435,
+            "y": 0.255,
+            "w": 0.18,
+            "h": 0.055
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Reglas",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "valign": "middle",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "nm1",
+          "box": {
+            "x": 0.37,
+            "y": 0.36,
+            "w": 0.26,
+            "h": 0.11
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "115-2025-PCM",
+          "style": {
+            "fontSize": 54,
+            "fontWeight": 800,
+            "font": "display",
+            "valign": "bottom",
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "kd1",
+          "box": {
+            "x": 0.37,
+            "y": 0.48,
+            "w": 0.26,
+            "h": 0.06
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "D.S. · Reglamento · enero 2026",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted"
+          }
+        },
+        {
+          "id": "ds1",
+          "box": {
+            "x": 0.37,
+            "y": 0.56,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Riesgos, prohibiciones y obligaciones: las reglas operativas.",
+          "style": {
+            "fontSize": 32,
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "sep2",
+          "box": {
+            "x": 0.65,
+            "y": 0.24,
+            "w": 0,
+            "h": 0.52
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ic2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.24,
+            "w": 0.05,
+            "h": 0.0889
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "lock",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "tg2",
+          "box": {
+            "x": 0.735,
+            "y": 0.255,
+            "w": 0.18,
+            "h": 0.055
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Ya vigente",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "valign": "middle",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "nm2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.36,
+            "w": 0.26,
+            "h": 0.11
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "29733",
+          "style": {
+            "fontSize": 84,
+            "fontWeight": 800,
+            "font": "display",
+            "valign": "bottom",
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "kd2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.48,
+            "w": 0.26,
+            "h": 0.06
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Ley de datos personales",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted"
+          }
+        },
+        {
+          "id": "ds2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.56,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Si tu sistema toca datos de personas, ya te aplica hoy.",
+          "style": {
+            "fontSize": 32,
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "bar",
+          "box": {
+            "x": 0.07,
+            "y": 0.8,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "fragment": 4,
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 24
+          }
+        },
+        {
+          "id": "ai0",
+          "box": {
+            "x": 0.1,
+            "y": 0.83,
+            "w": 0.034,
+            "h": 0.0604
+          },
+          "fragment": 4,
+          "type": "icon",
+          "name": "building-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "at0",
+          "box": {
+            "x": 0.145,
+            "y": 0.82,
+            "w": 0.22,
+            "h": 0.08
+          },
+          "fragment": 4,
+          "type": "text",
+          "text": "Manda: PCM · SGTD",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 600,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "ai1",
+          "box": {
+            "x": 0.38,
+            "y": 0.83,
+            "w": 0.034,
+            "h": 0.0604
+          },
+          "fragment": 4,
+          "type": "icon",
+          "name": "lock",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "at1",
+          "box": {
+            "x": 0.425,
+            "y": 0.82,
+            "w": 0.22,
+            "h": 0.08
+          },
+          "fragment": 4,
+          "type": "text",
+          "text": "Datos: ANPDP",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 600,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "ai2",
+          "box": {
+            "x": 0.66,
+            "y": 0.83,
+            "w": 0.034,
+            "h": 0.0604
+          },
+          "fragment": 4,
+          "type": "icon",
+          "name": "megaphone",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "at2",
+          "box": {
+            "x": 0.705,
+            "y": 0.82,
+            "w": 0.22,
+            "h": 0.08
+          },
+          "fragment": 4,
+          "type": "text",
+          "text": "Denuncias: gob.pe/iaperu",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 600,
+            "valign": "middle"
+          }
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "notes": "Art. 6 del Reglamento. Vuelta al gancho: con estas definiciones, OpenAI sería el desarrollador; el Poder Judicial, al usar la herramienta dentro de un proceso judicial, estaría más cerca del implementador; y la decisión la sigue firmando el juez. La responsabilidad se reparte. Si mañana el Poder Judicial les encarga ese sistema, los desarrolladores serían ustedes. Es una interpretación del ponente, no un pronunciamiento oficial: preséntala así.",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "¿Qué rol tienes tú?",
+          "style": {
+            "fontSize": 80,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "n1",
+          "box": {
+            "x": 0.07,
+            "y": 0.32,
+            "w": 0.22,
+            "h": 0.18
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Desarrollador",
+          "style": {
+            "fontSize": 40,
+            "fontWeight": 700,
+            "align": "center",
+            "valign": "middle",
+            "card": true
+          }
+        },
+        {
+          "id": "d1",
+          "box": {
+            "x": 0.07,
+            "y": 0.53,
+            "w": 0.22,
+            "h": 0.14
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Diseña, programa o entrena",
+          "style": {
+            "fontSize": 32,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "a1",
+          "box": {
+            "x": 0.3,
+            "y": 0.41,
+            "w": 0.09,
+            "h": 0
+          },
+          "fragment": 2,
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 6
+          }
+        },
+        {
+          "id": "n2",
+          "box": {
+            "x": 0.39,
+            "y": 0.32,
+            "w": 0.22,
+            "h": 0.18
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Implementador",
+          "style": {
+            "fontSize": 40,
+            "fontWeight": 700,
+            "align": "center",
+            "valign": "middle",
+            "card": true
+          }
+        },
+        {
+          "id": "d2",
+          "box": {
+            "x": 0.39,
+            "y": 0.53,
+            "w": 0.22,
+            "h": 0.14
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Integra o despliega en un proceso",
+          "style": {
+            "fontSize": 32,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "a2",
+          "box": {
+            "x": 0.62,
+            "y": 0.41,
+            "w": 0.09,
+            "h": 0
+          },
+          "fragment": 3,
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 6
+          }
+        },
+        {
+          "id": "n3",
+          "box": {
+            "x": 0.71,
+            "y": 0.32,
+            "w": 0.22,
+            "h": 0.18
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Usuario",
+          "style": {
+            "fontSize": 40,
+            "fontWeight": 700,
+            "align": "center",
+            "valign": "middle",
+            "card": true
+          }
+        },
+        {
+          "id": "d3",
+          "box": {
+            "x": 0.71,
+            "y": 0.53,
+            "w": 0.22,
+            "h": 0.14
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Usa el sistema ya implementado",
+          "style": {
+            "fontSize": 32,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "msg",
+          "box": {
+            "x": 0.07,
+            "y": 0.74,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "fragment": 4,
+          "type": "text",
+          "text": "La responsabilidad se reparte",
+          "style": {
+            "fontSize": 56,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "mark": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "categorias",
+      "notes": "Art. 22. Uso indebido: impacta de manera irreversible, significativa y negativa en derechos fundamentales; está prohibido. Riesgo alto: riesgo para la vida, dignidad, libertad o seguridad; permitido con condiciones. Aceptable: todo lo demás (art. 22.2), y aun así debe cumplir la ley y el reglamento.",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "Tres categorías de riesgo",
+          "style": {
+            "fontSize": 80,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "i1",
+          "box": {
+            "x": 0.16,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "x-circle"
+        },
+        {
+          "id": "l1",
+          "box": {
+            "x": 0.07,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Prohibido\nart. 23",
+          "style": {
+            "fontSize": 44,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i2",
+          "box": {
+            "x": 0.46,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "alert-triangle"
+        },
+        {
+          "id": "l2",
+          "box": {
+            "x": 0.37,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Riesgo alto\nart. 24",
+          "style": {
+            "fontSize": 44,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i3",
+          "box": {
+            "x": 0.76,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "check-circle-2"
+        },
+        {
+          "id": "l3",
+          "box": {
+            "x": 0.67,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Aceptable\nart. 22.2",
+          "style": {
+            "fontSize": 44,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "regla",
+      "notes": "El reglamento sigue la lógica del AI Act europeo: no regula la tecnología, regula el uso. El mismo modelo de visión puede ser riesgo aceptable en una app de plantas y prohibido en una cámara de la calle.",
+      "elements": [
+        {
+          "id": "decor",
+          "box": {
+            "x": 0.07,
+            "y": 0.12,
+            "w": 0.16,
+            "h": 0.12
+          },
+          "type": "decor",
+          "shape": "squiggle",
+          "style": {
+            "opacity": 0.6
+          }
+        },
+        {
+          "id": "quote",
+          "box": {
+            "x": 0.07,
+            "y": 0.28,
+            "w": 0.78,
+            "h": 0.34
+          },
+          "type": "text",
+          "text": "La ley regula el uso, no la tecnología",
+          "style": {
+            "fontSize": 96,
+            "fontWeight": 700,
+            "font": "display",
+            "lineHeight": 1.1,
+            "tracking": -0.02,
+            "mark": true
+          }
+        },
+        {
+          "id": "sub",
+          "box": {
+            "x": 0.07,
+            "y": 0.7,
+            "w": 0.8,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "El mismo modelo es aceptable en una app de plantas y prohibido en una cámara de la calle.",
+          "style": {
+            "fontSize": 36,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "listas",
+      "notes": "Prohibidos (art. 23.1): manipulación, capacidad letal autónoma, vigilancia masiva, inferir datos sensibles por biometría, identificación biométrica en tiempo real en espacios públicos (salvo autenticación e investigación de delitos graves), predicción policial individual. Riesgo alto (art. 24.1): activos críticos, educación de menores, empleo, programas sociales, crédito (salvo fraude), salud, emociones en trabajo o escuela, y una cláusula abierta. Ojo: en el texto oficial la numeración del 24.1 salta del literal b) al e); cita por tema, no por literal. Si dudas de la categoría: consulta a la SGTD (arts. 23.3 y 24.2) o el sandbox (art. 17.5).",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.07,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Prohibido vs. riesgo alto",
+          "style": {
+            "fontSize": 72,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "hb0",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.41,
+            "h": 0.11
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 20
+          }
+        },
+        {
+          "id": "hi0",
+          "box": {
+            "x": 0.09,
+            "y": 0.265,
+            "w": 0.034,
+            "h": 0.0604
+          },
+          "type": "icon",
+          "name": "x-circle",
+          "style": {
+            "color": "on-accent"
+          }
+        },
+        {
+          "id": "ht0",
+          "box": {
+            "x": 0.14,
+            "y": 0.24,
+            "w": 0.22,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Prohibido",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "on-accent",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "ha0",
+          "box": {
+            "x": 0.34,
+            "y": 0.24,
+            "w": 0.12,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "art. 23",
+          "style": {
+            "fontSize": 24,
+            "font": "mono",
+            "color": "on-accent",
+            "align": "right",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "ri00",
+          "box": {
+            "x": 0.09,
+            "y": 0.415,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "type": "icon",
+          "name": "megaphone",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "rt00",
+          "box": {
+            "x": 0.14,
+            "y": 0.39,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "type": "text",
+          "text": "Manipular decisiones",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "rl00",
+          "box": {
+            "x": 0.07,
+            "y": 0.505,
+            "w": 0.41,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ri01",
+          "box": {
+            "x": 0.09,
+            "y": 0.535,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "type": "icon",
+          "name": "camera",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "rt01",
+          "box": {
+            "x": 0.14,
+            "y": 0.51,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "type": "text",
+          "text": "Vigilancia masiva",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "rl01",
+          "box": {
+            "x": 0.07,
+            "y": 0.625,
+            "w": 0.41,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ri02",
+          "box": {
+            "x": 0.09,
+            "y": 0.655,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "type": "icon",
+          "name": "eye",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "rt02",
+          "box": {
+            "x": 0.14,
+            "y": 0.63,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "type": "text",
+          "text": "Biometría en tiempo real",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "rl02",
+          "box": {
+            "x": 0.07,
+            "y": 0.745,
+            "w": 0.41,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ri03",
+          "box": {
+            "x": 0.09,
+            "y": 0.775,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "type": "icon",
+          "name": "target",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "rt03",
+          "box": {
+            "x": 0.14,
+            "y": 0.75,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "type": "text",
+          "text": "Predicción policial individual",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "hb1",
+          "box": {
+            "x": 0.52,
+            "y": 0.24,
+            "w": 0.41,
+            "h": 0.11
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "hi1",
+          "box": {
+            "x": 0.54,
+            "y": 0.265,
+            "w": 0.034,
+            "h": 0.0604
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "ht1",
+          "box": {
+            "x": 0.59,
+            "y": 0.24,
+            "w": 0.22,
+            "h": 0.11
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Riesgo alto",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "ha1",
+          "box": {
+            "x": 0.79,
+            "y": 0.24,
+            "w": 0.12,
+            "h": 0.11
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "art. 24",
+          "style": {
+            "fontSize": 24,
+            "font": "mono",
+            "color": "muted",
+            "align": "right",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "ri10",
+          "box": {
+            "x": 0.54,
+            "y": 0.415,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "briefcase",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "rt10",
+          "box": {
+            "x": 0.59,
+            "y": 0.39,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Empleo y crédito",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "rl10",
+          "box": {
+            "x": 0.52,
+            "y": 0.505,
+            "w": 0.41,
+            "h": 0
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ri11",
+          "box": {
+            "x": 0.54,
+            "y": 0.535,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "graduation-cap",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "rt11",
+          "box": {
+            "x": 0.59,
+            "y": 0.51,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Salud y educación",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "rl11",
+          "box": {
+            "x": 0.52,
+            "y": 0.625,
+            "w": 0.41,
+            "h": 0
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ri12",
+          "box": {
+            "x": 0.54,
+            "y": 0.655,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "users",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "rt12",
+          "box": {
+            "x": 0.59,
+            "y": 0.63,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Programas sociales",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "rl12",
+          "box": {
+            "x": 0.52,
+            "y": 0.745,
+            "w": 0.41,
+            "h": 0
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ri13",
+          "box": {
+            "x": 0.54,
+            "y": 0.775,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "zap",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "rt13",
+          "box": {
+            "x": 0.59,
+            "y": 0.75,
+            "w": 0.33,
+            "h": 0.105
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Activos críticos",
+          "style": {
+            "fontSize": 36,
+            "valign": "middle"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sgtd",
+      "background": {
+        "color": "surface",
+        "pattern": "grid"
+      },
+      "notes": "Ahora ustedes son la SGTD. Tres casos, uno por categoría. Les muestro un sistema y votan: prohibido, riesgo alto o aceptable. Aclara en voz alta: los casos son inventados, pero podrían pasar mañana en Chiclayo. Ninguna empresa local real hizo esto. Mecánica: 30 segundos para votar, 30 a 45 de explicación.",
+      "elements": [
+        {
+          "id": "word",
+          "box": {
+            "x": 0.07,
+            "y": 0.28,
+            "w": 0.86,
+            "h": 0.32
+          },
+          "type": "text",
+          "text": "Ustedes son la SGTD",
+          "style": {
+            "fontSize": 130,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "valign": "middle",
+            "tracking": -0.02
+          }
+        },
+        {
+          "id": "sub",
+          "box": {
+            "x": 0.07,
+            "y": 0.66,
+            "w": 0.86,
+            "h": 0.1
+          },
+          "type": "text",
+          "text": "Tres casos hipotéticos. Todos en Lambayeque.",
+          "style": {
+            "fontSize": 44,
+            "color": "muted",
+            "align": "center"
+          }
+        }
+      ]
+    },
+    {
+      "id": "caso-1",
+      "layout": "quiz",
+      "notes": "Caso hipotético. Respuesta: riesgo alto. Revela tras 30 segundos.",
+      "elements": [],
+      "quiz": {
+        "question": "Caso 1 · Una agroexportadora de Olmos rankea miles de postulantes para la campaña de arándano y descarta automáticamente al 70 %.",
+        "options": [
+          "Prohibido",
+          "Riesgo alto",
+          "Aceptable"
+        ],
+        "correctIndex": 1,
+        "display": "secret",
+        "timerSec": 30
+      }
+    },
+    {
+      "id": "resp-1",
+      "notes": "Selección y contratación de trabajadores (art. 24.1). Contexto real: el arándano es el principal cultivo de exportación de la Irrigación Olmos (Andina, 2023). Caso real: Reuters reveló en 2018 que Amazon había abandonado una herramienta de reclutamiento entrenada con 10 años de CV mayoritariamente masculinos (CNBC, MIT Technology Review).",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.14,
+            "w": 0.86,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Caso 1 · Respuesta",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "verdict",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.86,
+            "h": 0.18
+          },
+          "type": "text",
+          "text": "Riesgo alto",
+          "style": {
+            "fontSize": 110,
+            "fontWeight": 800,
+            "font": "display",
+            "mark": true
+          }
+        },
+        {
+          "id": "why",
+          "box": {
+            "x": 0.07,
+            "y": 0.48,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "Selección y contratación de trabajadores (art. 24.1).",
+          "style": {
+            "fontSize": 44,
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "real",
+          "box": {
+            "x": 0.07,
+            "y": 0.68,
+            "w": 0.86,
+            "h": 0.16
+          },
+          "type": "text",
+          "text": "Caso real: Amazon abandonó una IA de reclutamiento que penalizaba CV con la palabra «women's».",
+          "style": {
+            "fontSize": 34,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "caso-2",
+      "layout": "quiz",
+      "notes": "Caso hipotético. Respuesta: prohibido. Revela tras 30 segundos.",
+      "elements": [],
+      "quiz": {
+        "question": "Caso 2 · Un centro comercial de Chiclayo identifica en tiempo real a «clientes sospechosos» con cámaras y los clasifica por apariencia.",
+        "options": [
+          "Prohibido",
+          "Riesgo alto",
+          "Aceptable"
+        ],
+        "correctIndex": 0,
+        "display": "secret",
+        "timerSec": 30
+      }
+    },
+    {
+      "id": "resp-2",
+      "notes": "Identificación biométrica en tiempo real para categorizar personas en espacios públicos (art. 23.1). Caso real: Clearview AI recibió multas en Italia (€20 M, 2022), Grecia (€20 M, 2022), Francia (€20 M + €5,2 M) y Países Bajos (€30,5 M, 2024); el Reino Unido también la multó, pero Clearview apeló. Variante: reconocimiento facial solo para autenticar al empleado que entra a la oficina es una excepción, aunque aplican las reglas de datos biométricos.",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.14,
+            "w": 0.86,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Caso 2 · Respuesta",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "verdict",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.86,
+            "h": 0.18
+          },
+          "type": "text",
+          "text": "Prohibido",
+          "style": {
+            "fontSize": 110,
+            "fontWeight": 800,
+            "font": "display",
+            "mark": true
+          }
+        },
+        {
+          "id": "why",
+          "box": {
+            "x": 0.07,
+            "y": 0.48,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "Biometría en tiempo real para categorizar personas en espacios públicos (art. 23.1).",
+          "style": {
+            "fontSize": 44,
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "real",
+          "box": {
+            "x": 0.07,
+            "y": 0.68,
+            "w": 0.86,
+            "h": 0.16
+          },
+          "type": "text",
+          "text": "Caso real: Clearview AI acumuló multas en Italia, Grecia, Francia y Países Bajos.",
+          "style": {
+            "fontSize": 34,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "caso-3",
+      "layout": "quiz",
+      "notes": "Caso hipotético. Respuesta: aceptable. Revela tras 30 segundos.",
+      "elements": [],
+      "quiz": {
+        "question": "Caso 3 · Una caja de ahorro de Chiclayo usa un chatbot con LLM en WhatsApp para responder horarios de agencias y requisitos.",
+        "options": [
+          "Prohibido",
+          "Riesgo alto",
+          "Aceptable"
+        ],
+        "correctIndex": 2,
+        "display": "secret",
+        "timerSec": 30
+      }
+    },
+    {
+      "id": "resp-3",
+      "notes": "No decide sobre crédito ni derechos. Pero riesgo aceptable no significa riesgo cero: en febrero de 2024, un tribunal de Columbia Británica (Canadá) condenó a Air Canada porque su chatbot inventó una política de tarifa por duelo. La empresa alegó que el chatbot era una entidad separada; el tribunal lo rechazó (Business Standard, AI Business).",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.14,
+            "w": 0.86,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Caso 3 · Respuesta",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "verdict",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.86,
+            "h": 0.18
+          },
+          "type": "text",
+          "text": "Aceptable",
+          "style": {
+            "fontSize": 110,
+            "fontWeight": 800,
+            "font": "display",
+            "mark": true
+          }
+        },
+        {
+          "id": "why",
+          "box": {
+            "x": 0.07,
+            "y": 0.48,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "No decide sobre crédito ni derechos. Pero aceptable no es riesgo cero.",
+          "style": {
+            "fontSize": 44,
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "real",
+          "box": {
+            "x": 0.07,
+            "y": 0.68,
+            "w": 0.86,
+            "h": 0.16
+          },
+          "type": "text",
+          "text": "Caso real: Air Canada fue condenada por una política que inventó su chatbot. Tú respondes por lo que dice tu bot.",
+          "style": {
+            "fontSize": 34,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "patron",
+      "notes": "Cierre del bloque: ¿notaron el patrón? Lo que mueve un sistema de categoría no es el modelo: es qué decide, sobre quién y si hay un humano que puede detenerlo.",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "Lo que mueve la categoría",
+          "style": {
+            "fontSize": 80,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "i1",
+          "box": {
+            "x": 0.16,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "target"
+        },
+        {
+          "id": "l1",
+          "box": {
+            "x": 0.07,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Qué decide",
+          "style": {
+            "fontSize": 44,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i2",
+          "box": {
+            "x": 0.46,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "users"
+        },
+        {
+          "id": "l2",
+          "box": {
+            "x": 0.37,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Sobre quién",
+          "style": {
+            "fontSize": 44,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i3",
+          "box": {
+            "x": 0.76,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "user-check"
+        },
+        {
+          "id": "l3",
+          "box": {
+            "x": 0.67,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Si un humano puede detenerlo",
+          "style": {
+            "fontSize": 44,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "datos",
+      "background": {
+        "color": "surface",
+        "pattern": "dots"
+      },
+      "notes": "El reglamento de IA lo dice expresamente: en el desarrollo, implementación y uso de IA se debe cumplir la normativa de protección de datos (art. 26.1), y las sanciones se determinan conforme a la Ley 29733 (art. 26.2). Si tu modelo toca datos de personas, ya estás regulado. Hoy. Sin plazo de gracia.",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.16,
+            "w": 0.86,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Datos personales · Ley 29733",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "statement",
+          "box": {
+            "x": 0.07,
+            "y": 0.28,
+            "w": 0.86,
+            "h": 0.36
+          },
+          "type": "text",
+          "text": "Si tu modelo toca datos de personas, ya estás regulado.",
+          "style": {
+            "fontSize": 96,
+            "fontWeight": 800,
+            "font": "display",
+            "lineHeight": 1.08,
+            "tracking": -0.02
+          }
+        },
+        {
+          "id": "sub",
+          "box": {
+            "x": 0.07,
+            "y": 0.7,
+            "w": 0.86,
+            "h": 0.1
+          },
+          "type": "text",
+          "text": "Reglamento de IA, art. 26: se cumple la Ley 29733 y se sanciona con ella.",
+          "style": {
+            "fontSize": 36,
+            "color": "muted"
+          }
+        }
+      ]
+    },
+    {
+      "id": "quiz-datos",
+      "layout": "quiz",
+      "notes": "Respuesta: D, las dos. Ley de IA: salud con historias clínicas electrónicas es riesgo alto (art. 24.1). Ley de datos: datos sensibles, transferencia internacional y posible incidente si el proveedor retiene los datos. Cómo abordarlo: anonimizar o seudonimizar antes de enviar, acuerdo con el proveedor sin retención ni entrenamiento, evaluación de impacto, médico que valida siempre el resumen.",
+      "elements": [],
+      "quiz": {
+        "question": "Tu equipo desarrolla para un hospital de Chiclayo y envía historias clínicas completas a la API de un LLM en EE. UU. ¿Cuántas normas tocas?",
+        "options": [
+          "Ninguna: es un proveedor confiable",
+          "Solo la ley de IA",
+          "Solo la ley de datos personales",
+          "Las dos"
+        ],
+        "correctIndex": 3,
+        "display": "secret",
+        "timerSec": 30
+      }
+    },
+    {
+      "id": "minsa-ia",
+      "notes": "Caso real y reciente que responde al quiz del hospital. El 6 de octubre de 2026 el Minsa aprobó, con la Resolución Ministerial N.° 903-2026/MINSA, los «Lineamientos de Política Institucional para el uso seguro, responsable y ético de los sistemas basados en Inteligencia Artificial». Regulan todo el ciclo de vida de una solución con IA: diseño, desarrollo, adquisición, implementación, operación y retiro. Como la información médica es dato personal sensible, exigen principios de seguridad, ética, transparencia, responsabilidad e inclusión. Son obligatorios para los órganos y unidades del Minsa, para las personas naturales o jurídicas que le prestan servicios (proveedores), y para las IPRESS e IAFAS en los sistemas administrativos o asistenciales que provee el Minsa. Los supervisa la OGTI del Minsa. Se alinean con el Reglamento de la Ley 31814, que exige a las entidades públicas una política institucional de IA (art. 28.1): es el paso 0 que veremos al final. Fuente: nota de prensa del Minsa en gob.pe (06/10/2026).",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.07,
+            "w": 0.86,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Minsa · R.M. N.° 903-2026/MINSA · 6 de octubre de 2026",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.1
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.13,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "En salud ya hay reglas propias",
+          "style": {
+            "fontSize": 68,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "ic0",
+          "box": {
+            "x": 0.07,
+            "y": 0.31,
+            "w": 0.05,
+            "h": 0.0889
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "refresh-cw",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "t0",
+          "box": {
+            "x": 0.07,
+            "y": 0.43,
+            "w": 0.26,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Todo el ciclo de vida",
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "d0",
+          "box": {
+            "x": 0.07,
+            "y": 0.51,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Diseño, desarrollo, compra, operación y retiro de cualquier solución con IA.",
+          "style": {
+            "fontSize": 28,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "ic1",
+          "box": {
+            "x": 0.37,
+            "y": 0.31,
+            "w": 0.05,
+            "h": 0.0889
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "lock",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "t1",
+          "box": {
+            "x": 0.37,
+            "y": 0.43,
+            "w": 0.26,
+            "h": 0.07
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Datos sensibles",
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "d1",
+          "box": {
+            "x": 0.37,
+            "y": 0.51,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Los datos de pacientes exigen privacidad, seguridad y transparencia.",
+          "style": {
+            "fontSize": 28,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "sep1",
+          "box": {
+            "x": 0.35,
+            "y": 0.31,
+            "w": 0,
+            "h": 0.38
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ic2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.31,
+            "w": 0.05,
+            "h": 0.0889
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "users",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 20
+          }
+        },
+        {
+          "id": "t2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.43,
+            "w": 0.26,
+            "h": 0.07
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Obligatoria",
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "d2",
+          "box": {
+            "x": 0.6699999999999999,
+            "y": 0.51,
+            "w": 0.26,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Para el Minsa, sus proveedores, y las IPRESS e IAFAS en los sistemas que provee el Minsa.",
+          "style": {
+            "fontSize": 28,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "sep2",
+          "box": {
+            "x": 0.65,
+            "y": 0.31,
+            "w": 0,
+            "h": 0.38
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "bar",
+          "box": {
+            "x": 0.07,
+            "y": 0.76,
+            "w": 0.86,
+            "h": 0.13
+          },
+          "fragment": 4,
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 24
+          }
+        },
+        {
+          "id": "barI",
+          "box": {
+            "x": 0.1,
+            "y": 0.795,
+            "w": 0.034,
+            "h": 0.0604
+          },
+          "fragment": 4,
+          "type": "icon",
+          "name": "code",
+          "style": {
+            "color": "on-accent"
+          }
+        },
+        {
+          "id": "barT",
+          "box": {
+            "x": 0.155,
+            "y": 0.76,
+            "w": 0.76,
+            "h": 0.13
+          },
+          "fragment": 4,
+          "type": "text",
+          "text": "¿Le desarrollas al Minsa? Estos lineamientos también son para ti.",
+          "style": {
+            "fontSize": 34,
+            "fontWeight": 700,
+            "color": "on-accent",
+            "valign": "middle"
+          }
+        }
+      ]
+    },
+    {
+      "id": "casos-peru",
+      "notes": "Dos casos peruanos de vulneración de datos personales. (1) Reniec, 2025: a fines de marzo un usuario con el alias \"Gatito_FBI_NZ\" ofreció en BreachForums datos de peruanos (nombres, direcciones, fotos, firmas). Reniec negó un hackeo: la extracción se hizo con un acceso autorizado del Mininter (\"scraping\", uso indebido de accesos concedidos). El 16/04/2025 la jefa del Reniec, Carmen Velarde, pidió disculpas por la exposición de datos de más de 15 millones de peruanos y dijo: \"Tal vez nosotros debimos haber monitoreado y no ser tan buena gente\". Fuentes: RPP 05/04/2025, Panamericana y Diario Correo 16/04/2025. Cifras posteriores (27 M, 33 M) vienen del Congreso y no están confirmadas. (2) Interbank, octubre de 2024: el banco confirmó que \"algunos datos de un grupo de clientes han sido expuestos por un tercero sin nuestra autorización\". La Fiscalía de Ciberdelincuencia abrió diligencias por acceso ilícito y la SBS anunció acciones para determinar infracciones (El Peruano, 31/10/2024). El hacker \"Kzoldyck\" dijo tener datos de unos 3 millones de clientes, pero esa cifra no está verificada. Lección para quien programa con IA: cada integración, API o agente que consulta datos personales es un acceso más que hay que limitar y monitorear (Ley 29733, art. 16: medidas de seguridad).",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.08,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Ya pasó en el Perú",
+          "style": {
+            "fontSize": 72,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "c1",
+          "box": {
+            "x": 0.07,
+            "y": 0.25,
+            "w": 0.41,
+            "h": 0.3
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "+15 M",
+          "style": {
+            "fontSize": 120,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "valign": "middle",
+            "card": true,
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "l1",
+          "box": {
+            "x": 0.07,
+            "y": 0.59,
+            "w": 0.41,
+            "h": 0.3
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Reniec (2025): datos de peruanos expuestos usando un acceso autorizado del Mininter. No fue un hackeo.",
+          "style": {
+            "fontSize": 32,
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "c2",
+          "box": {
+            "x": 0.52,
+            "y": 0.25,
+            "w": 0.41,
+            "h": 0.3
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Interbank",
+          "style": {
+            "fontSize": 96,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "valign": "middle",
+            "card": true,
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "l2",
+          "box": {
+            "x": 0.52,
+            "y": 0.59,
+            "w": 0.41,
+            "h": 0.3
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Interbank (2024): el banco confirmó datos de clientes expuestos. Fiscalía y SBS intervinieron.",
+          "style": {
+            "fontSize": 32,
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "leccion",
+          "box": {
+            "x": 0.07,
+            "y": 0.8,
+            "w": 0.86,
+            "h": 0.1
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Cada integración o agente de IA con acceso a datos es una puerta más: limítala y monitoréala.",
+          "style": {
+            "fontSize": 36,
+            "fontWeight": 700,
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "caso-deepseek",
+      "notes": "Caso real de vulneración de datos en un servicio de IA. El 29/01/2025, Wiz Research publicó que encontró una base de datos ClickHouse de DeepSeek accesible desde internet \"without any authentication at all\". La tabla log_stream tenía \"over 1 million log entries\" desde el 6 de enero de 2025: historiales de chat de usuarios, claves API, secretos y detalles del backend. Cualquiera podía ejecutar consultas SQL desde el navegador. Wiz avisó y DeepSeek la cerró de inmediato (\"promptly secured the exposure\"). Fuente: wiz.io/blog/wiz-research-uncovers-exposed-deepseek-database-leak. Mensaje para el público: lo que la gente le escribe a un chatbot son datos personales, y se filtraron por un error básico de configuración, no por un ataque sofisticado. Si integran un LLM, los logs de prompts también son datos personales (Ley 29733).",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.86,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Caso con IA · DeepSeek · enero 2025",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "card",
+          "box": {
+            "x": 0.07,
+            "y": 0.22,
+            "w": 0.44,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "+1 M",
+          "style": {
+            "fontSize": 200,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "valign": "middle",
+            "card": true,
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "label",
+          "box": {
+            "x": 0.56,
+            "y": 0.22,
+            "w": 0.37,
+            "h": 0.5
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "registros con historiales de chat y claves API, en una base de datos abierta a internet sin contraseña",
+          "style": {
+            "fontSize": 40,
+            "valign": "middle",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "leccion",
+          "box": {
+            "x": 0.07,
+            "y": 0.78,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "No hizo falta un hackeo: bastó un error de configuración. Lo que la gente le escribe a tu chatbot también son datos personales.",
+          "style": {
+            "fontSize": 34,
+            "fontWeight": 700,
+            "color": "accent",
+            "lineHeight": 1.2
+          }
+        }
+      ]
+    },
+    {
+      "id": "caso-integrador",
+      "layout": "quiz",
+      "notes": "Caso hipotético. Respuesta: B. Es riesgo alto (programas sociales, focalización de hogares). Tú eres desarrollador; el municipio es implementador; ambos tienen obligaciones. Sin supervisión humana real, estás repitiendo el caso neerlandés. Y como el cliente es una entidad pública, la evaluación de impacto es obligatoria, el padrón exige base legítima y tu código terminará publicado en la Plataforma Nacional de Software Público Peruano.",
+      "elements": [],
+      "quiz": {
+        "question": "Una municipalidad de Lambayeque prioriza con ML qué familias agricultoras reciben un bono tras las inundaciones, y el modelo descarta solo los «score» bajos. ¿Qué corriges primero?",
+        "options": [
+          "Mejorar el accuracy del modelo",
+          "Supervisión humana que pueda invalidar la decisión, con explicación",
+          "Cambiar a un modelo open source",
+          "Nada: el municipio es el responsable"
+        ],
+        "correctIndex": 1,
+        "display": "secret",
+        "timerSec": 40
+      }
+    },
+    {
+      "id": "etica",
+      "background": {
+        "gradient": {
+          "from": "surface",
+          "to": "background",
+          "angle": 135
+        }
+      },
+      "notes": "La ley llega tarde. Siempre. Cuando se escribió la Ley 31814 en 2023 ya había ChatGPT; cuando salió el reglamento en 2025 ya había agentes autónomos. Y a veces ni siquiera llega a tiempo a su propio plazo: la SGTD debía aprobar los lineamientos éticos hacia junio de 2026 (Segunda DCF) y al 31/10/2026 no se habían publicado. Art. 27.1: comportamiento probo y ético, equipos diversos, evitar resultados discriminatorios, minimizar sesgos.",
+      "elements": [
+        {
+          "id": "decor",
+          "box": {
+            "x": 0.74,
+            "y": 0,
+            "w": 0.26,
+            "h": 0.45
+          },
+          "type": "decor",
+          "shape": "arc",
+          "style": {
+            "opacity": 0.25
+          }
+        },
+        {
+          "id": "statement",
+          "box": {
+            "x": 0.07,
+            "y": 0.28,
+            "w": 0.7,
+            "h": 0.24
+          },
+          "type": "text",
+          "text": "La ley llega tarde",
+          "style": {
+            "fontSize": 120,
+            "fontWeight": 800,
+            "font": "display",
+            "tracking": -0.02,
+            "mark": true
+          }
+        },
+        {
+          "id": "sub",
+          "box": {
+            "x": 0.07,
+            "y": 0.6,
+            "w": 0.7,
+            "h": 0.16
+          },
+          "type": "text",
+          "text": "Los lineamientos éticos debían salir en junio de 2026. Todavía no existen.",
+          "style": {
+            "fontSize": 40,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "oficial-ia",
+      "notes": "Al juez nadie le hizo esas tres preguntas. Desde octubre de 2026, el Estado tiene un cargo cuyo trabajo es hacerlas: el Oficial de IA (Directiva N.° 002-2026-PCM/SGTD, publicada el 21/10/2026). Plazos para designarlo (art. 11.2): 6 meses para ministerios, Poder Judicial, Congreso y universidades públicas; 9 para gobiernos regionales; 12 para municipalidades Tipo A y C. Miembro del Comité de Gobierno Digital con voz y voto; no puede ser removido por sus alertas (art. 7.5). Antes de que un sistema salga, revisa pruebas, registro, métricas de sesgo y costos (art. 10.2). El sector privado puede usarla solo como referencia.",
+      "elements": [
+        {
+          "id": "card",
+          "box": {
+            "x": 0.07,
+            "y": 0.16,
+            "w": 0.5,
+            "h": 0.68
+          },
+          "type": "text",
+          "text": "≈ jul. 2027",
+          "style": {
+            "fontSize": 150,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "valign": "middle",
+            "card": true,
+            "tracking": -0.03
+          }
+        },
+        {
+          "id": "label",
+          "box": {
+            "x": 0.62,
+            "y": 0.16,
+            "w": 0.31,
+            "h": 0.68
+          },
+          "type": "text",
+          "text": "Plazo del Gobierno Regional de Lambayeque para designar a su Oficial de IA",
+          "style": {
+            "fontSize": 44,
+            "valign": "middle",
+            "lineHeight": 1.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "moral-machine",
+      "notes": "Moral Machine (MIT Media Lab): un auto autónomo se queda sin frenos y tiene que decidir. Si sigue recto, choca contra la barrera y mueren sus pasajeros; si gira, atropella a los peatones del cruce. Pregunta al público con la mano alzada: ¿recto o girar? Luego: no hay respuesta correcta, y por eso la ley no puede resolverlo por ti. Alguien tiene que programar esa decisión, y ese alguien puede ser cualquiera de ustedes. Referencia para que la prueben en casa: moralmachine.net.",
+      "elements": [
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.16,
+            "w": 0.42,
+            "h": 0.06
+          },
+          "type": "text",
+          "text": "Moral Machine · MIT",
+          "style": {
+            "fontSize": 30,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.42,
+            "h": 0.26
+          },
+          "type": "text",
+          "text": "¿A quién debe salvar el auto?",
+          "style": {
+            "fontSize": 80,
+            "fontWeight": 800,
+            "font": "display",
+            "lineHeight": 1.05,
+            "tracking": -0.02
+          }
+        },
+        {
+          "id": "sub",
+          "box": {
+            "x": 0.07,
+            "y": 0.54,
+            "w": 0.42,
+            "h": 0.18
+          },
+          "type": "text",
+          "text": "Sin frenos: seguir recto contra la barrera o girar hacia el cruce peatonal.",
+          "style": {
+            "fontSize": 36,
+            "color": "muted",
+            "lineHeight": 1.3
+          }
+        },
+        {
+          "id": "link",
+          "box": {
+            "x": 0.07,
+            "y": 0.76,
+            "w": 0.42,
+            "h": 0.08
+          },
+          "type": "text",
+          "text": "moralmachine.net",
+          "style": {
+            "fontSize": 40,
+            "font": "mono",
+            "mark": true
+          }
+        },
+        {
+          "id": "img-recto",
+          "box": {
+            "x": 0.53,
+            "y": 0.14,
+            "w": 0.19,
+            "h": 0.54
+          },
+          "type": "image",
+          "src": "assets/moral-machine-recto.png",
+          "alt": "El auto sigue recto contra la barrera y mueren sus pasajeros",
+          "fit": "contain",
+          "style": {
+            "radius": 16
+          }
+        },
+        {
+          "id": "img-gira",
+          "box": {
+            "x": 0.74,
+            "y": 0.14,
+            "w": 0.19,
+            "h": 0.54
+          },
+          "type": "image",
+          "src": "assets/moral-machine-gira.png",
+          "alt": "El auto gira hacia el cruce y mueren los peatones",
+          "fit": "contain",
+          "style": {
+            "radius": 16
+          }
+        },
+        {
+          "id": "cap-recto",
+          "box": {
+            "x": 0.53,
+            "y": 0.71,
+            "w": 0.19,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Recto: mueren los pasajeros",
+          "style": {
+            "fontSize": 32,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "cap-gira",
+          "box": {
+            "x": 0.74,
+            "y": 0.71,
+            "w": 0.19,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Gira: mueren los peatones",
+          "style": {
+            "fontSize": 32,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "pasos-estado",
+      "notes": "No se empieza comprando una herramienta: se empieza ordenando la casa. 0) Gobierno: designar al Oficial de IA (Directiva N.° 002-2026-PCM/SGTD), aprobar la política institucional de IA (art. 28.1) y conformar un equipo multidisciplinario (art. 28.3). 1) Inventario: mapear procesos candidatos y los usos de IA que ya existen sin control (servidores pegando expedientes en chatbots públicos); clasificar datos públicos, personales y sensibles (Ley 29733). 2) Priorización: cruzar valor (volumen, tiempo ahorrado) con riesgo (arts. 22 a 24) y empezar por lo de riesgo aceptable, por ejemplo la gestión documental. 3) Planificación: incluir el proyecto en el Plan de Gobierno Digital (art. 28.10). 4) Piloto: un proceso, una unidad, línea base medida antes y un humano que valida todo; si hay duda de categoría, consulta a la SGTD (arts. 23.3 y 24.2) o el sandbox (art. 17.5). 5) Contratación o desarrollo: TDR con NTP-ISO/IEC 42001 (art. 28.2), seguridad (art. 29) y código publicable (art. 28.8). 6) Escalar y vigilar: evaluación de impacto si es riesgo alto (art. 30.1), auditorías e incidentes (art. 29). Cierre: el proyecto de IA que falla en el Estado casi nunca falla por el modelo; falla porque nadie sabía qué proceso estaba automatizando ni con qué datos.",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.08,
+            "w": 0.86,
+            "h": 0.12
+          },
+          "type": "text",
+          "text": "Siete pasos para implementar IA en el Estado",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "track",
+          "box": {
+            "x": 0.1,
+            "y": 0.5,
+            "w": 0.8,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "ic0",
+          "box": {
+            "x": 0.0775,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "building-2",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "nd0",
+          "box": {
+            "x": 0.07,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "background",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn0",
+          "box": {
+            "x": 0.07,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "0",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm0",
+          "box": {
+            "x": 0.0375,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Gobierno",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "text",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb0",
+          "box": {
+            "x": 0.0375,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Oficial de IA y política",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "ic1",
+          "box": {
+            "x": 0.2108,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "clipboard-list",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "nd1",
+          "box": {
+            "x": 0.2033,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "background",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn1",
+          "box": {
+            "x": 0.2033,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "1",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm1",
+          "box": {
+            "x": 0.1708,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Inventario",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "text",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb1",
+          "box": {
+            "x": 0.1708,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Procesos y datos",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "ic2",
+          "box": {
+            "x": 0.3442,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "target",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "nd2",
+          "box": {
+            "x": 0.3367,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "background",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn2",
+          "box": {
+            "x": 0.3367,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "2",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm2",
+          "box": {
+            "x": 0.3042,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Priorización",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "text",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb2",
+          "box": {
+            "x": 0.3042,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Valor × riesgo",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "ic3",
+          "box": {
+            "x": 0.4775,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "calendar",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "nd3",
+          "box": {
+            "x": 0.47,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "background",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn3",
+          "box": {
+            "x": 0.47,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "3",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm3",
+          "box": {
+            "x": 0.4375,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Planificación",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "text",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb3",
+          "box": {
+            "x": 0.4375,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Plan de Gobierno Digital",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "ic4",
+          "box": {
+            "x": 0.6108,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "rocket",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "nd4",
+          "box": {
+            "x": 0.6033,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 2,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "accent",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn4",
+          "box": {
+            "x": 0.6033,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "4",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "on-accent",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm4",
+          "box": {
+            "x": 0.5708,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Piloto",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "accent",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb4",
+          "box": {
+            "x": 0.5708,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Un proceso, medido",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "ic5",
+          "box": {
+            "x": 0.7442,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "briefcase",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "nd5",
+          "box": {
+            "x": 0.7367,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 2,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "background",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn5",
+          "box": {
+            "x": 0.7367,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "5",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm5",
+          "box": {
+            "x": 0.7042,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Contratación",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "text",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb5",
+          "box": {
+            "x": 0.7042,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Requisitos en el TDR",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "ic6",
+          "box": {
+            "x": 0.8775,
+            "y": 0.3,
+            "w": 0.045,
+            "h": 0.08
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "eye",
+          "style": {
+            "color": "muted"
+          }
+        },
+        {
+          "id": "nd6",
+          "box": {
+            "x": 0.87,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 2,
+          "type": "shape",
+          "shape": "ellipse",
+          "style": {
+            "fill": "background",
+            "stroke": "accent",
+            "strokeWidth": 3
+          }
+        },
+        {
+          "id": "nn6",
+          "box": {
+            "x": 0.87,
+            "y": 0.4467,
+            "w": 0.06,
+            "h": 0.1067
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "6",
+          "style": {
+            "fontSize": 44,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "text",
+            "align": "center",
+            "valign": "middle"
+          }
+        },
+        {
+          "id": "nm6",
+          "box": {
+            "x": 0.8375,
+            "y": 0.59,
+            "w": 0.125,
+            "h": 0.06
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Escalar y vigilar",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": 700,
+            "color": "text",
+            "align": "center"
+          }
+        },
+        {
+          "id": "sb6",
+          "box": {
+            "x": 0.8375,
+            "y": 0.655,
+            "w": 0.125,
+            "h": 0.12
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Auditorías e incidentes",
+          "style": {
+            "fontSize": 22,
+            "color": "muted",
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "nota",
+          "box": {
+            "x": 0.07,
+            "y": 0.83,
+            "w": 0.86,
+            "h": 0.08
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "La tecnología entra recién en el paso 4",
+          "style": {
+            "fontSize": 38,
+            "fontWeight": 700,
+            "color": "accent",
+            "align": "center",
+            "mark": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-0",
+      "notes": "Paso 0, Gobierno. Antes de cualquier herramienta: designar al Oficial de IA (Directiva N.° 002-2026-PCM/SGTD), aprobar la política institucional de IA (art. 28.1 del Reglamento) y conformar un equipo multidisciplinario (art. 28.3). En Lambayeque: el Gobierno Regional tiene hasta ≈ julio de 2027 para designar a su OIA.",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 0 · Gobierno",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Directiva 002-2026 · arts. 28.1 y 28.3",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "building-2",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "0",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Ordenar quién decide",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Designar al Oficial de IA",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Aprobar la política institucional de IA (art. 28.1)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Conformar un equipo multidisciplinario (art. 28.3)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nResolución de designación del OIA y política aprobada.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nEl proyecto lo lidera solo TI, sin el área usuaria ni legal.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-1",
+      "notes": "Paso 1, Inventario. Mapear procesos candidatos y los usos de IA que ya existen sin control, por ejemplo servidores que pegan expedientes en chatbots públicos. Clasificar los datos de cada proceso en públicos, personales y sensibles (Ley 29733): eso define qué se puede enviar a un modelo y qué no.",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 1 · Inventario",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Ley 29733",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "clipboard-list",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "1",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Saber qué tenemos",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Mapear procesos candidatos a automatizar",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Detectar la IA que ya se usa sin control",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Clasificar datos: públicos, personales y sensibles",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nInventario de procesos, de usos de IA y de datos.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nServidores pegando expedientes en chatbots públicos.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-2",
+      "notes": "Paso 2, Priorización. Cruzar el valor del proceso (volumen de trámites, tiempo ahorrado) con su categoría de riesgo (arts. 22 a 24 del Reglamento). Empezar por lo de riesgo aceptable, por ejemplo la gestión documental. Dejar los usos de riesgo alto para cuando la entidad ya tenga experiencia y controles.",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 2 · Priorización",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Reglamento · arts. 22 a 24",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "target",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "2",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Elegir por dónde empezar",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Cruzar valor (volumen, tiempo ahorrado) con riesgo",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Empezar por lo de riesgo aceptable",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Ejemplo: gestión documental",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nMatriz valor × riesgo con el primer proceso elegido.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nEmpezar por un caso de riesgo alto: programas sociales o salud.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-3",
+      "notes": "Paso 3, Planificación. El proyecto de IA se incluye en el Plan de Gobierno Digital de la entidad (art. 28.10 del Reglamento). Fuera del plan, el proyecto no tiene presupuesto ni sobrevive a un cambio de gestión.",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 3 · Planificación",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Reglamento · art. 28.10",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "calendar",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "3",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Ponerlo en el plan",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Incluir el proyecto en el Plan de Gobierno Digital",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Asignar presupuesto y responsables",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Definir metas medibles",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nProyecto incorporado al Plan de Gobierno Digital.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nUn proyecto fuera del plan: sin presupuesto ni continuidad.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-4",
+      "notes": "Paso 4, Piloto. Recién aquí entra la tecnología. Un proceso, una unidad, línea base medida antes y un humano que valida todo. Si hay duda sobre la categoría de riesgo, se consulta a la SGTD (arts. 23.3 y 24.2) o se postula al sandbox (art. 17.5).",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 4 · Piloto",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Reglamento · arts. 17.5, 23.3 y 24.2",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "rocket",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "4",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Probar en pequeño",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Un proceso y una sola unidad",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Medir la línea base antes de empezar",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Un humano valida cada resultado",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nInforme del piloto con métricas antes y después.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nUn piloto sin línea base: nadie puede probar que mejoró.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-5",
+      "notes": "Paso 5, Contratación o desarrollo. Los términos de referencia incluyen la NTP-ISO/IEC 42001 (art. 28.2), requisitos de seguridad (art. 29) y que el código fuente se publique con licencia libre o abierta en la Plataforma Nacional de Software Público Peruano (art. 28.8; obligación de las entidades públicas para sistemas financiados con fondos públicos). Para quien desarrolla: esto es lo que el Estado te va a pedir en la licitación.",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "surface",
+            "stroke": "muted",
+            "strokeWidth": 1,
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 5 · Contratación",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Reglamento · arts. 28.2, 28.8 y 29",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "briefcase",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "5",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Comprar o construir bien",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "TDR con la NTP-ISO/IEC 42001 (art. 28.2)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Requisitos de seguridad (art. 29)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Código fuente abierto en la Plataforma de Software Público (art. 28.8)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nTérminos de referencia con requisitos de IA.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nComprar una caja negra sin acceso a código, datos ni logs.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "paso-6",
+      "notes": "Paso 6, Escalar y vigilar. Si el uso es de riesgo alto, evaluación de impacto obligatoria (art. 30.1). Auditorías periódicas y gestión de incidentes (art. 29). Cierre del bloque: el proyecto de IA que falla en el Estado casi nunca falla por el modelo; falla porque nadie sabía qué proceso estaba automatizando ni con qué datos.",
+      "elements": [
+        {
+          "id": "pg0",
+          "box": {
+            "x": 0.07,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg1",
+          "box": {
+            "x": 0.194,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg2",
+          "box": {
+            "x": 0.318,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg3",
+          "box": {
+            "x": 0.442,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg4",
+          "box": {
+            "x": 0.566,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg5",
+          "box": {
+            "x": 0.69,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "muted",
+            "radius": 6
+          }
+        },
+        {
+          "id": "pg6",
+          "box": {
+            "x": 0.814,
+            "y": 0.06,
+            "w": 0.116,
+            "h": 0.012
+          },
+          "type": "shape",
+          "shape": "rect",
+          "style": {
+            "fill": "accent",
+            "radius": 6
+          }
+        },
+        {
+          "id": "kicker",
+          "box": {
+            "x": 0.07,
+            "y": 0.09,
+            "w": 0.5,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Paso 6 · Escalar y vigilar",
+          "style": {
+            "fontSize": 24,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "accent",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "base",
+          "box": {
+            "x": 0.5,
+            "y": 0.09,
+            "w": 0.43,
+            "h": 0.05
+          },
+          "type": "text",
+          "text": "Reglamento · arts. 29 y 30.1",
+          "style": {
+            "fontSize": 22,
+            "font": "mono",
+            "color": "muted",
+            "align": "right"
+          }
+        },
+        {
+          "id": "tile",
+          "box": {
+            "x": 0.07,
+            "y": 0.2,
+            "w": 0.08,
+            "h": 0.1422
+          },
+          "type": "icon",
+          "name": "eye",
+          "style": {
+            "color": "on-accent",
+            "background": "accent",
+            "strokeWidth": 2,
+            "radius": 28
+          }
+        },
+        {
+          "id": "num",
+          "box": {
+            "x": 0.05,
+            "y": 0.36,
+            "w": 0.24,
+            "h": 0.5
+          },
+          "type": "text",
+          "text": "6",
+          "style": {
+            "fontSize": 400,
+            "fontWeight": 800,
+            "font": "display",
+            "color": "accent",
+            "lineHeight": 0.9,
+            "tracking": -0.04
+          }
+        },
+        {
+          "id": "h",
+          "box": {
+            "x": 0.32,
+            "y": 0.17,
+            "w": 0.61,
+            "h": 0.11
+          },
+          "type": "text",
+          "text": "Crecer sin perder el control",
+          "style": {
+            "fontSize": 64,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "lbl",
+          "box": {
+            "x": 0.32,
+            "y": 0.3,
+            "w": 0.61,
+            "h": 0.04
+          },
+          "type": "text",
+          "text": "Qué hacer",
+          "style": {
+            "fontSize": 22,
+            "fontWeight": 700,
+            "font": "mono",
+            "color": "muted",
+            "uppercase": true,
+            "tracking": 0.12
+          }
+        },
+        {
+          "id": "ck0",
+          "box": {
+            "x": 0.32,
+            "y": 0.368,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w0",
+          "box": {
+            "x": 0.36,
+            "y": 0.36,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Evaluación de impacto si es riesgo alto (art. 30.1)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck1",
+          "box": {
+            "x": 0.32,
+            "y": 0.453,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w1",
+          "box": {
+            "x": 0.36,
+            "y": 0.445,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Auditorías periódicas",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "ck2",
+          "box": {
+            "x": 0.32,
+            "y": 0.538,
+            "w": 0.026,
+            "h": 0.0462
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "check-circle-2",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "w2",
+          "box": {
+            "x": 0.36,
+            "y": 0.53,
+            "w": 0.57,
+            "h": 0.07
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Gestión de incidentes (art. 29)",
+          "style": {
+            "fontSize": 32,
+            "valign": "middle",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "div",
+          "box": {
+            "x": 0.32,
+            "y": 0.635,
+            "w": 0.61,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "muted",
+            "strokeWidth": 1
+          }
+        },
+        {
+          "id": "ent",
+          "box": {
+            "x": 0.32,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "Entregable\n\nEvaluación de impacto y plan de monitoreo.",
+          "style": {
+            "fontSize": 28,
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "entI",
+          "box": {
+            "x": 0.565,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "list-checks",
+          "style": {
+            "color": "accent"
+          }
+        },
+        {
+          "id": "alt",
+          "box": {
+            "x": 0.635,
+            "y": 0.67,
+            "w": 0.295,
+            "h": 0.2
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Señal de alerta\n\nNadie revisa el sistema después del lanzamiento.",
+          "style": {
+            "fontSize": 28,
+            "color": "accent",
+            "lineHeight": 1.3,
+            "card": true
+          }
+        },
+        {
+          "id": "altI",
+          "box": {
+            "x": 0.88,
+            "y": 0.69,
+            "w": 0.032,
+            "h": 0.0569
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "alert-triangle",
+          "style": {
+            "color": "accent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tres-ideas",
+      "notes": "Tres ideas y nos vamos. 1) La ley regula el uso, no la tecnología: lo que define tu riesgo es qué decide tu sistema, sobre quién y si un humano puede detenerlo. 2) El reloj ya empezó: si estás en salud, educación, justicia, seguridad o finanzas, tus obligaciones de riesgo alto ya son exigibles, y la ley de datos te aplica desde siempre. 3) Documenta: el registro técnico, la evaluación de impacto y el log de supervisión humana son tu mejor defensa.",
+      "elements": [
+        {
+          "id": "h",
+          "box": {
+            "x": 0.07,
+            "y": 0.1,
+            "w": 0.86,
+            "h": 0.14
+          },
+          "type": "text",
+          "text": "Tres ideas para llevarte",
+          "style": {
+            "fontSize": 80,
+            "fontWeight": 800,
+            "font": "display"
+          }
+        },
+        {
+          "id": "i1",
+          "box": {
+            "x": 0.16,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 1,
+          "type": "icon",
+          "name": "target"
+        },
+        {
+          "id": "l1",
+          "box": {
+            "x": 0.07,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.22
+          },
+          "fragment": 1,
+          "type": "text",
+          "text": "Regula el uso, no la tecnología",
+          "style": {
+            "fontSize": 40,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i2",
+          "box": {
+            "x": 0.46,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 2,
+          "type": "icon",
+          "name": "hourglass"
+        },
+        {
+          "id": "l2",
+          "box": {
+            "x": 0.37,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.22
+          },
+          "fragment": 2,
+          "type": "text",
+          "text": "El reloj ya empezó",
+          "style": {
+            "fontSize": 40,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        },
+        {
+          "id": "i3",
+          "box": {
+            "x": 0.76,
+            "y": 0.34,
+            "w": 0.08,
+            "h": 0.142
+          },
+          "fragment": 3,
+          "type": "icon",
+          "name": "clipboard-list"
+        },
+        {
+          "id": "l3",
+          "box": {
+            "x": 0.67,
+            "y": 0.54,
+            "w": 0.26,
+            "h": 0.22
+          },
+          "fragment": 3,
+          "type": "text",
+          "text": "Documenta lo que decide tu sistema",
+          "style": {
+            "fontSize": 40,
+            "align": "center",
+            "lineHeight": 1.25
+          }
+        }
+      ]
+    },
+    {
+      "id": "cierre",
+      "background": {
+        "gradient": {
+          "from": "surface",
+          "to": "background",
+          "angle": 135
+        }
+      },
+      "notes": "Vuelve la pregunta del gancho. Nosotros dirigimos; la IA ejecuta. Pero para dirigir hay que saber hacia dónde. Recursos: reglamento en gob.pe (normas legales de la PCM, D.S. 115-2025-PCM), canal gob.pe/iaperu, guías oficiales gob.pe/110229 y gob.pe/110227. Termina la sesión para descargar el resumen de votaciones.",
+      "elements": [
+        {
+          "id": "decor",
+          "box": {
+            "x": 0.7,
+            "y": 0.55,
+            "w": 0.3,
+            "h": 0.45
+          },
+          "type": "decor",
+          "shape": "blob",
+          "style": {
+            "opacity": 0.3
+          }
+        },
+        {
+          "id": "q",
+          "box": {
+            "x": 0.07,
+            "y": 0.24,
+            "w": 0.86,
+            "h": 0.34
+          },
+          "type": "text",
+          "text": "¿Qué responsabilidad tengo yo, que escribo el código?",
+          "style": {
+            "fontSize": 96,
+            "fontWeight": 800,
+            "font": "display",
+            "align": "center",
+            "valign": "middle",
+            "lineHeight": 1.08,
+            "tracking": -0.02
+          }
+        },
+        {
+          "id": "res",
+          "box": {
+            "x": 0.07,
+            "y": 0.66,
+            "w": 0.86,
+            "h": 0.1
+          },
+          "type": "text",
+          "text": "gob.pe/iaperu · gob.pe/110229 · gob.pe/110227",
+          "style": {
+            "fontSize": 36,
+            "font": "mono",
+            "color": "muted",
+            "align": "center"
+          }
+        },
+        {
+          "id": "rule",
+          "box": {
+            "x": 0.205,
+            "y": 0.76,
+            "w": 0.2,
+            "h": 0
+          },
+          "type": "shape",
+          "shape": "line",
+          "style": {
+            "stroke": "accent",
+            "strokeWidth": 6
+          }
+        },
+        {
+          "id": "li-icon",
+          "box": {
+            "x": 0.205,
+            "y": 0.81,
+            "w": 0.04,
+            "h": 0.071
+          },
+          "type": "icon",
+          "name": "link"
+        },
+        {
+          "id": "li-url",
+          "box": {
+            "x": 0.255,
+            "y": 0.8,
+            "w": 0.54,
+            "h": 0.09
+          },
+          "type": "text",
+          "text": "linkedin.com/in/angelsirlopu",
+          "style": {
+            "fontSize": 44,
+            "font": "mono",
+            "valign": "middle"
+          }
+        }
+      ]
+    }
+  ]
+}

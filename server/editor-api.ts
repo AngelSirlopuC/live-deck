@@ -4,7 +4,7 @@ import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join } from "node:path";
 import { parseDeck, type Deck } from "../shared/deck.ts";
-import { PRESET_NAMES, type PresetName } from "../shared/themes.ts";
+import { PRESET_NAMES, type PresetName, type ThemeMode } from "../shared/themes.ts";
 import {
   EDITOR_ASSET_BODY_LIMIT,
   EDITOR_DECK_BODY_LIMIT,
@@ -191,11 +191,13 @@ export function createEditorRoutes(opts: EditorRouteOptions) {
   async function createDeck(req: IncomingMessage, res: ServerResponse) {
     const body = await readJsonBody(req, res, 4096);
     if (body === undefined) return;
-    const { id, title, preset } = (body ?? {}) as { id?: unknown; title?: unknown; preset?: unknown };
+    const { id, title, preset, mode } = (body ?? {}) as { id?: unknown; title?: unknown; preset?: unknown; mode?: unknown };
     if (typeof id !== "string" || !DECK_ID.test(id)) return json(res, 400, { error: "invalid deck id" });
     if (typeof title !== "string" || !title.trim()) return json(res, 400, { error: "title is required" });
     if (preset !== undefined && !(PRESET_NAMES as readonly string[]).includes(preset as string)) return json(res, 400, { error: "unknown preset" });
-    const parsed = parseDeck({ version: 1, title, theme: { preset: (preset as PresetName | undefined) ?? "estudio" }, slides: [{ id: "portada", elements: [] }] });
+    if (mode !== undefined && mode !== "light" && mode !== "dark") return json(res, 400, { error: "unknown mode" });
+    const theme = { preset: (preset as PresetName | undefined) ?? "estudio", ...(mode !== undefined ? { mode: mode as ThemeMode } : {}) };
+    const parsed = parseDeck({ version: 1, title, theme, slides: [{ id: "portada", elements: [] }] });
     if (!parsed.ok) return json(res, 400, { error: parsed.error });
     try {
       await mkdir(decks.deckDir(id));

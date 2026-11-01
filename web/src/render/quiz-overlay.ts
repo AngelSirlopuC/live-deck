@@ -10,6 +10,14 @@ export interface QuizOverlayOptions {
   presenter?: boolean;
 }
 
+/**
+ * Quiz options for the console's own slide. It marks the answer for the presenter,
+ * except while that same slide is projected to the audience (presentation mode).
+ */
+export function consoleQuizOptions(projected: boolean, clockOffset?: number): QuizOverlayOptions {
+  return { presenter: !projected, ...(clockOffset !== undefined ? { clockOffset } : {}) };
+}
+
 export function remainingSeconds(view: QuizView, clockOffset = 0): number | null {
   if (view.status !== "open" || view.endsAt === null) return null;
   return Math.max(0, Math.ceil((view.endsAt - (Date.now() + clockOffset)) / 1000));
@@ -32,14 +40,16 @@ export function applyQuizView(stage: HTMLElement, view: QuizView | null, opts: Q
   const counts = view?.counts ?? null;
   // Zones are fixed regions of a designed image: they show rank badges but never move.
   const zones = quiz.dataset.layout === "zones";
-  const ranking = !!counts && !zones && quiz.dataset.results !== "grid";
+  // One vertical column whenever results are a ranking; options re-order only once counts are visible.
+  const column = !zones && quiz.dataset.results !== "grid";
+  const ranking = column && !!counts;
   const showRanks = ranking || (!!counts && zones);
   const ranks = counts ? rankOptions(counts) : [];
   const anyVotes = !!counts && counts.some((c) => c > 0);
 
   // Remember where items were so a re-order can glide instead of jump.
   const before = ranking && quiz.isConnected ? new Map(items.map((el) => [el, el.getBoundingClientRect().top])) : null;
-  quiz.dataset.view = ranking ? "ranking" : "grid";
+  quiz.dataset.view = column ? "ranking" : "grid";
 
   for (const item of items) {
     const i = Number(item.dataset.optionIndex);

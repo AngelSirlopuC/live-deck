@@ -5,8 +5,10 @@ import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DeckSchema, parseDeck, type Deck } from "../shared/deck.ts";
+import { DeckSchema, parseDeck, type Deck, type Theme } from "../shared/deck.ts";
+import { PRESET_NAMES, type PresetName, type ThemeMode } from "../shared/themes.ts";
 import { DECK_ID } from "../server/decks.ts";
+import { contrastWarnings, THEME_MODES } from "../shared/themes.ts";
 import { imageSize, isSixteenByNine } from "./image-size.ts";
 
 const REPO = fileURLToPath(new URL("..", import.meta.url));
@@ -16,7 +18,8 @@ const USAGE = `Usage: live-deck <command> [args]
 
 Commands:
   validate <deck.json | deck-dir | deck-id>   Check a deck against format v1 and its assets
-  new <id> [--title "..."]                     Scaffold decks/<id>/deck.json from a template
+  new <id> [--title "..."] [--preset <name>] [--mode light|dark]
+                                               Scaffold decks/<id>/deck.json from a template
   import <folder> --id <id> [--title "..."]    Build decks/<id> from slide images exported by any tool
   list                                         List decks with title and slide count
   publish <id> [--dry-run]                     Validate decks/<id> and copy it to the server (rsync)
@@ -26,10 +29,19 @@ Deck ids: lowercase letters, digits and dashes (${DECK_ID.source}).
 Decks root: ${DECKS_DIR} (override with DECKS_DIR).
 Preview a deck in the browser at /preview/<id>.
 
+New: without --preset the template keeps its own plain dark colours. --preset
+picks one of ${PRESET_NAMES.join(", ")}; --mode flips it
+to its light or dark variant (--mode alone flips estudio).
+
+Validate also warns when the theme's text, muted or accent colour reads low
+against the background (below 4.5:1, 3:1 and 3:1).
+
 Publish: copies decks/<id>/ to $LIVE_DECK_PUBLISH_TARGET/<id>/ with rsync,
 e.g. LIVE_DECK_PUBLISH_TARGET=user@host:/opt/live-deck/decks (or a local path).
 Files deleted locally are removed only inside that deck. The server reads decks
-when a session is created, so no restart is needed. Set LIVE_DECK_PUBLIC_URL
+when a session is created, so no restart is needed. If the server saves edits
+to its decks folder, set LIVE_DECK_PUBLISH_RSYNC_PATH to run the remote rsync as
+the container's user, e.g. "setpriv --reuid=1000 --regid=1000 --clear-groups rsync". Set LIVE_DECK_PUBLIC_URL
 (e.g. https://events.example.com) to print the preview link.
 
 Import: takes .png, .jpg, .jpeg and .webp files (up to 200) in natural order
@@ -90,6 +102,9 @@ function check(file: string): Report {
   if (!deck.slides[0]?.elements.some((el) => el.type === "qr")) {
     report.warnings.push("slides.0: first slide has no qr element; the audience cannot scan to join");
   }
+  for (const w of contrastWarnings(deck.theme)) {
+    report.warnings.push(`theme.${w.key}: contrast ${w.ratio.toFixed(1)}:1 against the background is below ${w.min}:1`);
+  }
   return report;
 }
 
@@ -112,19 +127,24 @@ function validate(args: string[]): number {
   return 0;
 }
 
-function template(title: string): Deck {
+/** The plain dark colours the template has always shipped; a preset replaces them and colours the subtitle itself. */
+const PLAIN_THEME: Theme = { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" };
+
+// Element colours are theme tokens (shared/theme-colors.ts), so the template follows whatever theme the deck ends up with.
+function template(title: string, theme: Theme = PLAIN_THEME): Deck {
+  const subtitleColor = theme === PLAIN_THEME ? { color: "muted" } : {};
   return {
     version: 1,
     title,
-    theme: { background: "#10131a", foreground: "#f4f1ea", accent: "#ff7a45", muted: "#9aa3b2" },
+    theme,
     slides: [
       {
         id: "cover",
         notes: "Welcome the audience and ask them to scan the QR code.",
         elements: [
           { id: "title", type: "text", box: { x: 0.07, y: 0.22, w: 0.52, h: 0.36 }, text: title, style: { fontSize: 96, fontWeight: 800, font: "display", lineHeight: 1.05 } },
-          { id: "subtitle", type: "text", box: { x: 0.07, y: 0.64, w: 0.48, h: 0.12 }, text: "Scan the code to join from your phone.", style: { fontSize: 36, color: "#9aa3b2", lineHeight: 1.3 } },
-          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 }, style: { background: "#f4f1ea", color: "#10131a" } },
+          { id: "subtitle", type: "text", box: { x: 0.07, y: 0.64, w: 0.48, h: 0.12 }, text: "Scan the code to join from your phone.", style: { fontSize: 36, ...subtitleColor, lineHeight: 1.3 } },
+          { id: "qr", type: "qr", box: { x: 0.64, y: 0.16, w: 0.29, h: 0.68 } },
         ],
       },
       {
@@ -165,10 +185,25 @@ function scaffold(args: string[]): number {
     process.stderr.write(`invalid deck id "${id}": use lowercase letters, digits and dashes (${DECK_ID.source})\n`);
     return 1;
   }
-  const t = args.indexOf("--title");
-  const title = t >= 0 ? args[t + 1] : undefined;
-  if (t >= 0 && !title) {
-    process.stderr.write("--title needs a value\n");
+  const flag = (name: string): string | undefined | null => {
+    const i = args.indexOf(name);
+    if (i < 0) return undefined;
+    const value = args[i + 1];
+    return value && !value.startsWith("--") ? value : null;
+  };
+  const title = flag("--title");
+  const preset = flag("--preset");
+  const mode = flag("--mode");
+  if (title === null || preset === null || mode === null) {
+    process.stderr.write(`${title === null ? "--title" : preset === null ? "--preset" : "--mode"} needs a value\n`);
+    return 2;
+  }
+  if (preset !== undefined && !(PRESET_NAMES as readonly string[]).includes(preset)) {
+    process.stderr.write(`unknown preset "${preset}": use one of ${PRESET_NAMES.join(", ")}\n`);
+    return 2;
+  }
+  if (mode !== undefined && !(THEME_MODES as readonly string[]).includes(mode)) {
+    process.stderr.write(`unknown mode "${mode}": use light or dark\n`);
     return 2;
   }
   const dir = join(DECKS_DIR, id);
@@ -177,7 +212,10 @@ function scaffold(args: string[]): number {
     process.stderr.write(`deck "${id}" already exists at ${file}; refusing to overwrite\n`);
     return 1;
   }
-  const deck = template(title ?? id);
+  // --mode alone flips the default preset; without either flag the template keeps its plain colours.
+  const theme: Theme | undefined =
+    preset !== undefined || mode !== undefined ? { preset: (preset ?? "estudio") as PresetName, ...(mode !== undefined ? { mode: mode as ThemeMode } : {}) } : undefined;
+  const deck = template(title ?? id, theme);
   const parsed = parseDeck(deck);
   if (!parsed.ok) {
     process.stderr.write(`template is invalid: ${parsed.error}\n`);
@@ -316,7 +354,19 @@ function publish(args: string[]): number {
     return 1;
   }
   // Trailing slashes: copy the folder's contents into <target>/<id>; --delete stays inside it.
-  const rsyncArgs = ["-a", "--delete", "--exclude", ".DS_Store", ...(dryRun ? ["-n", "-v"] : []), `${join(DECKS_DIR, id)}/`, `${target}/${id}/`];
+  // Optional: run the server's rsync as another user (e.g. the one the container
+  // runs as), so a writable decks mount stays editable after every publish.
+  const rsyncPath = process.env.LIVE_DECK_PUBLISH_RSYNC_PATH?.trim();
+  const rsyncArgs = [
+    "-a",
+    "--delete",
+    "--exclude",
+    ".DS_Store",
+    ...(rsyncPath ? [`--rsync-path=${rsyncPath}`] : []),
+    ...(dryRun ? ["-n", "-v"] : []),
+    `${join(DECKS_DIR, id)}/`,
+    `${target}/${id}/`,
+  ];
   const run = spawnSync("rsync", rsyncArgs, { stdio: "inherit" });
   if (run.error || run.status !== 0) {
     process.stderr.write(`${id}: rsync failed${run.error ? ` (${run.error.message})` : ` with exit code ${run.status}`}\n`);

@@ -1,11 +1,13 @@
 import type { PublicSlide, RenderableDeck } from "../../../shared/deck-core.ts";
 import type { Box, DeckElement, SlideBackground, TextStyle } from "../../../shared/deck.ts";
 import { iconNode } from "../../../shared/icons.ts";
-import { THEME_PRESETS, contrastRatio, fontStack, resolveTheme, type PresetName, type ResolvedTheme } from "../../../shared/themes.ts";
+import { DEFAULT_MOTION, groupEntrances, type Entrance } from "../../../shared/motion.ts";
+import { resolveColor, resolveColorHex, type ColorSpec } from "../../../shared/theme-colors.ts";
+import { contrastRatio, fontStack, luminance, resolveThemeSpec, type ThemeSpec } from "../../../shared/themes.ts";
 import { renderAsk } from "./ask-overlay.ts";
 import { renderChart } from "./charts.ts";
 import { renderDecor } from "./decor.ts";
-import { ensurePresetFonts } from "./fonts.ts";
+import { ensureFonts } from "./fonts.ts";
 
 // Slides render on a fixed logical stage and are scaled with a CSS transform,
 // so geometry, font sizes, and effect targets are identical on every screen.
@@ -21,8 +23,10 @@ export interface RenderOptions {
   qrSvg?: string;
   /** Base URL for "assets/…" image sources. */
   assetBase?: string;
-  /** Fragment step that was just revealed; its elements get an enter animation. */
+  /** Fragment step that was just revealed; its elements play their derived entrance. */
   enterStep?: number;
+  /** The slide was just entered; always-visible elements play their derived entrance. */
+  enterSlide?: boolean;
   /** Authoring aid for the preview page: dashed outlines with the option letter on quiz zones. */
   showZones?: boolean;
 }
@@ -32,7 +36,7 @@ const px = (n: number) => `${Math.round(n * 100) / 100}px`;
 export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOptions): HTMLElement {
   const slide = deck.slides[index];
   if (!slide) throw new RangeError(`slide ${index} out of range`);
-  const theme = resolveTheme(deck.theme);
+  const theme = resolveThemeSpec(deck.theme);
   const bg = typeof slide.background === "object" ? slide.background : undefined;
 
   const stage = document.createElement("div");
@@ -40,23 +44,35 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   stage.dataset.slideId = slide.id;
   stage.style.width = px(STAGE_WIDTH);
   stage.style.height = px(STAGE_HEIGHT);
-  const ground = typeof slide.background === "string" ? slide.background : (bg?.color ?? theme.colors.background);
+  // The ground defines --theme-bg itself, so a token resolves to its hex here rather than to a variable.
+  const ownGround = typeof slide.background === "string" ? slide.background : bg?.color;
+  const ground = ownGround ? resolveColorHex(ownGround, theme) : theme.colors.background;
+  // Element colours resolve against this: on a slide with its own ground, the `background` token still means the theme background.
+  const paint: ColorSpec = { colors: theme.colors, plain: theme.plain, groundOverridden: ownGround !== undefined };
   stage.style.setProperty("--theme-bg", ground);
   stage.style.setProperty("--theme-fg", theme.colors.foreground);
   stage.style.setProperty("--theme-accent", theme.colors.accent);
   stage.style.setProperty("--theme-muted", theme.colors.muted);
-  if (theme.colors.surface) stage.style.setProperty("--theme-surface", theme.colors.surface);
-  if (theme.preset) applyPreset(stage, theme.preset, theme);
+  stage.dataset.mode = theme.mode;
+  const motion = deck.motion ?? DEFAULT_MOTION;
+  stage.dataset.motion = motion;
+  // Plain colour decks (no preset, no custom fields) keep today's minimal variables.
+  if (theme.plain) {
+    if (deck.theme?.surface) stage.style.setProperty("--theme-surface", deck.theme.surface);
+  } else {
+    applyTheme(stage, theme);
+  }
 
-  // A slide background object replaces the preset art; a hex background keeps it.
-  const backdrop = bg ? renderBackground(bg, opts) : theme.preset ? renderPresetArt(theme.preset) : null;
+  // A slide background object replaces the theme art; a hex background keeps it.
+  const backdrop = bg ? renderBackground(bg, opts, paint) : renderThemeArt(theme);
   if (backdrop) stage.append(backdrop);
 
   // Content sits in its own layer so presenter zoom can transform it while the
   // effects layer (focus mask, ripples) stays in stage coordinates.
   const layer = document.createElement("div");
   layer.className = "stage-layer";
-  for (const el of slide.elements) layer.append(renderElement(el, opts, theme));
+  const entrances = plannedEntrances(slide.elements, opts, motion);
+  for (const el of slide.elements) layer.append(renderElement(el, opts, theme, paint, entrances.get(el.id)));
   if (slide.layout === "quiz" && slide.quiz) layer.append(renderQuiz(slide, opts));
   if (slide.layout === "ask" && slide.ask) layer.append(renderAsk(slide.ask.question));
   const fx = document.createElement("div");
@@ -65,26 +81,49 @@ export function renderSlide(deck: RenderableDeck, index: number, opts: RenderOpt
   return stage;
 }
 
-/** Preset tokens on the stage: fonts, card, heading and on-accent text. */
-function applyPreset(stage: HTMLElement, name: PresetName, theme: ResolvedTheme) {
-  const preset = THEME_PRESETS[name];
-  ensurePresetFonts(name);
-  stage.dataset.preset = name;
+/**
+ * Entrances to play on this render: the always-visible elements when the slide
+ * was just entered, and the elements of the step that was just revealed. Each
+ * group staggers on its own, in reading order. Nothing is planned otherwise, so
+ * the editor canvas, thumbnails and print export render a still slide.
+ */
+function plannedEntrances(elements: readonly DeckElement[], opts: RenderOptions, motion: NonNullable<RenderableDeck["motion"]>): Map<string, Entrance> {
+  const plan = new Map<string, Entrance>();
+  if (opts.enterSlide) for (const e of groupEntrances(elements.filter((el) => el.fragment === undefined), motion)) plan.set(...e);
+  if (opts.enterStep !== undefined) for (const e of groupEntrances(elements.filter((el) => el.fragment === opts.enterStep), motion)) plan.set(...e);
+  return plan;
+}
+
+/** Marks a node to play its entrance: one class per kind, timing as custom properties. */
+function applyEntrance(node: HTMLElement, entrance: Entrance) {
+  node.classList.add("enter", `enter-${entrance.kind}`);
+  node.style.setProperty("--enter-delay", `${entrance.delayMs}ms`);
+  node.style.setProperty("--enter-duration", `${entrance.durationMs}ms`);
+  node.style.setProperty("--enter-ease", entrance.ease);
+  // Bars grow one after another from the baseline; the index drives each bar's delay.
+  if (entrance.kind === "grow") node.querySelectorAll<SVGElement>(".chart-bar").forEach((bar, i) => bar.style.setProperty("--bar-index", String(i)));
+}
+
+/** Theme tokens on the stage: fonts, card, heading, surface and on-accent text. */
+function applyTheme(stage: HTMLElement, theme: ThemeSpec) {
+  ensureFonts(theme.fonts);
+  if (theme.preset) stage.dataset.preset = theme.preset;
   const vars: Record<string, string> = {
-    "--font-display": fontStack(preset.fonts.display),
-    "--font-body": fontStack(preset.fonts.body),
-    "--font-mono": fontStack(preset.fonts.mono),
-    "--card-bg": preset.card.background,
-    "--card-radius": preset.card.radius,
-    "--card-border": preset.card.border,
-    "--card-shadow": preset.card.shadow,
-    "--card-padding": preset.card.padding,
-    "--heading-weight": String(preset.heading.weight),
-    "--heading-tracking": preset.heading.letterSpacing,
-    "--heading-transform": preset.heading.textTransform,
+    "--theme-surface": theme.colors.surface,
+    "--theme-on-accent": theme.colors.onAccent,
+    "--font-display": fontStack(theme.fonts.display),
+    "--font-body": fontStack(theme.fonts.body),
+    "--font-mono": fontStack(theme.fonts.mono),
+    "--card-bg": theme.card.background,
+    "--card-radius": theme.card.radius,
+    "--card-border": theme.card.border,
+    "--card-shadow": theme.card.shadow,
+    "--card-padding": theme.card.padding,
+    "--heading-weight": String(theme.heading.weight),
+    "--heading-tracking": theme.heading.letterSpacing,
+    "--heading-transform": theme.heading.textTransform,
   };
-  if (preset.fonts.accent) vars["--font-accent"] = fontStack(preset.fonts.accent);
-  if (theme.colors.onAccent) vars["--theme-on-accent"] = theme.colors.onAccent;
+  if (theme.fonts.accent) vars["--font-accent"] = fontStack(theme.fonts.accent);
   for (const [k, v] of Object.entries(vars)) stage.style.setProperty(k, v);
 }
 
@@ -94,29 +133,28 @@ function layerDiv(cls: string): HTMLDivElement {
   return div;
 }
 
-function renderPresetArt(name: PresetName): HTMLElement | null {
-  const preset = THEME_PRESETS[name];
-  if (!preset.art && !preset.pattern) return null;
+function renderThemeArt(theme: ThemeSpec): HTMLElement | null {
+  if (!theme.art && !theme.pattern) return null;
   const wrap = layerDiv("stage-bg stage-bg-preset");
-  if (preset.art) {
+  if (theme.art) {
     const art = layerDiv("stage-bg-art");
-    art.style.setProperty("--bg-art", preset.art);
+    art.style.setProperty("--bg-art", theme.art);
     wrap.append(art);
   }
-  if (preset.pattern) {
+  if (theme.pattern) {
     const pattern = layerDiv("stage-bg-pattern");
-    pattern.dataset.pattern = preset.pattern;
+    pattern.dataset.pattern = theme.pattern;
     wrap.append(pattern);
   }
   return wrap;
 }
 
 // Layers paint bottom to top: color (the stage ground), gradient, image, pattern, dim.
-function renderBackground(bg: SlideBackground, opts: RenderOptions): HTMLElement | null {
+function renderBackground(bg: SlideBackground, opts: RenderOptions, paint: ColorSpec): HTMLElement | null {
   const wrap = layerDiv("stage-bg");
   if (bg.gradient) {
     const g = layerDiv("stage-bg-gradient");
-    g.style.setProperty("--bg-gradient", `linear-gradient(${bg.gradient.angle ?? 135}deg, ${bg.gradient.from}, ${bg.gradient.to})`);
+    g.style.setProperty("--bg-gradient", `linear-gradient(${bg.gradient.angle ?? 135}deg, ${resolveColor(bg.gradient.from, paint)}, ${resolveColor(bg.gradient.to, paint)})`);
     wrap.append(g);
   }
   if (bg.image) {
@@ -153,17 +191,19 @@ function place(node: HTMLElement, el: DeckElement) {
   node.style.height = px(el.box.h * STAGE_HEIGHT);
 }
 
-function applyText(node: HTMLElement, style: TextStyle | undefined) {
+// Colour fields hold a hex or a theme token (shared/theme-colors.ts); `color()` maps tokens to the stage variables.
+function applyText(node: HTMLElement, style: TextStyle | undefined, paint: ColorSpec) {
   if (!style) return;
+  const color = (v: string) => resolveColor(v, paint);
   if (style.fontSize) node.style.fontSize = px(style.fontSize);
   if (style.fontWeight) node.style.fontWeight = String(style.fontWeight);
   if (style.font) node.dataset.font = style.font;
   if (style.italic) node.style.fontStyle = "italic";
-  if (style.color) node.style.color = style.color;
+  if (style.color) node.style.color = color(style.color);
   if (style.align) node.style.textAlign = style.align;
   if (style.valign) node.dataset.valign = style.valign;
   if (style.lineHeight) node.style.lineHeight = String(style.lineHeight);
-  if (style.background) node.style.background = style.background;
+  if (style.background) node.style.background = color(style.background);
   if (style.radius !== undefined) node.style.borderRadius = px(style.radius);
   if (style.padding !== undefined) node.style.padding = px(style.padding);
   if (style.card) node.classList.add("card");
@@ -171,14 +211,33 @@ function applyText(node: HTMLElement, style: TextStyle | undefined) {
   if (style.tracking !== undefined) node.style.letterSpacing = `${style.tracking}em`;
 }
 
-function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedTheme): HTMLElement {
+/** Minimum contrast between QR modules and their tile for reliable scanning. */
+const QR_MIN_CONTRAST = 4;
+
+/**
+ * The deck's QR colours when they already scan (dark ink on a lighter tile,
+ * at least 4:1); otherwise the lightest and darkest theme colours, and plain
+ * white and near-black if even those are too close.
+ */
+export function qrColors(style: { color?: string; background?: string } | undefined, theme: ThemeSpec): { tile: string; ink: string } {
+  const scans = (ink: string, tile: string) => luminance(ink) < luminance(tile) && contrastRatio(ink, tile) >= QR_MIN_CONTRAST;
+  const { foreground, background } = theme.colors;
+  const [light, dark] = luminance(foreground) >= luminance(background) ? [foreground, background] : [background, foreground];
+  const tile = style?.background ? resolveColorHex(style.background, theme) : light;
+  const ink = style?.color ? resolveColorHex(style.color, theme) : dark;
+  if (scans(ink, tile)) return { tile, ink };
+  if (scans(dark, light)) return { tile: light, ink: dark };
+  return { tile: "#ffffff", ink: "#14110d" };
+}
+
+function renderElement(el: DeckElement, opts: RenderOptions, theme: ThemeSpec, paint: ColorSpec, entrance?: Entrance): HTMLElement {
   const node = document.createElement("div");
   place(node, el);
   if (el.fragment !== undefined) {
     node.dataset.fragment = String(el.fragment);
     node.hidden = el.fragment > opts.step;
-    if (el.fragment === opts.enterStep) node.classList.add("enter");
   }
+  const color = (v: string) => resolveColor(v, paint);
 
   switch (el.type) {
     case "text": {
@@ -194,7 +253,7 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedThem
         inner.textContent = el.text;
       }
       node.append(inner);
-      applyText(node, el.style);
+      applyText(node, el.style, paint);
       break;
     }
     case "image": {
@@ -211,18 +270,21 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedThem
       node.dataset.shape = el.shape;
       const s = el.style ?? {};
       if (el.shape === "line") {
-        node.style.borderTop = `${px(s.strokeWidth ?? 4)} solid ${s.stroke ?? "var(--theme-fg)"}`;
+        node.style.borderTop = `${px(s.strokeWidth ?? 4)} solid ${s.stroke ? color(s.stroke) : "var(--theme-fg)"}`;
         node.style.height = "0px";
       } else {
-        node.style.background = s.fill ?? "transparent";
-        if (s.stroke) node.style.border = `${px(s.strokeWidth ?? 2)} solid ${s.stroke}`;
+        node.style.background = s.fill ? color(s.fill) : "transparent";
+        if (s.stroke) node.style.border = `${px(s.strokeWidth ?? 2)} solid ${color(s.stroke)}`;
         node.style.borderRadius = el.shape === "ellipse" ? "50%" : px(s.radius ?? 0);
       }
       break;
     }
     case "qr": {
-      if (el.style?.color) node.style.color = el.style.color;
-      if (el.style?.background) node.style.background = el.style.background;
+      // Phones must be able to scan it: dark modules on a light tile, always.
+      const { tile, ink } = qrColors(el.style, theme);
+      node.style.background = tile;
+      node.style.color = ink;
+      node.style.setProperty("--qr-ink", ink);
       const code = document.createElement("div");
       code.className = "qr-code";
       const caption = document.createElement("div");
@@ -241,9 +303,9 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedThem
     case "icon": {
       const s = el.style ?? {};
       // Graphics need 3:1 against their ground; a faint accent (yellow on paper) falls back to the text colour.
-      const ground = s.background ?? theme.colors.background;
-      node.style.color = s.color ?? (contrastRatio(theme.colors.accent, ground) >= 3 ? "var(--theme-accent)" : "var(--theme-fg)");
-      if (s.background) node.style.background = s.background;
+      const ground = s.background ? resolveColorHex(s.background, theme) : theme.colors.background;
+      node.style.color = s.color ? color(s.color) : contrastRatio(theme.colors.accent, ground) >= 3 ? "var(--theme-accent)" : "var(--theme-fg)";
+      if (s.background) node.style.background = color(s.background);
       if (s.radius !== undefined) node.style.borderRadius = px(s.radius);
       if (s.background) {
         node.classList.add("has-background");
@@ -255,16 +317,25 @@ function renderElement(el: DeckElement, opts: RenderOptions, theme: ResolvedThem
       break;
     }
     case "chart": {
-      node.append(renderChart(el, { width: el.box.w * STAGE_WIDTH, height: el.box.h * STAGE_HEIGHT, accent: theme.colors.accent, palette: theme.palette }));
+      node.append(
+        renderChart(el, {
+          width: el.box.w * STAGE_WIDTH,
+          height: el.box.h * STAGE_HEIGHT,
+          accent: theme.colors.accent,
+          palette: theme.palette,
+          ...(el.style?.color ? { color: color(el.style.color) } : {}),
+        }),
+      );
       break;
     }
     case "decor": {
       node.setAttribute("aria-hidden", "true");
       if (el.style?.opacity !== undefined) node.style.opacity = String(el.style.opacity);
-      node.append(renderDecor(el.shape, el.style?.color ?? theme.colors.accent, el.box.w * STAGE_WIDTH, el.box.h * STAGE_HEIGHT));
+      node.append(renderDecor(el.shape, el.style?.color ? color(el.style.color) : theme.colors.accent, el.box.w * STAGE_WIDTH, el.box.h * STAGE_HEIGHT));
       break;
     }
   }
+  if (entrance && !node.hidden) applyEntrance(node, entrance);
   return node;
 }
 
@@ -301,7 +372,8 @@ function renderQuiz(slide: PublicSlide, opts: RenderOptions): HTMLElement {
   wrap.className = "quiz";
   wrap.dataset.optionCount = String(quiz.options.length);
   wrap.dataset.results = quiz.results ?? "ranking";
-  wrap.dataset.view = "grid";
+  // Ranking results read as one vertical list from the start; only "grid" uses two columns. Zones keep their designed spots.
+  wrap.dataset.view = !quiz.zones && wrap.dataset.results === "ranking" ? "ranking" : "grid";
   if (quiz.zones) return renderZoneQuiz(wrap, quiz.zones, quiz.options, opts);
 
   const question = document.createElement("h2");

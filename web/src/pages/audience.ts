@@ -1,7 +1,6 @@
 import type { PublicDeck } from "../../../shared/deck.ts";
 import { exploreNext, isAfter, prevPosition, type Position } from "../../../shared/nav.ts";
 import { NAME_MAX, REACTIONS, type CloseReason, type ErrorCode, type Identity, type PersonalState, type SessionInfo, type SessionSnapshot, type Sticker } from "../../../shared/protocol.ts";
-import { createArcade } from "../arcade/arcade.ts";
 import { createTheater } from "../ui/fullscreen.ts";
 import { Connection, type ConnectionStatus } from "../net/connection.ts";
 import { StageView } from "../render/stage-view.ts";
@@ -118,7 +117,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   let unlockedAll = false;
   let abandonDismissed = false;
   let view: StageView | null = null;
-  let arcade: ReturnType<typeof createArcade> | null = null;
+  let waitingMounted = false;
   let connStatus: ConnectionStatus = "connecting";
   let personal: PersonalState | null = null;
   let clockOffset = 0;
@@ -376,8 +375,7 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       mountWaiting();
       return;
     }
-    arcade?.destroy();
-    arcade = null;
+    waitingMounted = false;
 
     const following = mode === "live" && !unlockedAll;
     const pos = following ? state.position : explorePos;
@@ -416,8 +414,8 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
   }
 
   function mountWaiting() {
-    if (arcade) return;
-    arcade = createArcade();
+    if (waitingMounted) return;
+    waitingMounted = true;
     const qr = h("div", { class: "aud-waiting-qr" });
     void qrSvg(joinUrl).then((svg) => (qr.innerHTML = svg));
     waiting.replaceChildren(
@@ -428,7 +426,6 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
         h("p", { class: "aud-waiting-sub" }, `${deck!.title}. Cuando el ponente inicie, la verás aquí automáticamente.`),
         h("div", { class: "aud-waiting-share" }, qr, h("p", {}, "¿Alguien más quiere entrar? Que escanee este código.")),
       ),
-      arcade.el,
     );
   }
 
@@ -475,7 +472,6 @@ function startLive(root: HTMLElement, code: string, join: { name?: string | null
       render();
     },
     onClosed: (reason) => {
-      arcade?.destroy();
       theater.exit();
       if (reason === "ended" || reason === "not-found") local.remove(idKey(code));
       renderClosed(root, reason);

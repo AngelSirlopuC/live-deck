@@ -6,10 +6,10 @@ Boxes are normalized `{ x, y, w, h }` on a 16:9 canvas. Font sizes are logical p
 
 ```json
 [
-  { "id": "kicker", "type": "text", "box": { "x": 0.07, "y": 0.14, "w": 0.5, "h": 0.06 }, "text": "EVENT · DATE", "style": { "fontSize": 30, "fontWeight": 700, "font": "mono", "color": "#ff7a45" } },
+  { "id": "kicker", "type": "text", "box": { "x": 0.07, "y": 0.14, "w": 0.5, "h": 0.06 }, "text": "EVENT · DATE", "style": { "fontSize": 30, "fontWeight": 700, "font": "mono", "color": "accent" } },
   { "id": "title", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Title in up to eight words", "style": { "fontSize": 96, "fontWeight": 800, "font": "display", "lineHeight": 1.05 } },
-  { "id": "subtitle", "type": "text", "box": { "x": 0.07, "y": 0.64, "w": 0.48, "h": 0.12 }, "text": "Scan the code to join.", "style": { "fontSize": 36, "color": "#9aa3b2", "lineHeight": 1.3 } },
-  { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "#f4f1ea", "color": "#10131a" } }
+  { "id": "subtitle", "type": "text", "box": { "x": 0.07, "y": 0.64, "w": 0.48, "h": 0.12 }, "text": "Scan the code to join.", "style": { "fontSize": 36, "color": "muted", "lineHeight": 1.3 } },
+  { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 } }
 ]
 ```
 
@@ -22,20 +22,20 @@ Heading at `{ x: 0.07, y: 0.1, w: 0.86, h: 0.14 }`, fontSize 80, weight 800, fon
 ```json
 [
   { "id": "h", "type": "text", "box": { "x": 0.07, "y": 0.1, "w": 0.86, "h": 0.14 }, "text": "Before vs after", "style": { "fontSize": 80, "fontWeight": 800, "font": "display" } },
-  { "id": "left", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.4, "h": 0.56 }, "text": "Left column\nline two", "style": { "fontSize": 40, "lineHeight": 1.3, "background": "#1b2130", "radius": 24, "padding": 40 } },
-  { "id": "right", "type": "text", "box": { "x": 0.53, "y": 0.3, "w": 0.4, "h": 0.56 }, "text": "Right column\nline two", "fragment": 1, "style": { "fontSize": 40, "lineHeight": 1.3, "background": "#1b2130", "radius": 24, "padding": 40 } }
+  { "id": "left", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.4, "h": 0.56 }, "text": "Left column\nline two", "style": { "fontSize": 40, "lineHeight": 1.3, "card": true } },
+  { "id": "right", "type": "text", "box": { "x": 0.53, "y": 0.3, "w": 0.4, "h": 0.56 }, "text": "Right column\nline two", "fragment": 1, "style": { "fontSize": 40, "lineHeight": 1.3, "card": true } }
 ]
 ```
 
 ## agenda (2x2 cards with fragments)
 
-Heading as above. Cards `w: 0.4, h: 0.22` at (0.07, 0.32), (0.53, 0.32), (0.07, 0.6), (0.53, 0.6), `fragment` 1–4, style `{ "fontSize": 40, "lineHeight": 1.25, "background": "#1b2130", "radius": 24, "padding": 36 }`. Text pattern `"01\nShort point"`.
+Heading as above. Cards `w: 0.4, h: 0.22` at (0.07, 0.32), (0.53, 0.32), (0.07, 0.6), (0.53, 0.6), `fragment` 1–4, style `{ "fontSize": 40, "lineHeight": 1.25, "card": true }`. Text pattern `"01\nShort point"`.
 
 ## big-number
 
 ```json
 [
-  { "id": "num", "type": "text", "box": { "x": 0.07, "y": 0.18, "w": 0.86, "h": 0.4 }, "text": "73 %", "style": { "fontSize": 260, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle", "color": "#ff7a45" } },
+  { "id": "num", "type": "text", "box": { "x": 0.07, "y": 0.18, "w": 0.86, "h": 0.4 }, "text": "73 %", "style": { "fontSize": 260, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle", "color": "accent" } },
   { "id": "label", "type": "text", "box": { "x": 0.15, "y": 0.62, "w": 0.7, "h": 0.16 }, "text": "of attendees check their phone in the first 10 minutes", "style": { "fontSize": 44, "align": "center", "lineHeight": 1.25 } }
 ]
 ```
@@ -45,7 +45,7 @@ Heading as above. Cards `w: 0.4, h: 0.22` at (0.07, 0.32), (0.53, 0.32), (0.07, 
 ```json
 [
   { "id": "img", "type": "image", "box": { "x": 0.07, "y": 0.08, "w": 0.86, "h": 0.68 }, "src": "assets/photo.jpg", "alt": "Describe the image", "fit": "cover", "style": { "radius": 24 } },
-  { "id": "caption", "type": "text", "box": { "x": 0.07, "y": 0.8, "w": 0.86, "h": 0.1 }, "text": "One-line caption", "style": { "fontSize": 36, "color": "#9aa3b2", "align": "center" } }
+  { "id": "caption", "type": "text", "box": { "x": 0.07, "y": 0.8, "w": 0.86, "h": 0.1 }, "text": "One-line caption", "style": { "fontSize": 36, "color": "muted", "align": "center" } }
 ]
 ```
 
@@ -53,7 +53,7 @@ Image beside text: image `{ x: 0.53, y: 0.12, w: 0.4, h: 0.76 }`, text `{ x: 0.0
 
 ## diagram (boxes and arrows)
 
-Nodes `w: 0.22, h: 0.2` at `y: 0.42`, x 0.07 / 0.39 / 0.71, style `{ "align": "center", "valign": "middle", "radius": 28, "background": "#1b2130", "fontSize": 40 }`. Arrows are `shape: "line"` with `h: 0` between them, e.g. `{ "x": 0.3, "y": 0.52, "w": 0.09, "h": 0 }`, style `{ "stroke": "#9aa3b2", "strokeWidth": 6 }`.
+Nodes `w: 0.22, h: 0.2` at `y: 0.42`, x 0.07 / 0.39 / 0.71, style `{ "align": "center", "valign": "middle", "card": true, "fontSize": 40 }`. Arrows are `shape: "line"` with `h: 0` between them, e.g. `{ "x": 0.3, "y": 0.52, "w": 0.09, "h": 0 }`, style `{ "stroke": "muted", "strokeWidth": 6 }`.
 
 ## quiz
 
@@ -78,7 +78,7 @@ The player renders the question and the grouped answers (`×N` on repeats); do n
 ```json
 [
   { "id": "thanks", "type": "text", "box": { "x": 0.07, "y": 0.3, "w": 0.86, "h": 0.26 }, "text": "Thank you", "style": { "fontSize": 180, "fontWeight": 800, "font": "display", "align": "center", "valign": "middle" } },
-  { "id": "contact", "type": "text", "box": { "x": 0.07, "y": 0.6, "w": 0.86, "h": 0.1 }, "text": "name@example.com", "style": { "fontSize": 36, "color": "#9aa3b2", "align": "center" } }
+  { "id": "contact", "type": "text", "box": { "x": 0.07, "y": 0.6, "w": 0.86, "h": 0.1 }, "text": "name@example.com", "style": { "fontSize": 36, "color": "muted", "align": "center" } }
 ]
 ```
 
@@ -90,12 +90,12 @@ These assume a `theme.preset`. They set no colors on purpose: the preset supplie
 
 ```json
 { "id": "hero-gradient", "notes": "Welcome; ask everyone to scan the QR.",
-  "background": { "gradient": { "from": "#1b1f3a", "to": "#0b0d12", "angle": 135 } },
+  "background": { "gradient": { "from": "surface", "to": "background", "angle": 135 } },
   "elements": [
     { "id": "decor", "type": "decor", "shape": "rings", "box": { "x": 0.0, "y": 0.55, "w": 0.26, "h": 0.45 }, "style": { "opacity": 0.25 } },
     { "id": "kicker", "type": "text", "box": { "x": 0.07, "y": 0.14, "w": 0.5, "h": 0.06 }, "text": "Event · date", "style": { "fontSize": 30, "fontWeight": 700, "font": "mono", "uppercase": true, "tracking": 0.12 } },
     { "id": "title", "type": "text", "box": { "x": 0.07, "y": 0.22, "w": 0.52, "h": 0.36 }, "text": "Title in up to eight words", "style": { "fontSize": 100, "fontWeight": 800, "font": "display", "lineHeight": 1.02, "tracking": -0.02 } },
-    { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 }, "style": { "background": "#f4f1ea", "color": "#10131a" } }
+    { "id": "qr", "type": "qr", "box": { "x": 0.64, "y": 0.16, "w": 0.29, "h": 0.68 } }
   ] }
 ```
 
@@ -171,7 +171,7 @@ Columns `w: 0.185` at x 0.07 / 0.295 / 0.52 / 0.745; icons `w: 0.08, h: 0.142` c
   ] }
 ```
 
-Without a photo use `"background": { "color": "#0b0d12", "pattern": "grid" }` (pick a color from the preset world) and drop the `color` override on the text. `assets/section.jpg` must exist in `decks/<id>/assets/`.
+The dimmed photo is the ground here, not the theme, so the word is literally white: this and the QR over an imported slide are the only recipes with a hex. Without a photo use `"background": { "color": "surface", "pattern": "grid" }` and drop the `color` override on the text. `assets/section.jpg` must exist in `decks/<id>/assets/`.
 
 ## Imported designed slides
 

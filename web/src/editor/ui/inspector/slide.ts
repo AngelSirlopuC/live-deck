@@ -173,6 +173,7 @@ export function createSlidePanel(ctrl: EditorController, o: SlidePanelOptions) {
           const radio = rowEl.querySelector<HTMLInputElement>('input[type="radio"]')!;
           if (document.activeElement !== input && input.value !== opt) input.value = opt;
           radio.checked = quiz.correctIndex === i;
+          rowEl.classList.toggle("is-correct", quiz.correctIndex === i);
         });
         return;
       }

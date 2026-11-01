@@ -4,7 +4,6 @@ import { createDesignPanel, contrastHints } from "../../web/src/editor/ui/inspec
 import { createElementPanel } from "../../web/src/editor/ui/inspector/element.ts";
 import { backgroundMode, createSlidePanel } from "../../web/src/editor/ui/inspector/slide.ts";
 import { toPickerHex } from "../../web/src/editor/ui/fields.ts";
-import { resolveTheme } from "../../shared/themes.ts";
 import { loadedController } from "./helpers.ts";
 
 beforeAll(() => {
@@ -33,7 +32,31 @@ const type = (node: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, 
 };
 
 describe("element inspector", () => {
-  it("patches text style, box and fragment from the fields", async () => {
+  it("offers no fragment or animation control: the AI decides steps and motion", async () => {
+    const { ctrl } = await loadedController();
+    const panel = createElementPanel(ctrl, { openAssetPicker: () => {}, openIconPicker: () => {} });
+    document.body.append(panel.el);
+    ctrl.subscribe(panel.render);
+    ctrl.selectOne("paso");
+    const labels = [...panel.el.querySelectorAll("label")].map((l) => l.textContent ?? "");
+    expect(labels).not.toContain("Aparece en el paso");
+    expect(labels.some((l) => /paso|animaci/i.test(l))).toBe(false);
+  });
+
+  it("keeps the fragment of an element while editing its other fields", async () => {
+    const { ctrl } = await loadedController();
+    const panel = createElementPanel(ctrl, { openAssetPicker: () => {}, openIconPicker: () => {} });
+    document.body.append(panel.el);
+    ctrl.subscribe(panel.render);
+    ctrl.selectOne("paso");
+    expect(ctrl.selectedElements[0]?.fragment).toBe(1);
+    type(input(panel.el, "Tamaño"), "64");
+    type(input(panel.el, "Contenido"), "Cambiado");
+    type(input(panel.el, "X"), "25");
+    expect(ctrl.selectedElements[0]).toMatchObject({ text: "Cambiado", fragment: 1, box: { x: 0.25 } });
+  });
+
+  it("patches text style and box from the fields", async () => {
     const { ctrl } = await loadedController();
     const panel = createElementPanel(ctrl, { openAssetPicker: () => {}, openIconPicker: () => {} });
     document.body.append(panel.el);
@@ -47,10 +70,6 @@ describe("element inspector", () => {
     expect(ctrl.selectedElements[0]).toMatchObject({ text: "Cambiado" });
     type(input(panel.el, "X"), "25");
     expect(ctrl.selectedElements[0]?.box.x).toBe(0.25);
-    type(input(panel.el, "Aparece en el paso"), "2");
-    expect(ctrl.selectedElements[0]?.fragment).toBe(2);
-    type(input(panel.el, "Aparece en el paso"), "");
-    expect(ctrl.selectedElements[0]?.fragment).toBeUndefined();
     type(input(panel.el, "Peso"), "");
     expect((ctrl.selectedElements[0] as { style?: { fontWeight?: number } }).style?.fontWeight).toBeUndefined();
 
@@ -131,6 +150,11 @@ describe("slide inspector", () => {
     expect(ctrl.currentSlide?.quiz?.options[1]).toBe("Bravo");
     panel.el.querySelector<HTMLInputElement>('[aria-label="C es la correcta"]')!.click();
     expect(ctrl.currentSlide?.quiz?.correctIndex).toBe(2);
+    // The highlighted row follows the new correct answer, not only the radio.
+    expect([...panel.el.querySelectorAll(".ed-option")].map((o) => o.classList.contains("is-correct"))).toEqual([false, false, true]);
+    panel.el.querySelector<HTMLInputElement>('[aria-label="A es la correcta"]')!.click();
+    expect([...panel.el.querySelectorAll(".ed-option")].map((o) => o.classList.contains("is-correct"))).toEqual([true, false, false]);
+    panel.el.querySelector<HTMLInputElement>('[aria-label="C es la correcta"]')!.click();
     panel.el.querySelector<HTMLButtonElement>('[aria-label="Quitar opción C"]')!.click();
     expect(ctrl.currentSlide?.quiz?.options).toEqual(["A", "Bravo"]);
     expect(ctrl.currentSlide?.quiz?.correctIndex).toBe(0);
@@ -166,8 +190,10 @@ describe("design inspector", () => {
   });
 
   it("contrastHints and toPickerHex", () => {
-    expect(contrastHints(resolveTheme({ preset: "estudio" }))).toEqual([]);
-    expect(contrastHints(resolveTheme({ background: "#ffffff", foreground: "#eeeeee", accent: "#ffff00" }))).toHaveLength(2);
+    // contrastHints now takes the deck theme (it needs the preset to apply the native brutalista exemption)
+    // and checks text (4.5:1), muted (3:1) and accent (3:1): the default muted on white fails too.
+    expect(contrastHints({ preset: "estudio" })).toEqual([]);
+    expect(contrastHints({ background: "#ffffff", foreground: "#eeeeee", accent: "#ffff00" })).toHaveLength(3);
     expect(toPickerHex("#abc")).toBe("#aabbcc");
     expect(toPickerHex("#AABBCCDD")).toBe("#aabbcc");
     expect(toPickerHex("red")).toBeNull();

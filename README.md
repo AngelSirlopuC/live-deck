@@ -12,9 +12,11 @@ anything.
   votes by tap or keyboard (A–F, 1–6). Anonymous attendees get a creative alias.
 - **Open questions.** A slide of the deck (`layout: "ask"`, set up when the
   deck is created) with a character limit from 10 to 100 (default 40). It opens
-  when you reach the slide; each person sends one answer and can change it until
-  you close it. Answers fill the slide on every screen, grouped ignoring case,
-  accents and spacing, most repeated first with a `×N` badge. The answer box
+  when you reach the slide; each person taps "Escribir respuesta", writes in a
+  modal text area and sends one answer, and can reopen it with "Volver a
+  escribir" until you close the question. Answers fill the slide on every screen,
+  including the audience's phones, grouped ignoring case, accents and spacing,
+  most repeated first with a `×N` badge. The text area
   turns on the browser's spellcheck and autocorrect and recommends using it,
   so the same word is not split by typos. Every question lands in the summary.
 - **Pointer effects.** Ripple, focus and zoom (focus and zoom combine), mirrored on every screen. Focus and zoom stay armed so you can redraw the region; `Esc` clears everything. The laser (`L`) shows the presenter's cursor live on every screen.
@@ -104,16 +106,16 @@ any of these.
 
 ## Creating presentations
 
-There are two ways in. Both end in the same live session.
+There are three ways in. All end in the same live session, and you can mix them: write or import a deck, then fine-tune it in the editor.
 
-| | 1. Write a deck with Claude | 2. Import slides you designed |
-| --- | --- | --- |
-| Best for | Starting from an idea, outline or notes | Slides already made in PowerPoint, Keynote, Google Slides, Canva, Figma… |
-| Design | Six theme presets, icons, charts, decor, backgrounds | Exactly your design (each slide is an image) |
-| Step-by-step reveals, focus/zoom on one element | Yes | No (focus/zoom on an area still works) |
-| Quizzes | Native quiz slides | Native quiz slides, or **zone quizzes** drawn over your designed question |
+| | 1. Write a deck with Claude | 2. Import slides you designed | 3. Edit by hand |
+| --- | --- | --- | --- |
+| Best for | Starting from an idea, outline or notes | Slides already made in PowerPoint, Keynote, Google Slides, Canva, Figma… | Fine-tuning any deck, or building a short one visually |
+| Design | Six theme presets in light and dark, custom themes from your prompt, icons, charts, decor, backgrounds | Exactly your design (each slide is an image) | Same elements and themes as path 1, in the browser at `/edit/<id>` |
+| Step-by-step reveals, focus/zoom on one element | Yes (the skill decides the steps) | No (focus/zoom on an area still works) | Keeps the steps the skill chose |
+| Quizzes | Native quiz slides | Native quiz slides, or **zone quizzes** drawn over your designed question | Add and edit quiz and open-question slides |
 
-### Install the skill (both paths)
+### Install the skill (paths 1 and 2)
 
 ```sh
 npx skills add AngelSirlopuC/live-deck   # Claude Code, Cursor, Codex, Gemini CLI and more
@@ -123,19 +125,55 @@ npx skills add AngelSirlopuC/live-deck   # Claude Code, Cursor, Codex, Gemini CL
 
 Ask: "create a live deck about …". The skill picks a theme preset for the topic,
 audience and room, plans varied layouts, writes `decks/<id>/deck.json`, validates
-it with the CLI and fixes every issue, then gives you the preview link.
+it with the CLI and fixes every issue, then always ends with both links:
+
+```
+Vista previa: http://localhost:5180/preview/<id>
+Editar:       http://localhost:5180/edit/<id>
+```
+
+The links work while `npm run dev:server` and `npm run dev:web` are running.
+For a deck published to a server, the skill uses `PUBLIC_BASE_URL` from `.env`
+instead of `localhost`. **Vista previa** shows the saved deck; **Editar** opens
+the visual editor (press Guardar to save).
+
+#### Skill shortcuts
+
+Type these after `/live-deck` to get an answer without writing anything:
+
+| Shortcut | What you get |
+| --- | --- |
+| `/live-deck preview <id>` | The preview and editor links of that deck |
+| `/live-deck edit <id>` | The editor link (and the preview link) |
+| `/live-deck list` | Every deck with its title, slide count and links; invalid decks show why |
+| `/live-deck validate <id>` | The deck validated, every issue and warning fixed, then the links |
+
+Without an id, or with an unknown one, the skill lists the decks and asks which
+one you mean. Anything else after `/live-deck` is a normal request, such as
+"/live-deck create a deck about…".
 
 What a deck can use (format v1, defined in `shared/deck.ts`):
 
 - **Theme presets**: `estudio`, `editorial`, `neon`, `papel`, `brutalista`,
-  `corporativo`. Each brings its own fonts, colours, background art and card
-  style; colours can be overridden for a brand.
+  `corporativo`, each in a `light` and a `dark` mode. Each brings its own fonts,
+  colours, background art and card style. The skill picks the mode from the
+  room (light unless the venue is dark) and can build a custom theme from your
+  prompt: colours, fonts from a curated list, cards, headings, background art
+  and chart palette, all as data. `validate` warns about low contrast.
 - **Elements**: text (with `card`, `uppercase`, `tracking`, `mark`), images,
   shapes, curated Lucide icons, bar and donut charts, decorative shapes, and the
   join `qr`.
 - **Slide backgrounds**: colour, gradient, image (with dimming) or pattern.
-- **Fragments** for step-by-step reveals, **speaker notes**, and **quiz slides**
-  (live or secret results, shown as a ranking by default, optional timer).
+- **Colours that follow the theme**: element colours can be `text`, `muted`,
+  `accent`, `surface`, `background` or `on-accent` instead of a hex, so a
+  different preset or mode recolours the whole deck.
+- **Motion chosen for you**: the skill picks one motion style per deck (`calm`,
+  `lively`, `snappy` or `none`) and decides which elements appear step by step.
+  Each element animates by its type (text rises, bars grow, donuts sweep, icons
+  pop) in reading order. Nobody sets animations by hand.
+- **Speaker notes**, **quiz slides** (live or secret results, shown as a ranking
+  by default, optional timer) and **open-question slides** (short free-text
+  answers grouped with ×N on the slide).
 
 Decks are data, never HTML: nothing in a deck can run code on attendees' phones.
 
@@ -179,7 +217,10 @@ creates an empty deck and opens it). The editor works on the same `deck.json`:
   icons, charts, decorations and the join QR.
 - **Inspector**: every field of the selected element, the slide (layout,
   background, notes, quiz and open-question settings) and the design (title,
-  preset, colour overrides with a contrast hint).
+  preset, mode, fonts, card, heading, art, pattern and palette with contrast
+  hints). There are no animation controls: the AI picks the deck's motion
+  style and the step each element appears in; the canvas shows those steps as
+  read-only badges and keeps them when you edit.
 - **Save** with ⌘S. The server validates the deck before writing it and refuses
   to overwrite changes saved from another tab. Undo and redo with ⌘Z / ⇧⌘Z,
   every action with ⌘K, and **Exportar PDF** prints one slide per page.
@@ -189,9 +230,10 @@ The editor needs the admin key when `ADMIN_KEY` is set, like creating a session.
 ### The deck CLI
 
 ```sh
-npm run deck -- new my-talk --title "My talk"     # scaffold a deck
+npm run deck -- new my-talk --title "My talk"     # scaffold a deck (plain dark colours)
+npm run deck -- new my-talk --preset papel --mode dark   # ... on a preset, in its light or dark variant
 npm run deck -- import ./my-slides --id my-talk   # build a deck from slide images
-npm run deck -- validate my-talk                  # schema, assets (incl. backgrounds), QR on slide 1
+npm run deck -- validate my-talk                  # schema, assets (incl. backgrounds), QR on slide 1, low-contrast theme warnings
 npm run deck -- list                              # list decks and flag invalid ones
 ```
 
@@ -202,8 +244,9 @@ npm run deck -- list                              # list decks and flag invalid 
 | `decks/demo` | Every basic element and both quiz modes |
 | `decks/como-crear-una-presentacion` | Path 1: the `brutalista` preset, icons, charts with real data, decor, credits |
 | `decks/importadas-demo` | Path 2: imported designed images, a zone quiz and an interleaved native quiz |
+| `decks/tema-propio` | A custom light theme built from a prompt: colours, fonts, cards and chart palette |
 
-Open any of them at `/preview/<deck-id>`.
+Open any of them at `/preview/<deck-id>`, or edit it at `/edit/<deck-id>`.
 
 ## Self-hosting
 
@@ -233,6 +276,20 @@ npm run publish:deck -- my-event             # validate, then rsync decks/my-eve
 It refuses an invalid deck, removes files you deleted only inside that deck,
 and needs no restart: the server reads decks when a session is created. Then
 create the session from the home page with the admin key.
+
+To save edits from the hosted editor, mount the decks folder writable
+(`./decks:/app/decks`, without `:ro`) and give it to the container's user
+(`chown -R 1000:1000 decks`). Then make publish write as that user too, or the
+next publish leaves files the server cannot change:
+
+```sh
+# .env
+LIVE_DECK_PUBLISH_RSYNC_PATH=setpriv --reuid=1000 --regid=1000 --clear-groups rsync
+```
+
+Edits saved on the server stay there: publishing again from your machine
+overwrites them, so copy them back first (`rsync` the other way) if you want
+to keep them.
 
 ## Architecture
 

@@ -53,7 +53,45 @@ describe("home editor entry points", () => {
     await vi.waitFor(() => expect(visited).toEqual(["/edit/mi-charla"]));
     const post = calls.find((c) => c.url === "/api/editor/decks")!;
     expect(post.init?.method).toBe("POST");
-    expect(JSON.parse(String(post.init?.body))).toEqual({ id: "mi-charla", title: "Mi charla" });
+    // The preset is always explicit; the mode travels only when it differs from the preset's native one.
+    expect(JSON.parse(String(post.init?.body))).toEqual({ id: "mi-charla", title: "Mi charla", preset: "estudio" });
+  });
+
+  it("offers the six presets with the native mode preselected and sends mode only when flipped", async () => {
+    const calls = stubFetch();
+    const { root } = await mount();
+    root.querySelector<HTMLButtonElement>("button.home-new")!.click();
+    const form = root.querySelector<HTMLFormElement>("form.home-new-form")!;
+    const preset = form.querySelector<HTMLSelectElement>("#new-preset")!;
+    expect([...preset.options].map((o) => o.value)).toEqual(["estudio", "editorial", "neon", "papel", "brutalista", "corporativo"]);
+    expect([...preset.options].map((o) => o.textContent)).toEqual(["Estudio", "Editorial", "Neón", "Papel", "Brutalista", "Corporativo"]);
+    const mode = (value: string) => form.querySelector<HTMLButtonElement>(`.home-mode [data-mode="${value}"]`)!;
+    expect(mode("dark").getAttribute("aria-pressed")).toBe("true");
+    expect(mode("light").getAttribute("aria-pressed")).toBe("false");
+    preset.value = "papel";
+    preset.dispatchEvent(new Event("change"));
+    expect(mode("light").getAttribute("aria-pressed")).toBe("true");
+    mode("dark").click();
+    expect(mode("dark").getAttribute("aria-pressed")).toBe("true");
+    form.querySelector<HTMLInputElement>("#new-title")!.value = "Papel";
+    form.querySelector<HTMLInputElement>("#new-title")!.dispatchEvent(new Event("input"));
+    form.dispatchEvent(new Event("submit", { cancelable: true }));
+    await vi.waitFor(() => expect(calls.some((c) => c.url === "/api/editor/decks")).toBe(true));
+    expect(JSON.parse(String(calls.find((c) => c.url === "/api/editor/decks")!.init?.body))).toEqual({ id: "papel", title: "Papel", preset: "papel", mode: "dark" });
+  });
+
+  it("sends no mode when the preset's native mode is chosen again", async () => {
+    const calls = stubFetch();
+    const { root } = await mount();
+    root.querySelector<HTMLButtonElement>("button.home-new")!.click();
+    const form = root.querySelector<HTMLFormElement>("form.home-new-form")!;
+    form.querySelector<HTMLButtonElement>('.home-mode [data-mode="light"]')!.click();
+    form.querySelector<HTMLButtonElement>('.home-mode [data-mode="dark"]')!.click();
+    form.querySelector<HTMLInputElement>("#new-title")!.value = "Otra vez";
+    form.querySelector<HTMLInputElement>("#new-title")!.dispatchEvent(new Event("input"));
+    form.dispatchEvent(new Event("submit", { cancelable: true }));
+    await vi.waitFor(() => expect(calls.some((c) => c.url === "/api/editor/decks")).toBe(true));
+    expect(JSON.parse(String(calls.find((c) => c.url === "/api/editor/decks")!.init?.body))).toEqual({ id: "otra-vez", title: "Otra vez", preset: "estudio" });
   });
 
   it("shows the server's error when the deck already exists", async () => {

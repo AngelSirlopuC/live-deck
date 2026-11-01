@@ -9,12 +9,17 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 function svgEl(tag: string, attrs: Record<string, string | number>): SVGElement {
   const node = document.createElementNS(SVG_NS, tag) as SVGElement;
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+  for (const [k, v] of Object.entries(attrs)) {
+    // A theme token arrives as `var(--theme-…)`, which cannot live in a presentation attribute; a hex keeps the attribute.
+    if ((k === "fill" || k === "stroke") && typeof v === "string" && v.startsWith("var(")) node.style.setProperty(k, v);
+    else node.setAttribute(k, String(v));
+  }
   return node;
 }
 
 type Shape = DecorElement["shape"];
 
+/** `color` is a hex or a resolved `var(--theme-…)` (see shared/theme-colors.ts). */
 export function renderDecor(shape: Shape, color: string, width: number, height: number): SVGSVGElement {
   const svg = svgEl("svg", { viewBox: `0 0 ${r2(width)} ${r2(height)}`, width: "100%", height: "100%", class: `decor decor-${shape}` }) as SVGSVGElement;
   svg.setAttribute("aria-hidden", "true");

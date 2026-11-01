@@ -1,13 +1,16 @@
-// Element inspector: box, fragment and every style field of the selected
-// element's schema, plus arrange / align / distribute. Fields are rebuilt only
-// when the selection identity changes; deck changes refresh them in place.
+// Element inspector: box and every style field of the selected element's
+// schema, plus arrange / align / distribute. Fields are rebuilt only when the
+// selection identity changes; deck changes refresh them in place. There is no
+// fragment or animation control: the AI decides the steps and the deck motion,
+// and edits here leave an element's `fragment` untouched.
 import type { Box, DeckElement } from "../../../../../shared/deck.ts";
 import { ICON_NAMES } from "../../../../../shared/icons.ts";
-import { resolveTheme } from "../../../../../shared/themes.ts";
+import { THEME_COLOR_KEYS, THEME_COLOR_TOKENS, type ThemeColorToken } from "../../../../../shared/theme-colors.ts";
+import { resolveThemeSpec } from "../../../../../shared/themes.ts";
 import { h, trusted } from "../../../ui/dom.ts";
 import { clampBox, isValidId, round4, type AlignEdge, type ElementPatch, type ZOrder } from "../../model/index.ts";
 import type { EditorController, EditorState } from "../controller.ts";
-import { colorField, iconKey, numberField, row, section, segmentedField, selectField, textField, toggleField, type Field } from "../fields.ts";
+import { colorField, iconKey, numberField, row, section, segmentedField, selectField, textField, toggleField, type ColorSwatch, type Field } from "../fields.ts";
 import { edIcon } from "../icons.ts";
 import { DECOR_SHAPES } from "../toolbar.ts";
 
@@ -18,16 +21,12 @@ export interface ElementPanelOptions {
   openIconPicker: (onPick: (name: string) => void, current?: string) => void;
 }
 
-/** Theme swatches for colour fields, resolved from the deck theme. */
-export function themeSwatches(state: EditorState): { name: string; value: string }[] {
-  const t = resolveTheme(state.deck?.theme).colors;
-  return [
-    { name: "Acento", value: t.accent },
-    { name: "Texto", value: t.foreground },
-    { name: "Apagado", value: t.muted },
-    { name: "Fondo", value: t.background },
-    ...(t.surface ? [{ name: "Superficie", value: t.surface }] : []),
-  ];
+const TOKEN_LABELS: Record<ThemeColorToken, string> = { text: "Texto", muted: "Apagado", accent: "Acento", surface: "Superficie", background: "Fondo", "on-accent": "Sobre acento" };
+
+/** Theme swatches for colour fields: one per token, previewed with the colour the current theme resolves it to. */
+export function themeSwatches(state: EditorState): (ColorSwatch & { token: ThemeColorToken })[] {
+  const colors = resolveThemeSpec(state.deck?.theme).colors;
+  return THEME_COLOR_TOKENS.map((token) => ({ name: TOKEN_LABELS[token], token, value: colors[THEME_COLOR_KEYS[token]] }));
 }
 
 export function createElementPanel(ctrl: EditorController, o: ElementPanelOptions) {
@@ -142,19 +141,7 @@ export function createElementPanel(ctrl: EditorController, o: ElementPanelOption
         },
       }),
     );
-    const fragment = F(
-      numberField({
-        label: "Aparece en el paso",
-        min: 1,
-        max: 20,
-        optional: true,
-        placeholder: "siempre",
-        get: () => current()?.fragment,
-        set: (v) => patch({ fragment: v }, "fragment"),
-        commit: seal,
-      }),
-    );
-    const position = section("Posición y tamaño", row(F(boxField("X", "x")), F(boxField("Y", "y"))), row(F(boxField("Ancho", "w")), F(boxField("Alto", "h"))), fragment);
+    const position = section("Posición y tamaño", row(F(boxField("X", "x")), F(boxField("Y", "y"))), row(F(boxField("Ancho", "w")), F(boxField("Alto", "h"))));
 
     const typeSections: HTMLElement[] = [];
     const num = (label: string, key: string, min: number, max: number, step = 1, unit?: string) =>

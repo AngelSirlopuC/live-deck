@@ -45,7 +45,7 @@ export function createQuizPanel(onVote: (slideId: string, option: number) => voi
       list.dataset.slide = state.slideId;
       list.replaceChildren(
         ...quiz.options.map((label, i) => {
-          const b = h("button", { type: "button", class: "vote", "data-option": i, "aria-keyshortcuts": `${OPTION_KEYS[i]} ${i + 1}` }, h("span", { class: "vote-key" }, OPTION_KEYS[i]!), h("span", { class: "vote-label" }, label), h("span", { class: "vote-share" }));
+          const b = h("button", { type: "button", class: "vote", "data-option": i, "aria-keyshortcuts": `${OPTION_KEYS[i]} ${i + 1}` }, h("span", { class: "vote-bar", "aria-hidden": "true" }), h("span", { class: "vote-key" }, OPTION_KEYS[i]!), h("span", { class: "vote-label" }, label), h("span", { class: "vote-share" }));
           b.addEventListener("click", () => current && onVote(current.slideId, i));
           return b;
         }),
@@ -60,8 +60,14 @@ export function createQuizPanel(onVote: (slideId: string, option: number) => voi
       const revealed = view?.status === "revealed";
       b.classList.toggle("is-correct", revealed && view?.correctIndex === i);
       b.classList.toggle("is-wrong", revealed && view?.correctIndex !== i && myVote === i);
+      // Visible results: each option shows its share as a bar behind the label, plus the percentage.
       const count = view?.counts?.[i];
-      b.querySelector(".vote-share")!.textContent = count !== undefined && view && view.total ? `${Math.round((count / view.total) * 100)}%` : "";
+      const share = count !== undefined && view && view.total ? count / view.total : 0;
+      b.style.setProperty("--share", String(share));
+      const pct = b.querySelector<HTMLElement>(".vote-share")!;
+      pct.textContent = count !== undefined && view && view.total ? `${Math.round(share * 100)}%` : "";
+      if (count !== undefined && view && view.total) pct.setAttribute("aria-label", `${count} ${count === 1 ? "voto" : "votos"}, ${Math.round(share * 100)}%`);
+      else pct.removeAttribute("aria-label");
     });
 
     if (readOnly && view?.status !== "revealed") status.textContent = "Solo lectura: la votación no está disponible.";

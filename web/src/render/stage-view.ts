@@ -25,14 +25,14 @@ export class StageView {
   private disposeFit: (() => void) | null = null;
   private last: Position | null = null;
   private deck: RenderableDeck;
-  private extra: Omit<RenderOptions, "step" | "enterStep">;
+  private extra: Omit<RenderOptions, "step" | "enterStep" | "enterSlide">;
   private effects: PersistentEffect[] = [];
   private laserIdle: ReturnType<typeof setTimeout> | undefined;
   private zoom: Zoom = NO_ZOOM;
   private quizState: { view: QuizView | null; opts: QuizOverlayOptions } = { view: null, opts: {} };
   private asks: Record<string, AskView> = {};
 
-  constructor(host: HTMLElement, deck: RenderableDeck, extra: Omit<RenderOptions, "step" | "enterStep"> = {}) {
+  constructor(host: HTMLElement, deck: RenderableDeck, extra: Omit<RenderOptions, "step" | "enterStep" | "enterSlide"> = {}) {
     this.host = host;
     this.deck = deck;
     this.extra = extra;
@@ -47,7 +47,7 @@ export class StageView {
     return this.last;
   }
 
-  setOptions(extra: Omit<RenderOptions, "step" | "enterStep">) {
+  setOptions(extra: Omit<RenderOptions, "step" | "enterStep" | "enterSlide">) {
     this.extra = { ...this.extra, ...extra };
     if (this.last) this.show(this.last, { force: true });
   }
@@ -56,8 +56,10 @@ export class StageView {
     const prev = this.last;
     if (!force && prev && prev.slide === pos.slide && prev.step === pos.step) return;
     const sameSlide = prev?.slide === pos.slide;
+    // A new slide (the first one included) plays its entrance; a forward step on the
+    // same slide plays the revealed step; going back or re-rendering stays still.
     const enterStep = sameSlide && prev && pos.step > prev.step ? pos.step : undefined;
-    const next = renderSlide(this.deck, pos.slide, { ...this.extra, step: pos.step, enterStep });
+    const next = renderSlide(this.deck, pos.slide, { ...this.extra, step: pos.step, enterStep, enterSlide: !sameSlide });
     if (!sameSlide && prev) next.classList.add("stage-enter");
 
     this.disposeFit?.();

@@ -121,7 +121,7 @@ describe("renderSlide with rich decks", () => {
     const links = document.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]');
     expect(links).toHaveLength(1);
     expect(links[0]!.href).toContain("fonts.googleapis.com/css2");
-    expect(links[0]!.dataset.presetFonts).toBe("neon");
+    expect(links[0]!.dataset.themeFonts).toBe("Space Grotesk|Space Mono|Unbounded");
   });
 
   it("draws gradient, image, pattern and dim background layers", () => {
@@ -312,5 +312,99 @@ describe("stage view refit", () => {
     height = 1080;
     view.refit();
     expect(view.current!.style.transform).toContain("scale(1)");
+  });
+});
+
+describe("entrances", () => {
+  const motionDeck: Deck = {
+    version: 1,
+    title: "M",
+    slides: [
+      {
+        id: "s",
+        elements: [
+          { id: "title", type: "text", box: { x: 0.1, y: 0.1, w: 0.8, h: 0.1 }, text: "Hola", style: { fontSize: 96 } },
+          { id: "bars", type: "chart", kind: "bar", box: { x: 0.1, y: 0.3, w: 0.8, h: 0.4 }, data: [{ label: "a", value: 1 }, { label: "b", value: 2 }] },
+          { id: "rule", type: "shape", shape: "line", box: { x: 0.1, y: 0.25, w: 0.8, h: 0.01 } },
+          { id: "note", type: "text", box: { x: 0.1, y: 0.8, w: 0.8, h: 0.1 }, text: "Luego", fragment: 1 },
+          { id: "last", type: "text", box: { x: 0.1, y: 0.9, w: 0.8, h: 0.1 }, text: "Final", fragment: 2 },
+        ],
+      },
+    ],
+  };
+  const byId = (stage: HTMLElement, id: string) => stage.querySelector<HTMLElement>(`[data-element-id="${id}"]`)!;
+  const entering = (stage: HTMLElement) => [...stage.querySelectorAll<HTMLElement>(".el.enter")].map((n) => n.dataset.elementId);
+
+  it("adds nothing without enterSlide or enterStep, so the editor, thumbnails and print stay static", () => {
+    const stage = renderSlide(motionDeck, 0, { step: 2 });
+    expect(entering(stage)).toEqual([]);
+    expect(stage.querySelectorAll("[style*='--enter']")).toHaveLength(0);
+    expect(stage.querySelectorAll("[style*='--bar-index']")).toHaveLength(0);
+    expect(stage.dataset.motion).toBe("calm");
+  });
+
+  it("gives every always-visible element its derived entrance on enterSlide, in reading order", () => {
+    const stage = renderSlide(motionDeck, 0, { step: 0, enterSlide: true });
+    expect(entering(stage)).toEqual(["title", "bars", "rule"]);
+    const title = byId(stage, "title");
+    expect(title.classList.contains("enter-rise-lg")).toBe(true);
+    expect(title.style.getPropertyValue("--enter-delay")).toBe("0ms");
+    expect(title.style.getPropertyValue("--enter-duration")).toBe("560ms");
+    expect(title.style.getPropertyValue("--enter-ease")).not.toBe("");
+    expect(byId(stage, "rule").classList.contains("enter-draw")).toBe(true);
+    expect(byId(stage, "rule").style.getPropertyValue("--enter-delay")).toBe("80ms");
+    expect(byId(stage, "bars").style.getPropertyValue("--enter-delay")).toBe("160ms");
+    expect(byId(stage, "bars").classList.contains("enter-grow")).toBe(true);
+    const bars = [...byId(stage, "bars").querySelectorAll<SVGElement>(".chart-bar")];
+    expect(bars.map((b) => b.style.getPropertyValue("--bar-index"))).toEqual(["0", "1"]);
+    expect(byId(stage, "note").classList.contains("enter")).toBe(false);
+  });
+
+  it("gives only the revealed step's elements an entrance on enterStep", () => {
+    const stage = renderSlide(motionDeck, 0, { step: 1, enterStep: 1 });
+    expect(entering(stage)).toEqual(["note"]);
+    expect(byId(stage, "note").classList.contains("enter-rise")).toBe(true);
+    expect(byId(stage, "title").classList.contains("enter")).toBe(false);
+  });
+
+  it("follows the deck motion style and plays nothing for none", () => {
+    const snappy = renderSlide({ ...motionDeck, motion: "snappy" }, 0, { step: 0, enterSlide: true });
+    expect(snappy.dataset.motion).toBe("snappy");
+    expect(byId(snappy, "title").style.getPropertyValue("--enter-duration")).toBe("300ms");
+    const none = renderSlide({ ...motionDeck, motion: "none" }, 0, { step: 1, enterSlide: true, enterStep: 1 });
+    expect(none.dataset.motion).toBe("none");
+    expect(entering(none)).toEqual([]);
+  });
+
+  it("keeps the stage DOM identical with and without the flags apart from entrance marks", () => {
+    const strip = (stage: HTMLElement) => {
+      for (const n of stage.querySelectorAll<HTMLElement>(".el.enter")) {
+        n.classList.remove("enter", ...[...n.classList].filter((c) => c.startsWith("enter-")));
+        for (const p of ["--enter-delay", "--enter-duration", "--enter-ease"]) n.style.removeProperty(p);
+        for (const b of n.querySelectorAll<SVGElement>(".chart-bar")) {
+          b.style.removeProperty("--bar-index");
+          if (b.getAttribute("style") === "") b.removeAttribute("style");
+        }
+        if (n.getAttribute("style") === "") n.removeAttribute("style");
+      }
+      return stage.outerHTML.replace(/ class="el(.*?)"/g, (_m, rest: string) => ` class="el${rest.replace(/\s+$/, "")}"`);
+    };
+    expect(strip(renderSlide(motionDeck, 0, { step: 1, enterSlide: true, enterStep: 1 }))).toBe(strip(renderSlide(motionDeck, 0, { step: 1 })));
+  });
+
+  it("disables every entrance keyframe and the slide transition under prefers-reduced-motion", () => {
+    const css = readFileSync(`${process.cwd()}/web/src/styles/stage.css`, "utf8");
+    const names = [...css.matchAll(/@keyframes\s+((?:enter|stage-in|layer-in)[\w-]*)/g)].map((m) => m[1]!);
+    expect(names.length).toBeGreaterThanOrEqual(10);
+    const reduced = [...css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)].map((m) => m[1]!).join("\n");
+    for (const name of names) {
+      const uses = [...css.matchAll(/([^{}]+)\{[^{}]*animation(?:-name)?:\s*([\w-]+)[^{}]*\}/g)].filter((m) => m[2] === name).map((m) => m[1]!.trim().split("\n").pop()!.trim());
+      expect(uses.length, `${name} is used`).toBeGreaterThan(0);
+      for (const selector of uses) {
+        const rule = new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^{]*\\{[^}]*animation:\\s*none`);
+        expect(reduced, `${selector} (${name}) is disabled under reduced motion`).toMatch(rule);
+      }
+    }
+    expect(css).not.toMatch(/transition:\s*all/);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_THEME } from "../shared/deck-core.ts";
 import { ICON_NAMES, ICON_NODES } from "../shared/icons.ts";
-import { PRESET_NAMES, THEME_PRESETS, presetFontsHref, resolveTheme } from "../shared/themes.ts";
+import { PRESET_NAMES, THEME_PRESETS, presetFontsHref, presetVariant, resolveTheme } from "../shared/themes.ts";
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -46,6 +46,16 @@ describe("theme presets", () => {
         expect(contrast(muted, background)).toBeGreaterThanOrEqual(4.5);
         expect(contrast(foreground, surface)).toBeGreaterThanOrEqual(4.5);
         expect(contrast(onAccent, accent)).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it("declares its native mode and a variant for the other mode with hex colours and a palette", () => {
+        expect(["light", "dark"]).toContain(preset.native);
+        for (const c of Object.values(preset.variant.colors)) expect(c).toMatch(HEX);
+        expect(preset.variant.palette.length).toBeGreaterThanOrEqual(3);
+        expect(preset.variant.palette.length).toBeLessThanOrEqual(8);
+        for (const c of preset.variant.palette) expect(c).toMatch(HEX);
+        expect(presetVariant(name, preset.native)).toBe(preset);
+        expect(presetVariant(name, preset.native === "light" ? "dark" : "light")).toBe(preset.variant);
       });
 
       it("names display, body and mono font families", () => {

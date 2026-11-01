@@ -233,6 +233,23 @@ describe("deck", () => {
     expect("theme" in cleared).toBe(false);
   });
 
+  it("setTheme merges fonts, card, heading and art one level deep and drops them when empty", () => {
+    let d = applyCommand(deck(), { type: "setTheme", patch: { card: { radius: 12, border: "thick" }, fonts: { display: "Fraunces" } } });
+    d = applyCommand(d, { type: "setTheme", patch: { card: { radius: 20 }, fonts: { body: "Lora" } } });
+    expect(d.theme?.card).toEqual({ radius: 20, border: "thick" });
+    expect(d.theme?.fonts).toEqual({ display: "Fraunces", body: "Lora" });
+    d = applyCommand(d, { type: "setTheme", patch: { card: { radius: undefined, border: undefined }, fonts: { display: undefined } } });
+    expect("card" in (d.theme ?? {})).toBe(false);
+    expect(d.theme?.fonts).toEqual({ body: "Lora" });
+    d = applyCommand(d, { type: "setTheme", patch: { art: { kind: "gradient", angle: 90 } } });
+    d = applyCommand(d, { type: "setTheme", patch: { art: { kind: "none", angle: undefined } } });
+    expect(d.theme?.art).toEqual({ kind: "none" });
+    d = applyCommand(d, { type: "setTheme", patch: { palette: ["#111111", "#222222", "#333333"] } });
+    d = applyCommand(d, { type: "setTheme", patch: { palette: ["#444444", "#555555", "#666666", "#777777"] } });
+    expect(d.theme?.palette).toEqual(["#444444", "#555555", "#666666", "#777777"]);
+    expect(applyCommand(d, { type: "setTheme", patch: { fonts: { body: "Lora" } } })).toBe(d);
+  });
+
   it("setTitle", () => {
     expect(applyCommand(deck(), { type: "setTitle", title: "Nuevo" }).title).toBe("Nuevo");
   });
