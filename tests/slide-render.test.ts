@@ -227,6 +227,13 @@ describe("icon rendering regressions", () => {
     const dark = renderSlide(iconDeck("neon", {}), 0, { step: 0 }).querySelector<HTMLElement>('[data-element-id="i"]')!;
     expect(dark.style.color).toBe("var(--theme-accent)");
   });
+
+  it("exposes a readable accent ink for text drawn in the accent colour", () => {
+    const light = renderSlide(iconDeck("brutalista", {}), 0, { step: 0 });
+    expect(light.style.getPropertyValue("--theme-accent-ink")).toBe("var(--theme-fg)");
+    const dark = renderSlide(iconDeck("neon", {}), 0, { step: 0 });
+    expect(dark.style.getPropertyValue("--theme-accent-ink")).toBe("var(--theme-accent)");
+  });
 });
 
 describe("zone quizzes", () => {
